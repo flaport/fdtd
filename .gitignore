@@ -1,0 +1,38 @@
+#############
+## Folders ##
+#############
+__pycache__
+.ipynb_checkpoints
+.DS_Store
+.vscode
+
+###########
+## Files ##
+###########
+
+## byte code
+*.pyc
+
+## logs
+*.log
+log.txt
+
+## data
+*.data
+*.dat
+*.obj
+*.npy
+*.npz
+*.gz
+
+## documentation src (latex)
+*.gz
+*.tex
+*.pdf
+*.aux
+*.log
+*.out
+*.toc
+*.tdo
+*.bbl
+*.blg
