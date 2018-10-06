@@ -97,7 +97,7 @@ Or written as update equations:
     H  -= (cdt/du)*inv(µ)*curl_E
 ```
 
-The number `(cdt/du)` is a dimensionless parameters called the *courant number*.
+The number `(cdt/du)` is a dimensionless parameter called the *courant number*.
 For stability reasons, the courant number should always be smaller than `1/√D`, with `D` the
 dimension of the simulation. This can be intuitively understoond as being the condition
 that the field energy may not transit through more than one mesh cell in a single
