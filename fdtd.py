@@ -100,14 +100,6 @@ class Grid:
     def time_passed(self):
         return self.timesteps_passed * self.timestep
 
-    @property
-    def permittivity(self):
-        return 1.0 / self.permittivity
-
-    @property
-    def permeability(self):
-        return 1.0 / self.permeability
-
     def run(self, total_time: Number, progress_bar: bool = True):
         if isinstance(total_time, float):
             total_time /= self.timestep
@@ -123,16 +115,15 @@ class Grid:
         self.timesteps_passed += 1
 
     def update_E(self):
-        # normal update equation
-        self.E += self.courant_number * self.inverse_permittivity * curl_H(self.H)
+        curl = curl_H(self.H)
+        self.E += self.courant_number * self.inverse_permittivity * curl
+
         # add source (dummy for now)
         self.E[self.Nx // 2, self.Ny // 2, 2] = 1
 
     def update_H(self):
-        # normal update equation
-        self.H -= self.courant_number * self.inverse_permeability * curl_E(self.E)
-        # add source (None for now)
-        # self.H[...]
+        curl = curl_E(self.E)
+        self.H -= self.courant_number * self.inverse_permeability * curl
 
     def reset(self):
         self.H *= 0.0
@@ -143,12 +134,15 @@ class Grid:
 if __name__ == "__main__":
     import time
     import matplotlib.pyplot as plt
+    from line_profiler import LineProfiler
 
     grid = Grid((400, 400))
 
-    start = time.time()
+    profiler = LineProfiler()
+    profiler.add_function(grid.update_E)
+    profiler.enable()
     grid.run(20, progress_bar=False)
-    print(f"time elapsed: {time.time()-start}")
+    profiler.print_stats()
 
     plt.imshow(grid.E[..., 2])
     plt.show()
