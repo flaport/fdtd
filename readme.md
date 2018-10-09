@@ -1,6 +1,6 @@
-# Under Construction
+# Simple 2D Python FDTD Solver
 
-## FDTD for electromagnetic fields introduction
+## FDTD for electromagnetic fields
 A quick explanation of the FDTD discretization and the maxwell equations to bring you up to speed.
 
 
@@ -97,24 +97,44 @@ Or written as update equations:
     H  -= (cdt/du)*inv(µ)*curl_E
 ```
 
-The number `(cdt/du)` is a dimensionless parameter called the *courant number*.
+The number `(cdt/du)` is a dimensionless parameters called the *courant number*.
 For stability reasons, the courant number should always be smaller than `1/√D`, with `D` the
 dimension of the simulation. This can be intuitively understoond as being the condition
 that the field energy may not transit through more than one mesh cell in a single
 time step. This yields the final update equations for the FDTD algorithm:
 
+```
+    E  += sc*inv(ε)*curl_H + Es
+    H  -= sc*inv(µ)*curl_E + Hs
+```
+
+Where `Es` and `Hs` are source terms. This is also how it is implemented in the code:
+
+
 ```python
 class Grid:
-    # initialization here
+    # initialization...
 
-def step(self):
-    self.update_E()
-    self.update_H()
-    self.timesteps_passed += 1
+    def step(self):
+        self.update_E()
+        self.source_E()
+        self.update_H()
+        self.source_H()
+        self.timesteps_passed += 1
 
-def update_E(self):
-    self.E += self.courant_number * self.inverse_permittivity * curl_H(self.H)
+    def update_E(self):
+        self.E += self.courant_number * einsum(
+            "ijkl,ijl->ijk", self.inverse_permittivity, curl_H(self.H)
+        )
 
-def update_H(self):
-    self.H -= self.courant_number * self.inverse_permeability * curl_E(self.E)
+    def update_H(self):
+        self.H -= self.courant_number * einsum(
+            "ijkl,ijl->ijk", self.inverse_permeability, curl_E(self.E)
+        )
+
+    def source_E(self):
+        # source implementation here
+
+    def source_H(self):
+        # source implementation here
 ```
