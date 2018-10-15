@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from line_profiler import LineProfiler
 
 import fdtd
+fdtd.set_backend('torch')
 
 
 ## Simulation
@@ -25,4 +26,5 @@ profiler.print_stats()
 
 # show result
 plt.imshow(grid.E[..., 2])
+print(grid.E.__class__)
 plt.show()

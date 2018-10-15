@@ -5,7 +5,9 @@ from typing import Tuple
 from numbers import Number
 
 # Other
-import numpy as np
+from backend import set_backend
+from backend import backend as bd
+
 from tqdm import tqdm
 
 ## Constants
@@ -14,7 +16,7 @@ SPEED_LIGHT: float = 299_792_458.0  # [m/s] speed of light
 ## Functions
 def curl_E(E):
     """ Transforms an E-type field into an H-type field by performing a curl operation """
-    ret = np.zeros(E.shape)
+    ret = bd.zeros(E.shape)
     ret[:, :-1, 0] = E[:, 1:, 2] - E[:, :-1, 2]
     ret[:, -1, 0] = -E[:, -1, 2]
     ret[:-1, :, 1] = -E[1:, :, 2] + E[:-1, :, 2]
@@ -28,7 +30,7 @@ def curl_E(E):
 
 def curl_H(H):
     """ Transforms an H-type field into an E-type field by performing a curl operation """
-    ret = np.zeros(H.shape)
+    ret = bd.zeros(H.shape)
     ret[:, 1:, 0] = H[:, 1:, 2] - H[:, :-1, 2]
     ret[:, 0, 0] = H[:, 0, 2]
     ret[1:, :, 1] = -(H[1:, :, 2] - H[:-1, :, 2])
@@ -59,13 +61,13 @@ class Grid:
         self.Nx, self.Ny = self._handle_shape(shape)
 
         # save electric and magnetic field
-        self.E = np.zeros((self.Nx, self.Ny, 3))
-        self.H = np.zeros((self.Nx, self.Ny, 3))
+        self.E = bd.zeros((self.Nx, self.Ny, 3))
+        self.H = bd.zeros((self.Nx, self.Ny, 3))
 
         # save the inverse of the relative permittiviy and the relative permeability
         # as a diagonal matrix
-        self.inverse_permittivity = np.ones((self.Nx, self.Ny, 3)) / permittivity
-        self.inverse_permeability = np.ones((self.Nx, self.Ny, 3)) / permeability
+        self.inverse_permittivity = bd.ones((self.Nx, self.Ny, 3)) / permittivity
+        self.inverse_permeability = bd.ones((self.Nx, self.Ny, 3)) / permeability
 
         # save current time index
         self.timesteps_passed = 0
@@ -129,20 +131,3 @@ class Grid:
         self.H *= 0.0
         self.E *= 0.0
         self.timesteps_passed *= 0
-
-
-if __name__ == "__main__":
-    import time
-    import matplotlib.pyplot as plt
-    from line_profiler import LineProfiler
-
-    grid = Grid((400, 400))
-
-    profiler = LineProfiler()
-    profiler.add_function(grid.update_E)
-    profiler.enable()
-    grid.run(20, progress_bar=False)
-    profiler.print_stats()
-
-    plt.imshow(grid.E[..., 2])
-    plt.show()
