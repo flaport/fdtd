@@ -52,6 +52,15 @@ class Grid:
         permeability: float = 1.0,
         courant_number: float = 0.7,
     ):
+    '''
+    Args:
+        shape: shape of the FDTD grid.
+        grid_spacing = 50e-9: distance between the grid cells.
+        permittivity = 1.0: the relative permittivity of the background.
+        permeability = 1.0: the relative permeability of the background.
+        courant_number = 0.7: the courant number of the FDTD simulation. The timestep of
+            the simulation will be derived from this number using the CFL-condition.
+    '''
         # simulation constants
         self.courant_number = float(courant_number)
         self.grid_spacing = float(grid_spacing)
@@ -73,7 +82,8 @@ class Grid:
         self.timesteps_passed = 0
 
     @staticmethod
-    def _handle_shape(shape: Tuple[Number, Number]):
+    def _handle_shape(shape: Tuple[Number, Number]) -> Tuple[int, int]:
+        ''' validate the grid shape and transform to a length-2 tuple of ints '''
         if len(shape) != 2:
             raise ValueError(
                 f"invalid grid shape {shape}\n"
@@ -87,22 +97,33 @@ class Grid:
         return x, y
 
     @property
-    def x(self):
+    def x(self) -> int:
+        ''' get the number of grid cells in the x-direction '''
         return self.Nx * self.grid_spacing
 
     @property
-    def y(self):
+    def y(self) -> int:
+        ''' get the number of grid cells in the y-direction '''
         return self.Ny * self.grid_spacing
 
     @property
-    def shape(self):
+    def shape(self) -> Tuple[int,int]:
+        ''' get the shape of the FDTD grid '''
         return (self.Nx, self.Ny)
 
     @property
-    def time_passed(self):
+    def time_passed(self) -> float:
+        ''' get the total time passed '''
         return self.timesteps_passed * self.timestep
 
     def run(self, total_time: Number, progress_bar: bool = True):
+        ''' run an FDTD simulation.
+
+        Args:
+            total_time: the total time for the simulation to run.
+            progress_bar = True: choose to show a progress bar during simulation
+
+        '''
         if isinstance(total_time, float):
             total_time /= self.timestep
         time = range(0, int(total_time), 1)
@@ -112,11 +133,15 @@ class Grid:
             self.step()
 
     def step(self):
+        ''' do a single FDTD step by first updating the electric field and then
+        updating the magnetic field
+        '''
         self.update_E()
         self.update_H()
         self.timesteps_passed += 1
 
     def update_E(self):
+        ''' update the electric field by using the curl of the magnetic field '''
         curl = curl_H(self.H)
         self.E += self.courant_number * self.inverse_permittivity * curl
 
@@ -124,10 +149,12 @@ class Grid:
         self.E[self.Nx // 2, self.Ny // 2, 2] = 1
 
     def update_H(self):
+        ''' update the magnetic field by using the curl of the electric field '''
         curl = curl_E(self.E)
         self.H -= self.courant_number * self.inverse_permeability * curl
 
     def reset(self):
+        ''' reset the grid by setting all fields to zero '''
         self.H *= 0.0
         self.E *= 0.0
         self.timesteps_passed *= 0
