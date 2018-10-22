@@ -1,40 +1,52 @@
 ## Imports
 
-import numpy
+from typing import Union
+import numpy # numpy has to be present
+try:
+    import torch
+    torch.set_default_dtype(torch.float64)
+    torch_available = True
+    torch_cuda_available = torch.cuda.is_available()
+except ImportError:
+    torch_available = False
+    torch_cuda_available = False
+
+
+## Typing
+
+if torch_available:
+    TensorLike = Union[numpy.ndarray, torch.Tensor]
+else:
+    TensorLike = numpy.ndarray
 
 
 ## Backends
 
 class Backend:
-    import numpy
-
     def __repr__(self):
         return self.__class__.__name__
 
 
 class NumpyBackend(Backend):
+    import numpy
     ones = staticmethod(numpy.ones)
     zeros = staticmethod(numpy.zeros)
 
 
-class TorchBackend(Backend):
-    try:
+if torch_available:
+    class TorchBackend(Backend):
         import torch
-
-        torch.set_default_dtype(torch.float64)
-    except ImportError:
-        pass
-    else:
         ones = staticmethod(torch.ones)
         zeros = staticmethod(torch.zeros)
 
 
-class TorchCudaBackend(TorchBackend):
-    def ones(self, shape):
-        return self.torch.ones(shape, device="cuda")
+if torch_cuda_available:
+    class TorchCudaBackend(TorchBackend):
+        def ones(self, shape):
+            return self.torch.ones(shape, device="cuda")
 
-    def zeros(self, shape):
-        return self.torch.zeros(shape, device="cuda")
+        def zeros(self, shape):
+            return self.torch.zeros(shape, device="cuda")
 
 
 ## Default Backend
@@ -46,14 +58,13 @@ backend = NumpyBackend()
 
 def set_backend(name):
     if name == "torch":
-        import torch
-
+        if not torch_available:
+            raise RuntimeError("Torch backend is not available. Is PyTorch installed?")
         backend.__class__ = TorchBackend
     elif name == "torch.cuda":
-        import torch
-
-        if not torch.cuda.is_available():
-            raise ValueError("CUDA not available")
+        if not torch_cuda_available:
+            raise RuntimeError("Torch cuda backend is not available. "
+                               "Is PyTorch with cuda support installed?")
         backend.__class__ = TorchCudaBackend
     elif name == "numpy":
         backend.__class__ = NumpyBackend
