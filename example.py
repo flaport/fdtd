@@ -5,7 +5,8 @@ import matplotlib.pyplot as plt
 from line_profiler import LineProfiler
 
 import fdtd
-fdtd.set_backend('torch')
+
+fdtd.set_backend("numpy")
 
 
 ## Simulation

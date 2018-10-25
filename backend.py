@@ -1,10 +1,13 @@
 ## Imports
 
-from typing import Union
-import numpy # numpy has to be present
+# Numpy Backend
+import numpy  # numpy has to be present
+
+# Torch Backends (and flags)
 try:
     import torch
-    torch.set_default_dtype(torch.float64)
+
+    torch.set_default_dtype(torch.float64)  # we need more precision for FDTD
     torch_available = True
     torch_cuda_available = torch.cuda.is_available()
 except ImportError:
@@ -13,35 +16,52 @@ except ImportError:
 
 
 ## Typing
+from typing import Union
 
 if torch_available:
-    TensorLike = Union[numpy.ndarray, torch.Tensor]
+    Tensorlike = Union[numpy.ndarray, torch.Tensor]
 else:
-    TensorLike = numpy.ndarray
+    Tensorlike = numpy.ndarray
 
 
 ## Backends
 
+# Base Class
 class Backend:
+    """ Backend Base Class """
+
     def __repr__(self):
         return self.__class__.__name__
 
 
+# Numpy Backend
 class NumpyBackend(Backend):
+    """ Numpy Backend """
+
     import numpy
+
     ones = staticmethod(numpy.ones)
     zeros = staticmethod(numpy.zeros)
 
 
+# Torch Backend
 if torch_available:
+
     class TorchBackend(Backend):
+        """ Torch Backend """
+
         import torch
+
         ones = staticmethod(torch.ones)
         zeros = staticmethod(torch.zeros)
 
 
+# Torch Cuda Backend
 if torch_cuda_available:
+
     class TorchCudaBackend(TorchBackend):
+        """ Torch Cuda Backend """
+
         def ones(self, shape):
             return self.torch.ones(shape, device="cuda")
 
@@ -50,21 +70,31 @@ if torch_cuda_available:
 
 
 ## Default Backend
-
+# this backend object will be used for all array/tensor operations.
+# the backend is changed by changing the class of the backend
+# using the "set_backend" function. This "monkeypatch" will replace all the methods
+# of the backend object by the methods supplied by the new class.
 backend = NumpyBackend()
 
 
 ## Set backend
+def set_backend(name: str):
+    """ Set the backend for the FDTD simulations
 
-def set_backend(name):
+    Args:
+        name: name of the backend. Allowed backends: "numpy", "torch", "torch.cuda".
+    """
+    # this method monkeypatches the backend object and changes its class.
     if name == "torch":
         if not torch_available:
             raise RuntimeError("Torch backend is not available. Is PyTorch installed?")
         backend.__class__ = TorchBackend
     elif name == "torch.cuda":
         if not torch_cuda_available:
-            raise RuntimeError("Torch cuda backend is not available. "
-                               "Is PyTorch with cuda support installed?")
+            raise RuntimeError(
+                "Torch cuda backend is not available. "
+                "Is PyTorch with cuda support installed?"
+            )
         backend.__class__ = TorchCudaBackend
     elif name == "numpy":
         backend.__class__ = NumpyBackend
