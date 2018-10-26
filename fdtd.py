@@ -14,6 +14,7 @@ from tqdm import tqdm
 ## Constants
 SPEED_LIGHT: float = 299_792_458.0  # [m/s] speed of light
 
+
 ## Functions
 def curl_E(E: Tensorlike) -> Tensorlike:
     """ Transforms an E-type field into an H-type field by performing a curl operation
@@ -25,14 +26,16 @@ def curl_E(E: Tensorlike) -> Tensorlike:
         curl_E: the curl of E (H-type field located on half-integer grid points)
     """
     curl_E = bd.zeros(E.shape)
-    curl_E[:, :-1, 0] = E[:, 1:, 2] - E[:, :-1, 2]
-    curl_E[:, -1, 0] = -E[:, -1, 2]
-    curl_E[:-1, :, 1] = -E[1:, :, 2] + E[:-1, :, 2]
-    curl_E[-1, :, 1] = E[-1, :, 2]
-    curl_E[:-1, :, 2] = E[1:, :, 1] - E[:-1, :, 1]
-    curl_E[-1, :, 2] = -E[-1, :, 1]
-    curl_E[:, :-1, 2] -= E[:, 1:, 0] - E[:, :-1, 0]
-    curl_E[:, -1, 2] -= -E[:, -1, 0]
+
+    curl_E[:, :-1, :, 0] += E[:, 1:, :, 2] - E[:, :-1, :, 2]
+    curl_E[:, :, :-1, 0] -= E[:, :, 1:, 1] - E[:, :, :-1, 1]
+
+    curl_E[:, :, :-1, 1] += E[:, :, 1:, 0] - E[:, :, :-1, 0]
+    curl_E[:-1, :, :, 1] -= E[1:, :, :, 2] - E[:-1, :, :, 2]
+
+    curl_E[:-1, :, :, 2] += E[1:, :, :, 1] - E[:-1, :, :, 1]
+    curl_E[:, :-1, :, 2] -= E[:, 1:, :, 0] - E[:, :-1, :, 0]
+
     return curl_E
 
 
@@ -46,14 +49,16 @@ def curl_H(H: Tensorlike) -> Tensorlike:
         curl_H: the curl of H (E-type field located on integer grid points)
     """
     curl_H = bd.zeros(H.shape)
-    curl_H[:, 1:, 0] = H[:, 1:, 2] - H[:, :-1, 2]
-    curl_H[:, 0, 0] = H[:, 0, 2]
-    curl_H[1:, :, 1] = -(H[1:, :, 2] - H[:-1, :, 2])
-    curl_H[0, :, 1] = -H[0, :, 2]
-    curl_H[1:, :, 2] = H[1:, :, 1] - H[:-1, :, 1]
-    curl_H[0, :, 2] = H[0, :, 1]
-    curl_H[:, 1:, 2] -= H[:, 1:, 0] - H[:, :-1, 0]
-    curl_H[:, 0, 2] -= H[:, 0, 0]
+
+    curl_H[:, 1:, :, 0] += H[:, 1:, :, 2] - H[:, :-1, :, 2]
+    curl_H[:, :, 1:, 0] -= H[:, :, 1:, 1] - H[:, :, :-1, 1]
+
+    curl_H[:, :, 1:, 1] += H[:, :, 1:, 0] - H[:, :, -1:, 0]
+    curl_H[1:, :, :, 1] -= H[1:, :, :, 2] - H[:-1, :, :, 2]
+
+    curl_H[1:, :, :, 2] += H[1:, :, :, 1] - H[:-1, :, :, 1]
+    curl_H[:, 1:, :, 2] -= H[:, 1:, :, 0] - H[:, :-1, :, 0]
+
     return curl_H
 
 
@@ -82,34 +87,36 @@ class Grid:
         self.timestep = self.courant_number * self.grid_spacing / SPEED_LIGHT
 
         # save grid shape as integers
-        self.Nx, self.Ny = self._handle_shape(shape)
+        self.Nx, self.Ny, self.Nz = self._handle_shape(shape)
 
         # save electric and magnetic field
-        self.E = bd.zeros((self.Nx, self.Ny, 3))
-        self.H = bd.zeros((self.Nx, self.Ny, 3))
+        self.E = bd.zeros((self.Nx, self.Ny, self.Nz, 3))
+        self.H = bd.zeros((self.Nx, self.Ny, self.Nz, 3))
 
         # save the inverse of the relative permittiviy and the relative permeability
         # as a diagonal matrix
-        self.inverse_permittivity = bd.ones((self.Nx, self.Ny, 3)) / permittivity
-        self.inverse_permeability = bd.ones((self.Nx, self.Ny, 3)) / permeability
+        self.inverse_permittivity = bd.ones((self.Nx, self.Ny, self.Nz, 3)) / permittivity
+        self.inverse_permeability = bd.ones((self.Nx, self.Ny, self.Nz, 3)) / permeability
 
         # save current time index
         self.timesteps_passed = 0
 
     @staticmethod
-    def _handle_shape(shape: Tuple[Number, Number]) -> Tuple[int, int]:
+    def _handle_shape(shape: Tuple[Number, Number, Number]) -> Tuple[int, int, int]:
         """ validate the grid shape and transform to a length-2 tuple of ints """
-        if len(shape) != 2:
+        if len(shape) != 3:
             raise ValueError(
                 f"invalid grid shape {shape}\n"
-                f"grid shape should be a 2D tuple containing floats or ints"
+                f"grid shape should be a 3D tuple containing floats or ints"
             )
-        x, y = shape
+        x, y, z = shape
         if isinstance(x, float):
             x = int(x / self.grid_spacing + 0.5)
         if isinstance(y, float):
             x = int(x / self.grid_spacing + 0.5)
-        return x, y
+        if isinstance(z, float):
+            z = int(z / self.grid_spacing + 0.5)
+        return x, y, z
 
     @property
     def x(self) -> int:
@@ -122,9 +129,14 @@ class Grid:
         return self.Ny * self.grid_spacing
 
     @property
-    def shape(self) -> Tuple[int, int]:
+    def z(self) -> int:
+        """ get the number of grid cells in the y-direction """
+        return self.Nz * self.grid_spacing
+
+    @property
+    def shape(self) -> Tuple[int, int, int]:
         """ get the shape of the FDTD grid """
-        return (self.Nx, self.Ny)
+        return (self.Nx, self.Ny, self.Nz)
 
     @property
     def time_passed(self) -> float:
@@ -161,7 +173,7 @@ class Grid:
         self.E += self.courant_number * self.inverse_permittivity * curl
 
         # add source (dummy for now)
-        self.E[self.Nx // 2, self.Ny // 2, 2] = 1
+        self.E[self.Nx // 2, self.Ny // 2, self.Nz//2, 2] = 1
 
     def update_H(self):
         """ update the magnetic field by using the curl of the electric field """
