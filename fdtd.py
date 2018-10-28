@@ -1,4 +1,5 @@
 ## Imports
+import numpy as np
 
 # Typing
 from typing import Tuple
@@ -53,7 +54,7 @@ def curl_H(H: Tensorlike) -> Tensorlike:
     curl_H[:, 1:, :, 0] += H[:, 1:, :, 2] - H[:, :-1, :, 2]
     curl_H[:, :, 1:, 0] -= H[:, :, 1:, 1] - H[:, :, :-1, 1]
 
-    curl_H[:, :, 1:, 1] += H[:, :, 1:, 0] - H[:, :, -1:, 0]
+    curl_H[:, :, 1:, 1] += H[:, :, 1:, 0] - H[:, :, :-1, 0]
     curl_H[1:, :, :, 1] -= H[1:, :, :, 2] - H[:-1, :, :, 2]
 
     curl_H[1:, :, :, 2] += H[1:, :, :, 1] - H[:-1, :, :, 1]
@@ -67,10 +68,10 @@ class Grid:
     def __init__(
         self,
         shape: Tuple[Number, Number],
-        grid_spacing: float = 50e-9,
+        grid_spacing: float = 25e-9,
         permittivity: float = 1.0,
         permeability: float = 1.0,
-        courant_number: float = 0.7,
+        courant_number: float = None,
     ):
         """
         Args:
@@ -78,32 +79,47 @@ class Grid:
             grid_spacing = 50e-9: distance between the grid cells.
             permittivity = 1.0: the relative permittivity of the background.
             permeability = 1.0: the relative permeability of the background.
-            courant_number = 0.7: the courant number of the FDTD simulation. The timestep of
-                the simulation will be derived from this number using the CFL-condition.
+            courant_number = None: the courant number of the FDTD simulation. Defaults to
+                the inverse of the square root of the number of dimensions > 1 (optimal
+                value). The timestep of the simulation will be derived from this number
+                using the CFL-condition.
         """
-        # simulation constants
-        self.courant_number = float(courant_number)
+        # save the grid spacing
         self.grid_spacing = float(grid_spacing)
-        self.timestep = self.courant_number * self.grid_spacing / SPEED_LIGHT
 
         # save grid shape as integers
         self.Nx, self.Ny, self.Nz = self._handle_shape(shape)
+
+        # dimension of the simulation:
+        self.D = int(self.Nx > 1) + int(self.Ny > 1) + int(self.Nz > 1)
+
+        # courant number of the simulation (optimal value)
+        if courant_number is None:
+            courant_number = float(self.D) ** (-0.5)*0.99  # slight stability factor added
+        self.courant_number = float(courant_number)
+
+        # timestep of the simulation
+        self.timestep = self.courant_number * self.grid_spacing / SPEED_LIGHT
 
         # save electric and magnetic field
         self.E = bd.zeros((self.Nx, self.Ny, self.Nz, 3))
         self.H = bd.zeros((self.Nx, self.Ny, self.Nz, 3))
 
         # save the inverse of the relative permittiviy and the relative permeability
-        # as a diagonal matrix
-        self.inverse_permittivity = bd.ones((self.Nx, self.Ny, self.Nz, 3)) / permittivity
-        self.inverse_permeability = bd.ones((self.Nx, self.Ny, self.Nz, 3)) / permeability
+        # these tensors can be anisotropic!
+        self.inverse_permittivity = (
+            bd.ones((self.Nx, self.Ny, self.Nz, 3)) / permittivity
+        )
+        self.inverse_permeability = (
+            bd.ones((self.Nx, self.Ny, self.Nz, 3)) / permeability
+        )
 
         # save current time index
         self.timesteps_passed = 0
 
     @staticmethod
     def _handle_shape(shape: Tuple[Number, Number, Number]) -> Tuple[int, int, int]:
-        """ validate the grid shape and transform to a length-2 tuple of ints """
+        """ validate the grid shape and transform to a length-3 tuple of ints """
         if len(shape) != 3:
             raise ValueError(
                 f"invalid grid shape {shape}\n"
@@ -173,7 +189,8 @@ class Grid:
         self.E += self.courant_number * self.inverse_permittivity * curl
 
         # add source (dummy for now)
-        self.E[self.Nx // 2, self.Ny // 2, self.Nz//2, 2] = 1
+        if self.timesteps_passed == 0:
+            self.E[self.Nx // 2, self.Ny // 2, self.Nz // 2, 2] = 1
 
     def update_H(self):
         """ update the magnetic field by using the curl of the electric field """
