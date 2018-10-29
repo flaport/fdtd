@@ -8,6 +8,7 @@ try:
     import torch
 
     torch.set_default_dtype(torch.float64)  # we need more precision for FDTD
+    torch._C.set_grad_enabled(False)  # we don't need gradients (for now)
     torch_available = True
     torch_cuda_available = torch.cuda.is_available()
 except ImportError:
