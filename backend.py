@@ -43,6 +43,8 @@ class NumpyBackend(Backend):
 
     ones = staticmethod(numpy.ones)
     zeros = staticmethod(numpy.zeros)
+    stack = staticmethod(numpy.stack)
+    transpose = staticmethod(numpy.transpose)
 
 
 # Torch Backend
@@ -55,6 +57,13 @@ if torch_available:
 
         ones = staticmethod(torch.ones)
         zeros = staticmethod(torch.zeros)
+        stack = staticmethod(torch.stack)
+
+        @staticmethod
+        def transpose(tensor, axes=None):
+            if axes is None:
+                axes = tuple(range(len(tensor.shape)-1, -1, -1))
+            return tensor.permute(*axes)
 
 
 # Torch Cuda Backend
