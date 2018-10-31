@@ -31,6 +31,9 @@ else:
 class Backend:
     """ Backend Base Class """
 
+    # constants
+    pi = numpy.pi
+
     def __repr__(self):
         return self.__class__.__name__
 
@@ -41,10 +44,22 @@ class NumpyBackend(Backend):
 
     import numpy
 
-    ones = staticmethod(numpy.ones)
-    zeros = staticmethod(numpy.zeros)
+    # types
+    int = numpy.int64
+    float = numpy.float64
+
+    # methods
+    exp = staticmethod(numpy.exp)
+    sin = staticmethod(numpy.sin)
+    cos = staticmethod(numpy.cos)
     stack = staticmethod(numpy.stack)
     transpose = staticmethod(numpy.transpose)
+
+    # constructors
+    array = staticmethod(numpy.array)
+    ones = staticmethod(numpy.ones)
+    zeros = staticmethod(numpy.zeros)
+    linspace = staticmethod(numpy.linspace)
 
 
 # Torch Backend
@@ -55,8 +70,14 @@ if torch_available:
 
         import torch
 
-        ones = staticmethod(torch.ones)
-        zeros = staticmethod(torch.zeros)
+        # types
+        int = torch.int64
+        float = torch.get_default_dtype()
+
+        # methods
+        exp = staticmethod(torch.exp)
+        sin = staticmethod(torch.sin)
+        cos = staticmethod(torch.cos)
         stack = staticmethod(torch.stack)
 
         @staticmethod
@@ -64,6 +85,22 @@ if torch_available:
             if axes is None:
                 axes = tuple(range(len(tensor.shape)-1, -1, -1))
             return tensor.permute(*axes)
+
+        # constructors
+        ones = staticmethod(torch.ones)
+        zeros = staticmethod(torch.zeros)
+
+        def array(self, arr, dtype=None):
+            if dtype is None:
+                dtype = torch.get_default_dtype()
+            return self.torch.tensor(arr, device='cpu', dtype=dtype)
+
+        def linspace(self, start, stop, num=50, endpoint=True):
+            delta = (stop - start)/float(num - float(endpoint))
+            if not delta:
+                return self.array([start]*num)
+            return self.torch.arange(start, stop + 0.5*float(endpoint)*delta, delta)
+
 
 
 # Torch Cuda Backend
@@ -77,6 +114,18 @@ if torch_cuda_available:
 
         def zeros(self, shape):
             return self.torch.zeros(shape, device="cuda")
+
+        def array(self, arr, dtype=None):
+            if dtype is None:
+                dtype = torch.get_default_dtype()
+            return self.torch.tensor(arr, device='cuda', dtype=dtype)
+
+        def linspace(self, start, stop, num=50, endpoint=True):
+            delta = (stop - start)/float(num - float(endpoint))
+            if not delta:
+                return self.array([start]*num)
+            return self.torch.arange(start, stop + 0.5*float(endpoint)*delta, delta, device='cuda')
+
 
 
 ## Default Backend
