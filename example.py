@@ -17,9 +17,14 @@ fdtd.set_backend("torch")
 ## Simulation
 
 # create FDTD Grid
-N = 7
+N = 50
 n = N // 2
+
 grid = fdtd.Grid((N, N, N))
+grid.source = fdtd.Source((N // 3, N // 3, N // 2), (2 * N // 3, 2 * N // 3, N // 2), 1)
+
+print(grid._sources)
+
 print(f"courant number: {grid.courant_number}")
 
 # create and enable profiler
@@ -38,24 +43,53 @@ profiler.print_stats()
 
 fig, axes = plt.subplots(3, 6, squeeze=False)
 titles = [
-    "Ex: yz", "Ey: zx", "Ez: xy", "Hx: yz", "Hy: zx", "Hz: xy",
-    "Ex: zx", "Ey: xy", "Ez: yz", "Hx: zx", "Hy: xy", "Hz: yz",
-    "Ex: xy", "Ey: yz", "Ez: zx", "Hx: xy", "Hy: yz", "Hz: zx",
+    "Ex: yz",
+    "Ey: zx",
+    "Ez: xy",
+    "Hx: yz",
+    "Hy: zx",
+    "Hz: xy",
+    "Ex: zx",
+    "Ey: xy",
+    "Ez: yz",
+    "Hx: zx",
+    "Hy: xy",
+    "Hz: yz",
+    "Ex: xy",
+    "Ey: yz",
+    "Ez: zx",
+    "Hx: xy",
+    "Hy: yz",
+    "Hz: zx",
 ]
-fields = bd.stack([
-    grid.E[n, :, :, 0], bd.transpose(grid.E[:, n, :, 1]), grid.E[:, :, n, 2],
-    grid.H[n, :, :, 0], bd.transpose(grid.H[:, n, :, 1]), grid.H[:, :, n, 2],
-    bd.transpose(grid.E[:, n, :, 0]), grid.E[:, :, n, 1], grid.E[n, :, :, 2],
-    bd.transpose(grid.H[:, n, :, 0]), grid.H[:, :, n, 1], grid.H[n, :, :, 2],
-    grid.E[:, :, n, 0], grid.E[n, :, :, 1], bd.transpose(grid.E[:, n, :, 2]),
-    grid.H[:, :, n, 0], grid.H[n, :, :, 1], bd.transpose(grid.H[:, n, :, 2]),
-])
+fields = bd.stack(
+    [
+        grid.E[n, :, :, 0],
+        bd.transpose(grid.E[:, n, :, 1]),
+        grid.E[:, :, n, 2],
+        grid.H[n, :, :, 0],
+        bd.transpose(grid.H[:, n, :, 1]),
+        grid.H[:, :, n, 2],
+        bd.transpose(grid.E[:, n, :, 0]),
+        grid.E[:, :, n, 1],
+        grid.E[n, :, :, 2],
+        bd.transpose(grid.H[:, n, :, 0]),
+        grid.H[:, :, n, 1],
+        grid.H[n, :, :, 2],
+        grid.E[:, :, n, 0],
+        grid.E[n, :, :, 1],
+        bd.transpose(grid.E[:, n, :, 2]),
+        grid.H[:, :, n, 0],
+        grid.H[n, :, :, 1],
+        bd.transpose(grid.H[:, n, :, 2]),
+    ]
+)
 
 m = max(abs(fields.min().item()), abs(fields.max().item()))
 
 for ax, field, title in zip(axes.ravel(), fields, titles):
     ax.set_axis_off()
     ax.set_title(title)
-    ax.imshow(field, vmin=-m, vmax=m, cmap='RdBu')
+    ax.imshow(field, vmin=-m, vmax=m, cmap="RdBu")
 
 plt.show()

@@ -83,7 +83,7 @@ if torch_available:
         @staticmethod
         def transpose(tensor, axes=None):
             if axes is None:
-                axes = tuple(range(len(tensor.shape)-1, -1, -1))
+                axes = tuple(range(len(tensor.shape) - 1, -1, -1))
             return tensor.permute(*axes)
 
         # constructors
@@ -93,14 +93,13 @@ if torch_available:
         def array(self, arr, dtype=None):
             if dtype is None:
                 dtype = torch.get_default_dtype()
-            return self.torch.tensor(arr, device='cpu', dtype=dtype)
+            return self.torch.tensor(arr, device="cpu", dtype=dtype)
 
         def linspace(self, start, stop, num=50, endpoint=True):
-            delta = (stop - start)/float(num - float(endpoint))
+            delta = (stop - start) / float(num - float(endpoint))
             if not delta:
-                return self.array([start]*num)
-            return self.torch.arange(start, stop + 0.5*float(endpoint)*delta, delta)
-
+                return self.array([start] * num)
+            return self.torch.arange(start, stop + 0.5 * float(endpoint) * delta, delta)
 
 
 # Torch Cuda Backend
@@ -118,14 +117,15 @@ if torch_cuda_available:
         def array(self, arr, dtype=None):
             if dtype is None:
                 dtype = torch.get_default_dtype()
-            return self.torch.tensor(arr, device='cuda', dtype=dtype)
+            return self.torch.tensor(arr, device="cuda", dtype=dtype)
 
         def linspace(self, start, stop, num=50, endpoint=True):
-            delta = (stop - start)/float(num - float(endpoint))
+            delta = (stop - start) / float(num - float(endpoint))
             if not delta:
-                return self.array([start]*num)
-            return self.torch.arange(start, stop + 0.5*float(endpoint)*delta, delta, device='cuda')
-
+                return self.array([start] * num)
+            return self.torch.arange(
+                start, stop + 0.5 * float(endpoint) * delta, delta, device="cuda"
+            )
 
 
 ## Default Backend

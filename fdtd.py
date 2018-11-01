@@ -6,6 +6,9 @@ from typing import Tuple
 from numbers import Number
 from backend import Tensorlike
 
+# Sources
+from source import Source
+
 # Other
 from backend import set_backend
 from backend import backend as bd
@@ -67,7 +70,7 @@ def curl_H(H: Tensorlike) -> Tensorlike:
 class Grid:
     def __init__(
         self,
-        shape: Tuple[Number, Number],
+        shape: Tuple[Number, Number, Number],
         grid_spacing: float = 25e-9,
         permittivity: float = 1.0,
         permeability: float = 1.0,
@@ -88,14 +91,16 @@ class Grid:
         self.grid_spacing = float(grid_spacing)
 
         # save grid shape as integers
-        self.Nx, self.Ny, self.Nz = self._handle_shape(shape)
+        self.Nx, self.Ny, self.Nz = self._handle_tuple(shape)
 
         # dimension of the simulation:
         self.D = int(self.Nx > 1) + int(self.Ny > 1) + int(self.Nz > 1)
 
         # courant number of the simulation (optimal value)
         if courant_number is None:
-            courant_number = float(self.D) ** (-0.5)*0.99  # slight stability factor added
+            courant_number = (
+                float(self.D) ** (-0.5) * 0.99
+            )  # slight stability factor added
         self.courant_number = float(courant_number)
 
         # timestep of the simulation
@@ -117,8 +122,12 @@ class Grid:
         # save current time index
         self.timesteps_passed = 0
 
-    @staticmethod
-    def _handle_shape(shape: Tuple[Number, Number, Number]) -> Tuple[int, int, int]:
+        # dictionary to save sources:
+        self._sources = {}
+
+    def _handle_tuple(
+        self, shape: Tuple[Number, Number, Number]
+    ) -> Tuple[int, int, int]:
         """ validate the grid shape and transform to a length-3 tuple of ints """
         if len(shape) != 3:
             raise ValueError(
@@ -188,17 +197,32 @@ class Grid:
         curl = curl_H(self.H)
         self.E += self.courant_number * self.inverse_permittivity * curl
 
-        # add source (dummy for now)
-        if self.timesteps_passed == 0:
-            self.E[self.Nx // 2, self.Ny // 2, self.Nz // 2, 2] = 1
+        # add sources to grid:
+        for src in self._sources.values():
+            src.source_E()
 
     def update_H(self):
         """ update the magnetic field by using the curl of the electric field """
         curl = curl_E(self.E)
         self.H -= self.courant_number * self.inverse_permeability * curl
 
+        # add sources to grid:
+        for src in self._sources.values():
+            src.source_H()
+
     def reset(self):
         """ reset the grid by setting all fields to zero """
         self.H *= 0.0
         self.E *= 0.0
         self.timesteps_passed *= 0
+
+    def add_source(self, name, source):
+        """ add a source to the grid """
+        source.register_grid(self)
+        self._sources[name] = source
+
+    def __setattr__(self, key, attr):
+        if isinstance(attr, Source):
+            self.add_source(key, attr)
+        else:
+            super().__setattr__(key, attr)
