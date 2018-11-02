@@ -2,12 +2,14 @@
 
 # other
 from math import pi, sin
-from backend import backend as bd
 
 # typing
 from typing import Tuple
-from backend import Tensorlike
 from numbers import Number
+
+# relatvie
+from .backend import Tensorlike
+from .backend import backend as bd
 
 
 ## Source class

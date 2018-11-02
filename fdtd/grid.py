@@ -1,19 +1,16 @@
 ## Imports
 import numpy as np
+from tqdm import tqdm
 
 # Typing
 from typing import Tuple
 from numbers import Number
-from backend import Tensorlike
 
-# Sources
-from source import Source
+# Relative
+from .source import Source
+from .backend import backend as bd
+from .backend import Tensorlike
 
-# Other
-from backend import set_backend
-from backend import backend as bd
-
-from tqdm import tqdm
 
 ## Constants
 SPEED_LIGHT: float = 299_792_458.0  # [m/s] speed of light

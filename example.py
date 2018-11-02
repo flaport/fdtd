@@ -6,12 +6,12 @@ import matplotlib.pyplot as plt
 from line_profiler import LineProfiler
 
 import fdtd
-from backend import backend as bd
+import fdtd.backend as bd
 
 
 ## Set Backend
 
-fdtd.set_backend("torch")
+fdtd.set_backend("numpy")
 
 
 ## Simulation
