@@ -97,13 +97,13 @@ class Source:
         z = bd.array(bd.linspace(z0, z1, m, endpoint=False), bd.int)
         return x, y, z
 
-    def source_E(self):
+    def update_E(self):
         """ Add the source to the electric field """
         q = self.grid.timesteps_passed
         vect = self.profile * sin(2 * pi * q / self.period + self.phase_shift)
         self.grid.E[self.x, self.y, self.z, 2] += vect
 
-    def source_H(self):
+    def update_H(self):
         """ Add the source to the magnetic field """
         pass
 
