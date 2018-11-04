@@ -7,7 +7,6 @@ from typing import Tuple
 from numbers import Number
 
 # Relative
-from .source import Source
 from .backend import backend as bd
 from .backend import Tensorlike
 
@@ -122,6 +121,21 @@ class Grid:
         # dictionary to save sources:
         self._sources = {}
 
+        # dictionary to save boundaries
+        self._boundaries = {}
+
+    def _handle_distance(self, distance: Number) -> int:
+        """ transform a distance to an integer number of gridpoints """
+        if not isinstance(distance, int):
+            return int(float(distance) / self.grid_spacing + 0.5)
+        return distance
+
+    def _handle_time(self, time: Number) -> int:
+        """ transform a time value to an integer number of timesteps """
+        if not isinstance(time, int):
+            return int(float(time) / self.timestep + 0.5)
+        return time
+
     def _handle_tuple(
         self, shape: Tuple[Number, Number, Number]
     ) -> Tuple[int, int, int]:
@@ -132,12 +146,9 @@ class Grid:
                 f"grid shape should be a 3D tuple containing floats or ints"
             )
         x, y, z = shape
-        if isinstance(x, float):
-            x = int(x / self.grid_spacing + 0.5)
-        if isinstance(y, float):
-            x = int(x / self.grid_spacing + 0.5)
-        if isinstance(z, float):
-            z = int(z / self.grid_spacing + 0.5)
+        x = self._handle_distance(x)
+        y = self._handle_distance(y)
+        z = self._handle_distance(z)
         return x, y, z
 
     @property
@@ -191,21 +202,39 @@ class Grid:
 
     def update_E(self):
         """ update the electric field by using the curl of the magnetic field """
+
+        # update boundaries: step 1
+        for boundary in self._boundaries.values():
+            boundary.update_phi_E()
+
         curl = curl_H(self.H)
         self.E += self.courant_number * self.inverse_permittivity * curl
 
+        # update boundaries: step 2
+        for boundary in self._boundaries.values():
+            boundary.update_E()
+
         # add sources to grid:
         for src in self._sources.values():
-            src.source_E()
+            src.update_E()
 
     def update_H(self):
         """ update the magnetic field by using the curl of the electric field """
+
+        # update boundaries: step 1
+        for boundary in self._boundaries.values():
+            boundary.update_phi_H()
+
         curl = curl_E(self.E)
         self.H -= self.courant_number * self.inverse_permeability * curl
 
+        # update boundaries: step 2
+        for boundary in self._boundaries.values():
+            boundary.update_H()
+
         # add sources to grid:
         for src in self._sources.values():
-            src.source_H()
+            src.update_H()
 
     def reset(self):
         """ reset the grid by setting all fields to zero """
@@ -218,8 +247,23 @@ class Grid:
         source.register_grid(self)
         self._sources[name] = source
 
+    def add_boundary(self, name, boundary):
+        """ add a boundary to the grid """
+        boundary.register_grid(self)
+        self._boundaries[name] = boundary
+
     def __setattr__(self, key, attr):
         if isinstance(attr, Source):
             self.add_source(key, attr)
+        if isinstance(attr, Boundary):
+            self.add_boundary(key, attr)
         else:
             super().__setattr__(key, attr)
+
+
+## Imports
+# placed here to prevent circular imports
+
+# relative
+from .sources import Source
+from .boundaries import Boundary
