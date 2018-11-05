@@ -8,6 +8,7 @@ from typing import Tuple
 from numbers import Number
 
 # relatvie
+from .grid import Grid
 from .backend import Tensorlike
 from .backend import backend as bd
 
@@ -36,7 +37,7 @@ class Source:
 
         Note:
             The initialization of the source is not finished before it is registered on the
-            grid. This is don automatically by setting the source to be an attribute of the
+            grid. This is done automatically by setting the source to be an attribute of the
             grid.
 
         """
@@ -47,7 +48,7 @@ class Source:
         self.p0 = p0
         self.p1 = p1
 
-    def register_grid(self, grid: "Grid"):
+    def register_grid(self, grid: Grid):
         """ Register a grid for the source.
 
         Args:
@@ -55,8 +56,7 @@ class Source:
 
         """
         self.grid = grid
-        if isinstance(self.period, float):
-            self.period = int(self.period / self.grid.timestep + 0.5)
+        self.period = grid._handle_time(self.period)
         self.p0 = self.grid._handle_tuple(self.p0)
         self.p1 = self.grid._handle_tuple(self.p1)
         self.x, self.y, self.z = self._get_location(self.p0, self.p1)

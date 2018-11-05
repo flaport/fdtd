@@ -11,19 +11,22 @@ import fdtd.backend as bd
 
 ## Set Backend
 
-fdtd.set_backend("numpy")
+fdtd.set_backend("torch")
 
 
 ## Simulation
 
 # create FDTD Grid
-N = 50
-n = N // 2
+M = N = 100
+P = 1
 
-grid = fdtd.Grid((N, N, N))
-grid.source = fdtd.Source((N // 3, N // 3, N // 2), (2 * N // 3, 2 * N // 3, N // 2), 1)
-
-print(grid._sources)
+grid = fdtd.Grid((M, N, P))
+grid.source = fdtd.Source(p0=(48, 80, 0), p1=(52, 80, 0), period=20)
+grid.xbounds = fdtd.PeriodicBoundaryX()
+grid.ybounds = fdtd.PeriodicBoundaryY()
+grid.zbounds = fdtd.PeriodicBoundaryZ()
+grid.pml = fdtd.PMLYhigh(thickness=10)
+grid.pml2 = fdtd.PMLYlow(thickness=10)
 
 print(f"courant number: {grid.courant_number}")
 
@@ -33,7 +36,7 @@ profiler.add_function(grid.update_E)
 profiler.enable()
 
 # run simulation
-grid.run(N, progress_bar=False)
+grid.run(50, progress_bar=False)
 
 # print profiler summary
 profiler.print_stats()
@@ -41,47 +44,17 @@ profiler.print_stats()
 
 ## Plot Result
 
-fig, axes = plt.subplots(3, 6, squeeze=False)
-titles = [
-    "Ex: yz",
-    "Ey: zx",
-    "Ez: xy",
-    "Hx: yz",
-    "Hy: zx",
-    "Hz: xy",
-    "Ex: zx",
-    "Ey: xy",
-    "Ez: yz",
-    "Hx: zx",
-    "Hy: xy",
-    "Hz: yz",
-    "Ex: xy",
-    "Ey: yz",
-    "Ez: zx",
-    "Hx: xy",
-    "Hy: yz",
-    "Hz: zx",
-]
+fig, axes = plt.subplots(3, 2, squeeze=False)
+titles = ["Ex: xy", "Ey: xy", "Ez: xy", "Hx: xy", "Hy: xy", "Hz: xy"]
+
 fields = bd.stack(
     [
-        grid.E[n, :, :, 0],
-        bd.transpose(grid.E[:, n, :, 1]),
-        grid.E[:, :, n, 2],
-        grid.H[n, :, :, 0],
-        bd.transpose(grid.H[:, n, :, 1]),
-        grid.H[:, :, n, 2],
-        bd.transpose(grid.E[:, n, :, 0]),
-        grid.E[:, :, n, 1],
-        grid.E[n, :, :, 2],
-        bd.transpose(grid.H[:, n, :, 0]),
-        grid.H[:, :, n, 1],
-        grid.H[n, :, :, 2],
-        grid.E[:, :, n, 0],
-        grid.E[n, :, :, 1],
-        bd.transpose(grid.E[:, n, :, 2]),
-        grid.H[:, :, n, 0],
-        grid.H[n, :, :, 1],
-        bd.transpose(grid.H[:, n, :, 2]),
+        grid.E[:, :, 0, 1],
+        grid.E[:, :, 0, 0],
+        grid.E[:, :, 0, 2],
+        grid.H[:, :, 0, 0],
+        grid.H[:, :, 0, 1],
+        grid.H[:, :, 0, 2],
     ]
 )
 

@@ -60,6 +60,7 @@ class NumpyBackend(Backend):
     ones = staticmethod(numpy.ones)
     zeros = staticmethod(numpy.zeros)
     linspace = staticmethod(numpy.linspace)
+    arange = staticmethod(numpy.arange)
 
 
 # Torch Backend
@@ -89,6 +90,7 @@ if torch_available:
         # constructors
         ones = staticmethod(torch.ones)
         zeros = staticmethod(torch.zeros)
+        arange = staticmethod(torch.arange)
 
         def array(self, arr, dtype=None):
             if dtype is None:
