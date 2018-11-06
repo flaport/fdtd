@@ -2,23 +2,25 @@
 
 ## [Under Construction]
 
-## Background
-A quick explanation of the FDTD discretization and the maxwell equations to
-bring you up to speed.
+## Update Equations
+An as quick as possible explanation of the FDTD discretization of the maxwell equations.
 
 
 An electromagnetic FDTD solver solves the time-dependent Maxwell Equations
 
 ```
-    curl(H) = ε ε0 dE/dt
-    curl(E) = -µ µ0 dH/dt
+    curl(H) = ε*ε0*dE/dt
+    curl(E) = -µ*µ0*dH/dt
 ```
+
+These two equations are called *Ampere's Law* and *Faraday's Law* respectively.
+
 Where ε and µ are the relative permittivity and permeability tensors
 respectively. ε0 and µ0 are the vacuum permittivity and permeability and their
-square root can be absorbed into E and H respectively, such that `E := √ε0 E`
-and `H := √µ0 H`.
+square root can be absorbed into E and H respectively, such that `E := √ε0*E`
+and `H := √µ0*H`.
 
-Doing this, the maxwell equations can be written as update equations:
+Doing this, the Maxwell equations can be written as update equations:
 ```
     E  += c*dt*inv(ε)*curl(H)
     H  -= c*dt*inv(µ)*curl(E)
@@ -28,7 +30,7 @@ interlaced Yee-coordinates, which in 3D looks like this:
 
 ![grid discretization in 3D](yee.svg)
 
-According to the Yee discritization algorithm, there are inherently two types
+According to the Yee discretization algorithm, there are inherently two types
 of fields on the grid: `E`-type fields on integer grid locations and `H`-type
 fields on half-integer grid locations.
 
@@ -87,21 +89,17 @@ The update equations can now be rewritten as
     H  -= (c*dt/du)*inv(µ)*curl_E
 ```
 
-The number `(cdt/du)` is a dimensionless parameters called the *courant
+The number `(c*dt/du)` is a dimensionless parameters called the *courant
 number*.  For stability reasons, the courant number should always be smaller
 than `1/√D`, with `D` the dimension of the simulation. This can be intuitively
-understoond as being the condition that the field energy may not transit
+understood as being the condition that the field energy may not transit
 through more than one mesh cell in a single time step. This yields the final
 update equations for the FDTD algorithm:
 
 ```
-    E  += sc*inv(ε)*curl_H + Es
-    H  -= sc*inv(µ)*curl_E + Hs
+    E  += sc*inv(ε)*curl_H
+    H  -= sc*inv(µ)*curl_E
 ```
-
-Where `Es` and `Hs` are source terms. This is also how it is implemented in the
-code:
-
 
 ```python
 class Grid:
@@ -121,4 +119,32 @@ class Grid:
         curl = curl_E(self.E)
         self.H -= self.courant_number * self.inverse_permeability * curl
         # source implementation here
+```
+
+## Sources
+
+Ampere's Law can be updated to incorporate a current density:
+```
+    curl(H) = J + ε*ε0*dE/dt
+```
+Making again the usual substitutions `sc:=c*dt/du`, `E := √ε0*E` and `H := √µ0*H`, the
+update equations can be modified:
+
+```
+    E += sc*inv(ε)*curl_H - dt*inv(ε)*J/√ε0
+```
+
+Making one final substitution `Es := -dt*inv(ε)*J/√ε0` allows us to write this in a
+very clean way:
+```
+    E += sc*inv(ε)*curl_H + Es
+```
+
+Where we defined Es as the *electric field source term*.
+
+In FDTD simulations, it is often useful to also define a *magnetic field source term*
+`Hs`, which would be derived from the *magnetic current density* if it were to exist.
+In the same way, Faraday's update equation can be rewritten as
+```
+    H  -= sc*inv(µ)*curl_E + Hs
 ```
