@@ -89,46 +89,50 @@ The update equations can now be rewritten as
     H  -= (c*dt/du)*inv(µ)*curl_E
 ```
 
-The number `(c*dt/du)` is a dimensionless parameters called the *courant
-number*.  For stability reasons, the courant number should always be smaller
-than `1/√D`, with `D` the dimension of the simulation. This can be intuitively
-understood as being the condition that the field energy may not transit
-through more than one mesh cell in a single time step. This yields the final
-update equations for the FDTD algorithm:
+The number `(c*dt/du)` is a dimensionless parameter called the *courant number* `sc`. For
+stability reasons, the courant number should always be smaller than `1/√D`, with `D`
+the dimension of the simulation. This can be intuitively be understood as the condition
+that information should always travel slower than the speed of light through the grid.
+in the FDTD method described here, information can only travel to the neighbouring grid
+cells (through application of the curl). It would therefore take `D` timesteps to
+travel over the diagonal of a `D`-dimensional cube (square in `2D`, cube in `3D`), the
+courant condition follows then automatically from the fact that the length of this
+diagonal is `1/√D`.
+
+This yields the final update equations for the FDTD algorithm:
+
 
 ```
     E  += sc*inv(ε)*curl_H
     H  -= sc*inv(µ)*curl_E
 ```
 
+This is also how it is implemented:
+
 ```python
 class Grid:
-    # initialization...
+    # ... [initialization]
 
     def step(self):
         self.update_E()
         self.update_H()
-        self.timesteps_passed += 1
 
     def update_E(self):
-        curl = curl_H(self.H)
-        self.E += self.courant_number * self.inverse_permittivity * curl
-        # source implementation here
+        self.E += self.courant_number * self.inverse_permittivity * curl_H(self.H)
 
     def update_H(self):
-        curl = curl_E(self.E)
-        self.H -= self.courant_number * self.inverse_permeability * curl
-        # source implementation here
+        self.H -= self.courant_number * self.inverse_permeability * curl_E(self.E)
 ```
 
 ## Sources
+
 
 Ampere's Law can be updated to incorporate a current density:
 ```
     curl(H) = J + ε*ε0*dE/dt
 ```
-Making again the usual substitutions `sc:=c*dt/du`, `E := √ε0*E` and `H := √µ0*H`, the
-update equations can be modified:
+Making again the usual substitutions `sc := c*dt/du`, `E := √ε0*E` and `H := √µ0*H`, the
+update equations can be modified to include the current density:
 
 ```
     E += sc*inv(ε)*curl_H - dt*inv(ε)*J/√ε0
@@ -142,9 +146,74 @@ very clean way:
 
 Where we defined Es as the *electric field source term*.
 
-In FDTD simulations, it is often useful to also define a *magnetic field source term*
-`Hs`, which would be derived from the *magnetic current density* if it were to exist.
-In the same way, Faraday's update equation can be rewritten as
+It is often useful to also define a *magnetic field source term* `Hs`, which would be
+derived from the *magnetic current density* if it were to exist. In the same way,
+Faraday's update equation can be rewritten as
 ```
     H  -= sc*inv(µ)*curl_E + Hs
 ```
+
+```python
+class Source:
+    # ... [initialization]
+    def update_E(self):
+        # electric source function here
+
+    def update_H(self):
+        # magnetic source function here
+
+class Grid:
+    # ... [initialization]
+    def update_E(self):
+        # ... [electric field update equation]
+        for source in self._sources:
+            source.update_E()
+
+    def update_H(self):
+        # ... [magnetic field update equation]
+        for source in self._sources:
+            source.update_H()
+
+```
+
+## Boundary Conditions
+
+### Periodic Boundary Conditions
+
+Assuming we want periodic boundary conditions along the `X`-direction, then we have to
+make sure that the fields at `Xlow` and `Xhigh` are the same. This has to be enforced
+after performing the update equations:
+
+Note that the electric field `E` is dependent on `curl_H`, which means that
+the first indices of E will not be updated through the update equations.
+It's those indices that need to be set through the periodic boundary condition.
+Concretely: `E[0]` needs to be set to equal `E[-1]`. For the magnetic field, the
+inverse is true: `H` is dependent on `curl_E`, which means that its last indices
+will not be set. This has to be done by the boundary condition: `H[-1]` needs to
+be set equal to `H[-1]`:
+
+
+```python
+class PeriodicBoundaryX:
+    # ... [initialization]
+    def update_E(self):
+        self.grid.E[0, :, :, :] = self.grid.E[-1, :, :, :]
+
+    def update_H(self):
+        self.grid.H[-1, :, :, :] = self.grid.H[0, :, :, :]
+
+class Grid:
+    # ... [initialization]
+    def update_E(self):
+        # ... [electric field update equation]
+        # ... [electric field source functions]
+        for boundary in self._boundaries:
+            boundary.update_E()
+
+    def update_H(self):
+        # ... [magnetic field update equation]
+        # ... [magnetic field source functions]
+        for boundary in self._boundaries:
+            boundary.update_H()
+```
+

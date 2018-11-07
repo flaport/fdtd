@@ -63,16 +63,12 @@ class PeriodicBoundaryX(Boundary):
     def update_E(self):
         """ Update electric field such that periodic boundary conditions in the
         X-direction apply """
-        self.grid.E[-1, :, :, 0] = self.grid.E[0, :, :, 0]
-        self.grid.E[0, :, :, 1] = self.grid.E[-1, :, :, 1]
-        self.grid.E[0, :, :, 2] = self.grid.E[-1, :, :, 2]
+        self.grid.E[0, :, :, :] = self.grid.E[-1, :, :, :]
 
     def update_H(self):
         """ Update magnetic field such that periodic boundary conditions in the
         X-directions apply """
-        self.grid.H[0, :, :, 0] = self.grid.H[-1, :, :, 0]
-        self.grid.H[-1, :, :, 1] = self.grid.H[0, :, :, 1]
-        self.grid.H[-1, :, :, 2] = self.grid.H[0, :, :, 2]
+        self.grid.H[-1, :, :, :] = self.grid.H[0, :, :, :]
 
 
 # Periodic Boundaries in the Y-direction
@@ -80,16 +76,12 @@ class PeriodicBoundaryY(Boundary):
     def update_E(self):
         """ Update electric field such that periodic boundary conditions in the
         Y-direction apply """
-        self.grid.E[:, 0, :, 0] = self.grid.E[:, -1, :, 0]
-        self.grid.E[:, -1, :, 1] = self.grid.E[:, 0, :, 1]
-        self.grid.E[:, 0, :, 2] = self.grid.E[:, -1, :, 2]
+        self.grid.E[:, 0, :, :] = self.grid.E[:, -1, :, :]
 
     def update_H(self):
         """ Update magnetic field such that periodic boundary conditions in the
         Y-direction apply """
-        self.grid.H[:, -1, :, 0] = self.grid.H[:, 0, :, 0]
-        self.grid.H[:, 0, :, 1] = self.grid.H[:, -1, :, 1]
-        self.grid.H[:, -1, :, 2] = self.grid.H[:, 0, :, 2]
+        self.grid.H[:, -1, :, :] = self.grid.H[:, 0, :, :]
 
 
 # Periodic Boundaries in the Z-direction
@@ -97,20 +89,16 @@ class PeriodicBoundaryZ(Boundary):
     def update_E(self):
         """ Update electric field such that periodic boundary conditions in the
         Z-direction apply """
-        self.grid.E[:, :, 0, 0] = self.grid.E[:, :, -1, 0]
-        self.grid.E[:, :, 0, 1] = self.grid.E[:, :, -1, 1]
-        self.grid.E[:, :, -1, 2] = self.grid.E[:, :, 0, 2]
+        self.grid.E[:, :, 0, :] = self.grid.E[:, :, -1, :]
 
     def update_H(self):
         """ Update magnetic field such that periodic boundary conditions in the
         Z-direction apply """
-        self.grid.H[:, :, -1, 0] = self.grid.H[:, :, 0, 0]
-        self.grid.H[:, :, -1, 1] = self.grid.H[:, :, 0, 1]
-        self.grid.H[:, :, 0, 2] = self.grid.H[:, :, -1, 2]
+        self.grid.H[:, :, -1, :] = self.grid.H[:, :, 0, :]
+
 
 
 ## Perfectly Matched Layer (PML)
-
 
 class PML(Boundary):
     """ A perfectly matched layer is an impedence-matched area and the boundary of the
@@ -210,7 +198,7 @@ class PML(Boundary):
         self.bH = bd.exp(-(self.sigmaH / self.kH + self.aH) * self.grid.courant_number)
         self.cH = (
             (self.bH - 1.0)
-            * self.sigmaH  # is defined by _set_sigmaE()
+            * self.sigmaH  # is defined by _set_sigmaH()
             / (self.sigmaH * self.kH + self.aH * self.kH ** 2)
         )
 
