@@ -176,6 +176,62 @@ class Grid:
 
 ```
 
+## Lossy Medium
+
+When a material has a conductivity σ, a conduction-current will ensure that the medium is lossy. Ampere's law with a conduction current becomes
+```
+    curl(H) = σE + ε*ε0*dE/dt
+```
+
+making the usual subsitutions, this becomes:
+```
+    E(t+dt) - E(t) = sc*inv(ε)*curl_H(t+dt/2) - dt*inv(ε)*σE(t+dt/2)/√ε0
+```
+
+This update equation depends on the electric field on a half-integer timestep (a *magnetic field timestep*). We need to make a substitution to interpolate the electric field to this timestep:
+```
+    (1 + 0.5*dt*inv(ε)*σ/√ε0)*E(t+dt) = sc*inv(ε)*curl_H(t+dt/2) + (1 - 0.5*inv(ε)*σ/√ε0)*E(t)
+```
+
+Which, after substitution `σ := σ/√ε0` yield the new update equations:
+```
+    f = 0.5*inv(ε)*σ
+    E *= inv(1 + f) * (1 - f)
+    E += inv(1 + f)*sc*inv(ε)*curl_H
+```
+
+If we want to keep track of the absorption:
+```
+    f = 0.5*inv(ε)*σ
+    Enoabs = E + sc*inv(ε)*curl_H
+    E *= inv(1 + f) * (1 - f)
+    E += inv(1 + f)*sc*inv(ε)*curl_H
+    dE = Enoabs - E
+    abs += ε*E*dE + 0.5*ε*dE**2
+```
+
+Note that the more complicated the permittivity tensor ε is, the more time consuming this
+algorithm will be. It is therefore sometimes the right decision to transfer the absorption to the magnetic domain by introducing a (*nonphysical*) magnetic conductivity, because
+the permeability µ usually has a much easier form.
+
+Which, after substitution `σm := σm/√µ0`, we get the magnetic field update equations:
+```
+    f = 0.5*inv(µ)*σm
+    H *= inv(1 + f) * (1 - f)
+    H += inv(1 + f)*sc*inv(µ)*curl_E
+```
+
+or if we want to keep track of the absorption:
+```
+    f = 0.5*inv(µ)*σm
+    Hnoabs = E + sc*inv(µ)*curl_E
+    H *= inv(1 + f) * (1 - f)
+    H += inv(1 + f)*sc*inv(µ)*curl_E
+    dH = Hnoabs - H
+    abs += µ*H*dH + 0.5*µ*dH**2
+```
+
+
 ## Boundary Conditions
 
 ### Periodic Boundary Conditions
