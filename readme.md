@@ -15,7 +15,7 @@ An electromagnetic FDTD solver solves the time-dependent Maxwell Equations
 
 These two equations are called *Ampere's Law* and *Faraday's Law* respectively.
 
-Where ε and µ are the relative permittivity and permeability tensors
+In these equations, ε and µ are the relative permittivity and permeability tensors
 respectively. ε0 and µ0 are the vacuum permittivity and permeability and their
 square root can be absorbed into E and H respectively, such that `E := √ε0*E`
 and `H := √µ0*H`.
@@ -178,31 +178,31 @@ class Grid:
 
 ## Lossy Medium
 
-When a material has a conductivity σ, a conduction-current will ensure that the medium is lossy. Ampere's law with a conduction current becomes
+When a material has a *electric conductivity* σe, a conduction-current will ensure that the medium is lossy. Ampere's law with a conduction current becomes
 ```
-    curl(H) = σE + ε*ε0*dE/dt
+    curl(H) = σe*E + ε*ε0*dE/dt
 ```
 
 making the usual subsitutions, this becomes:
 ```
-    E(t+dt) - E(t) = sc*inv(ε)*curl_H(t+dt/2) - dt*inv(ε)*σE(t+dt/2)/√ε0
+    E(t+dt) - E(t) = sc*inv(ε)*curl_H(t+dt/2) - dt*inv(ε)*σe*E(t+dt/2)/ε0
 ```
 
 This update equation depends on the electric field on a half-integer timestep (a *magnetic field timestep*). We need to make a substitution to interpolate the electric field to this timestep:
 ```
-    (1 + 0.5*dt*inv(ε)*σ/√ε0)*E(t+dt) = sc*inv(ε)*curl_H(t+dt/2) + (1 - 0.5*inv(ε)*σ/√ε0)*E(t)
+    (1 + 0.5*dt*inv(ε)*σ/√ε0)*E(t+dt) = sc*inv(ε)*curl_H(t+dt/2) + (1 - 0.5*dt*inv(ε)*σe/ε0)*E(t)
 ```
 
-Which, after substitution `σ := σ/√ε0` yield the new update equations:
+Which, after substitution `σ := σe/ε0` yield the new update equations:
 ```
-    f = 0.5*inv(ε)*σ
+    f = 0.5*dt*inv(ε)*σ
     E *= inv(1 + f) * (1 - f)
     E += inv(1 + f)*sc*inv(ε)*curl_H
 ```
 
-If we want to keep track of the absorption:
+If we want to keep track of the absorbed energy:
 ```
-    f = 0.5*inv(ε)*σ
+    f = 0.5*dt*inv(ε)*σ
     Enoabs = E + sc*inv(ε)*curl_H
     E *= inv(1 + f) * (1 - f)
     E += inv(1 + f)*sc*inv(ε)*curl_H
@@ -214,22 +214,29 @@ Note that the more complicated the permittivity tensor ε is, the more time cons
 algorithm will be. It is therefore sometimes the right decision to transfer the absorption to the magnetic domain by introducing a (*nonphysical*) magnetic conductivity, because
 the permeability µ usually has a much easier form.
 
-Which, after substitution `σm := σm/√µ0`, we get the magnetic field update equations:
+Which, after substitution `σ := σm/µ0`, we get the magnetic field update equations:
 ```
-    f = 0.5*inv(µ)*σm
+    f = 0.5*dt*inv(µ)*σ
     H *= inv(1 + f) * (1 - f)
     H += inv(1 + f)*sc*inv(µ)*curl_E
 ```
 
-or if we want to keep track of the absorption:
+or if we want to keep track of the absorbed energy:
 ```
-    f = 0.5*inv(µ)*σm
+    f = 0.5*dt*inv(µ)*σ
     Hnoabs = E + sc*inv(µ)*curl_E
     H *= inv(1 + f) * (1 - f)
     H += inv(1 + f)*sc*inv(µ)*curl_E
     dH = Hnoabs - H
     abs += µ*H*dH + 0.5*µ*dH**2
 ```
+
+The same amount of energy will be absorbed by introducing a *magnetic conductivity* σm
+as by introducing a *electric conductivity* σe if:
+```
+    σm/µ0 = σe/ε0
+```
+This is the motivation for substituting.
 
 
 ## Boundary Conditions
