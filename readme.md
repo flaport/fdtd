@@ -193,16 +193,16 @@ This update equation depends on the electric field on a half-integer timestep (a
     (1 + 0.5*dt*inv(ε)*σ/√ε0)*E(t+dt) = sc*inv(ε)*curl_H(t+dt/2) + (1 - 0.5*dt*inv(ε)*σe/ε0)*E(t)
 ```
 
-Which, after substitution `σ := σe/ε0` yield the new update equations:
+Which, after substitution `σ := inv(ε)*σe/ε0` yield the new update equations:
 ```
-    f = 0.5*dt*inv(ε)*σ
+    f = 0.5*dt*σ
     E *= inv(1 + f) * (1 - f)
     E += inv(1 + f)*sc*inv(ε)*curl_H
 ```
 
 If we want to keep track of the absorbed energy:
 ```
-    f = 0.5*dt*inv(ε)*σ
+    f = 0.5*dt*σ
     Enoabs = E + sc*inv(ε)*curl_H
     E *= inv(1 + f) * (1 - f)
     E += inv(1 + f)*sc*inv(ε)*curl_H
@@ -214,9 +214,9 @@ Note that the more complicated the permittivity tensor ε is, the more time cons
 algorithm will be. It is therefore sometimes the right decision to transfer the absorption to the magnetic domain by introducing a (*nonphysical*) magnetic conductivity, because
 the permeability µ usually has a much easier form.
 
-Which, after substitution `σ := σm/µ0`, we get the magnetic field update equations:
+Which, after substitution `σ := inv(µ)*σm/µ0`, we get the magnetic field update equations:
 ```
-    f = 0.5*dt*inv(µ)*σ
+    f = 0.5*dt*σ
     H *= inv(1 + f) * (1 - f)
     H += inv(1 + f)*sc*inv(µ)*curl_E
 ```
@@ -234,7 +234,7 @@ or if we want to keep track of the absorbed energy:
 The same amount of energy will be absorbed by introducing a *magnetic conductivity* σm
 as by introducing a *electric conductivity* σe if:
 ```
-    σm/µ0 = σe/ε0
+    inv(µ)*σm/µ0 = inv(ε)*σe/ε0
 ```
 This is the motivation for substituting.
 
@@ -280,3 +280,49 @@ class Grid:
             boundary.update_H()
 ```
 
+### Perfectly Matched Layer
+a Perfectly Matched Layer (PML) is the state of the art for
+introducing absorbing boundary conditions in an FDTD grid.
+A PML is an impedance-matched absorbing area in the grid. It turns out that
+for a impedance-matching condition to hold, the PML can only be absorbing in
+a single direction. This is what makes a PML in fact a nonphysical material.
+
+
+Consider Ampere's law for the `Ez` component, where the usual subsitutions
+`E := √ε0*E`, `H := √µ0*H` and `σ := inv(ε)*σe/ε0` are
+already introduced:
+```
+    ε*dEz/dt + ε*σ*Ez = c*dHy/dx - c*dHx/dy
+```
+This becomes in the frequency domain:
+```
+    iω*ε*Ez + ε*σ*Ez = c*dHy/dx - c*dHx/dy
+```
+We can split this equation in a x-propagating wave and a y-propagating wave:
+```
+    iω*ε*Ezx + ε*σx*Ezx = iω*ε*(1 + σx/iω)*Ezx = c*dHy/dx
+    iω*ε*Ezy + ε*σy*Ezy = iω*ε*(1 + σy/iω)*Ezy = -c*dHx/dy
+```
+
+We can define the `S`-operators as follows
+```
+    Su = 1 + σu/iω     with u in {x, y, z}
+```
+In general, we prefer to add a stability factor `au` and a scaling factor `ku` to `Su`:
+```
+    Su = ku + σu/(iω+au)     with u in {x, y, z}
+```
+Summing the two equations for `Ez` back together after dividing by the respective `S`-operator gives
+```
+    iω*ε*Ez = (c/Sx)*dHy/dx - (c/Sy)*dHx/dy
+```
+Converting this back to the time domain gives
+```
+    ε*dEz/dt = c*sx[*]dHy/dx - c*sx[*]dHx/dy
+```
+with `sx` being the inverse fourier transform of `(1/Sx)` and `[*]` denoting a convolution.
+The expression for `su` can be proven to be
+```
+    su = (1/ku)*δ(t) - (σu/ku**2)*exp(-(au+σu/ku)*t)     for all t > 0
+```
+with `δ(t)` denoting the dirac delta function.
