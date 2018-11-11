@@ -320,9 +320,44 @@ Converting this back to the time domain gives
 ```
     ε*dEz/dt = c*sx[*]dHy/dx - c*sx[*]dHx/dy
 ```
-with `sx` being the inverse fourier transform of `(1/Sx)` and `[*]` denoting a convolution.
-The expression for `su` can be proven to be
+with `sx` denotes the inverse fourier transform of `(1/Sx)` and `[*]` denotes a convolution.
+The expression for `su` can be proven to look as follows:
 ```
-    su = (1/ku)*δ(t) - (σu/ku**2)*exp(-(au+σu/ku)*t)     for all t > 0
+    su = (1/ku)*δ(t) + Cu(t)
 ```
-with `δ(t)` denoting the dirac delta function.
+with `δ(t)` denoting the dirac delta function and `C(t)` an exponentially
+decaying function given by:
+```
+    Cu(t) = -(σu/ku**2)*exp(-(au+σu/ku)*t)     for all t > 0
+```
+Plugging this in gives:
+```
+    ε*dEz/dt = (c/kx)*dHy/dx - (c/ky)*dHx/dy + c*Cx[*]dHy/dx - c*Cx[*]dHx/dy
+             = (c/kx)*dHy/dx - (c/ky)*dHx/dy + Фez/dt
+```
+Where we defined `Фeu` as
+```
+    Фeu = Ψeuv - Ψezw
+```
+and `Ψeuv` as the convolution updating the component `Eu` by taking the derivative of `Hw` in the `v` direction:
+```
+    Ψeuv = c*dt*Cv[*]dHw/dv
+```
+This can be (after a lengthy derivation) rewritten as an update equation:
+```
+     Ψeuv = c*dt*cv*dHw/dv + bv*Ψeuv
+```
+Where we defined the constants `bw` and `cw` as:
+```
+    bu = exp(-(au + σu/ku)*dt)
+    cu = σu*(bu - 1)/(σu*ku + au*ku**2)
+```
+The final PML algorithm for the electric field now becomes:
+
+1. Update `Фe=[Фex, Фey, Фez]` by using the update equation for the `Ψ`-components.
+2. Update the electric fields the normal way
+3. Add `Фe` to the electric fields.
+
+The same has to be applied for the magnetic field.
+
+These update equations for the PML were based on the derivation of [Schneider, Chap. 11](https://www.eecs.wsu.edu/~schneidj/ufdtd/).
