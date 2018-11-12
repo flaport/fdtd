@@ -248,12 +248,12 @@ make sure that the fields at `Xlow` and `Xhigh` are the same. This has to be enf
 after performing the update equations:
 
 Note that the electric field `E` is dependent on `curl_H`, which means that
-the first indices of E will not be updated through the update equations.
+the first indices of `E` will not be updated through the update equations.
 It's those indices that need to be set through the periodic boundary condition.
 Concretely: `E[0]` needs to be set to equal `E[-1]`. For the magnetic field, the
 inverse is true: `H` is dependent on `curl_E`, which means that its last indices
 will not be set. This has to be done by the boundary condition: `H[-1]` needs to
-be set equal to `H[-1]`:
+be set equal to `H[0]`:
 
 
 ```python
@@ -269,13 +269,13 @@ class Grid:
     # ... [initialization]
     def update_E(self):
         # ... [electric field update equation]
-        # ... [electric field source functions]
+        # ... [electric field source update equations]
         for boundary in self._boundaries:
             boundary.update_E()
 
     def update_H(self):
         # ... [magnetic field update equation]
-        # ... [magnetic field source functions]
+        # ... [magnetic field source update equations]
         for boundary in self._boundaries:
             boundary.update_H()
 ```
@@ -306,11 +306,11 @@ We can split this equation in a x-propagating wave and a y-propagating wave:
 
 We can define the `S`-operators as follows
 ```
-    Su = 1 + σu/iω     with u in {x, y, z}
+    Su = 1 + σu/iω          with u in {x, y, z}
 ```
 In general, we prefer to add a stability factor `au` and a scaling factor `ku` to `Su`:
 ```
-    Su = ku + σu/(iω+au)     with u in {x, y, z}
+    Su = ku + σu/(iω+au)    with u in {x, y, z}
 ```
 Summing the two equations for `Ez` back together after dividing by the respective `S`-operator gives
 ```
@@ -320,37 +320,42 @@ Converting this back to the time domain gives
 ```
     ε*dEz/dt = c*sx[*]dHy/dx - c*sx[*]dHx/dy
 ```
-with `sx` denotes the inverse fourier transform of `(1/Sx)` and `[*]` denotes a convolution.
-The expression for `su` can be proven to look as follows:
+where `sx` denotes the inverse fourier transform of `(1/Sx)` and `[*]` denotes a convolution.
+The expression for `su` can be proven [after some derivation] to look as follows:
 ```
-    su = (1/ku)*δ(t) + Cu(t)
+    su = (1/ku)*δ(t) + Cu(t)    with u in {x, y, z}
 ```
-with `δ(t)` denoting the dirac delta function and `C(t)` an exponentially
+where `δ(t)` denotes the dirac delta function and `C(t)` an exponentially
 decaying function given by:
 ```
-    Cu(t) = -(σu/ku**2)*exp(-(au+σu/ku)*t)     for all t > 0
+    Cu(t) = -(σu/ku**2)*exp(-(au+σu/ku)*t)     for all t > 0 and u in {x, y, z}
 ```
 Plugging this in gives:
 ```
-    ε*dEz/dt = (c/kx)*dHy/dx - (c/ky)*dHx/dy + c*Cx[*]dHy/dx - c*Cx[*]dHx/dy
-             = (c/kx)*dHy/dx - (c/ky)*dHx/dy + Фez/dt
+    dEz/dt = (c/kx)*inv(ε)*dHy/dx - (c/ky)*inv(ε)*dHx/dy + c*inv(ε)*Cx[*]dHy/dx - c*inv(ε)*Cx[*]dHx/dy
+           = (c/kx)*inv(ε)*dHy/dx - (c/ky)*inv(ε)*dHx/dy + c*inv(ε)*Фez/du      with du=dx=dy=dz
+```
+This can be written as an update equation:
+```
+    Ez += (1/kx)*sc*inv(ε)*dHy - (1/ky)*sc*inv(ε)*dHx + sc*inv(ε)*Фez
 ```
 Where we defined `Фeu` as
 ```
-    Фeu = Ψeuv - Ψezw
+    Фeu = Ψeuv - Ψezw           with u, v, w in {x, y, z}
 ```
 and `Ψeuv` as the convolution updating the component `Eu` by taking the derivative of `Hw` in the `v` direction:
 ```
-    Ψeuv = c*dt*Cv[*]dHw/dv
+    Ψeuv = dv*Cv[*]dHw/dv     with u, v, w in {x, y, z}
 ```
-This can be (after a lengthy derivation) rewritten as an update equation:
+This can be rewritten [after some derivation] as an update equation in itself:
 ```
-     Ψeuv = c*dt*cv*dHw/dv + bv*Ψeuv
+     Ψeuv = bv*Ψeuv + cv*dv*(dHw/dv)
+          = bv*Ψeuv + cv*dHw            with u, v, w in {x, y, z}
 ```
-Where we defined the constants `bw` and `cw` as:
+Where the constants `bu` and `cu` are derived to be:
 ```
-    bu = exp(-(au + σu/ku)*dt)
-    cu = σu*(bu - 1)/(σu*ku + au*ku**2)
+    bu = exp(-(au + σu/ku)*dt)              with u in {x, y, z}
+    cu = σu*(bu - 1)/(σu*ku + au*ku**2)     with u in {x, y, z}
 ```
 The final PML algorithm for the electric field now becomes:
 
@@ -358,6 +363,51 @@ The final PML algorithm for the electric field now becomes:
 2. Update the electric fields the normal way
 3. Add `Фe` to the electric fields.
 
+or as python code:
+```python
+class PML(Boundary):
+    # ... [initialization]
+    def update_phi_E(self): # update convolution
+        self.psi_Ex *= self.bE
+        self.psi_Ey *= self.bE
+        self.psi_Ez *= self.bE
+
+        c = self.cE
+        Hx = self.grid.H[self.locx]
+        Hy = self.grid.H[self.locy]
+        Hz = self.grid.H[self.locz]
+
+        self.psi_Ex[:, 1:, :, 1] += (Hz[:, 1:, :] - Hz[:, :-1, :]) * c[:, 1:, :, 1]
+        self.psi_Ex[:, :, 1:, 2] += (Hy[:, :, 1:] - Hy[:, :, :-1]) * c[:, :, 1:, 2]
+
+        self.psi_Ey[:, :, 1:, 2] += (Hx[:, :, 1:] - Hx[:, :, :-1]) * c[:, :, 1:, 2]
+        self.psi_Ey[1:, :, :, 0] += (Hz[1:, :, :] - Hz[:-1, :, :]) * c[1:, :, :, 0]
+
+        self.psi_Ez[1:, :, :, 0] += (Hy[1:, :, :] - Hy[:-1, :, :]) * c[1:, :, :, 0]
+        self.psi_Ez[:, 1:, :, 1] += (Hx[:, 1:, :] - Hx[:, :-1, :]) * c[:, 1:, :, 1]
+
+        self.phi_E[..., 0] = self.psi_Ex[..., 1] - self.psi_Ex[..., 2]
+        self.phi_E[..., 1] = self.psi_Ey[..., 2] - self.psi_Ey[..., 0]
+        self.phi_E[..., 2] = self.psi_Ez[..., 0] - self.psi_Ez[..., 1]
+
+    def update_E(self): # update PML located at self.loc
+        self.grid.E[self.loc] += (
+            self.grid.courant_number
+            * self.grid.inverse_permittivity[self.loc]
+            * self.phi_E
+        )
+
+class Grid:
+    # ... [initialization]
+    def update_E(self):
+        for boundary in self._boundaries:
+            boundary.update_phi_E()
+        # ... [electric field update equation]
+        # ... [electric field source update equations]
+        for boundary in self._boundaries:
+            boundary.update_E()
+```
+
 The same has to be applied for the magnetic field.
 
-These update equations for the PML were based on the derivation of [Schneider, Chap. 11](https://www.eecs.wsu.edu/~schneidj/ufdtd/).
+These update equations for the PML were based on [Schneider, Chap. 11](https://www.eecs.wsu.edu/~schneidj/ufdtd).

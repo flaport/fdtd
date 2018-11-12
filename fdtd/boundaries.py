@@ -2,6 +2,7 @@
 
 # typing
 from numbers import Number
+from .backend import Tensorlike
 
 # relative
 from .grid import Grid
@@ -105,18 +106,17 @@ class PML(Boundary):
     grid for which all fields incident to the area are prefectly absorbed.
     """
 
-    def __init__(self, thickness: Number = 10, k: float = 1.2, a: float = 1e-8):
+    def __init__(self, thickness: Number = 10, a: float = 1e-8):
         """ Perfectly Matched Layer
 
         Args:
             thickness: The thickness of the PML. The thickness can be specified as
                 integer [gridpoints] or as float [meters].
-            k = 1.2:
             a = 1e-8: stability parameter
         """
+        self.grid = None # will be set later
+        self.k = 1.0 # TODO: to make this a PML parameter, the *normal* curl equations need to be updated
         self.a = a
-        self.k = k
-        self.grid = None
         self.thickness = thickness
 
     def _set_locations(self):
@@ -156,7 +156,7 @@ class PML(Boundary):
         """
         raise NotImplementedError
 
-    def _sigma(self, vect):
+    def _sigma(self, vect: Tensorlike):
         """ create a cubicly increasing profile for the conductivity """
         return 40 * vect ** 3 / (self.thickness + 1) ** 4
 
@@ -169,7 +169,7 @@ class PML(Boundary):
         self.grid = grid
         self.thickness = self.grid._handle_distance(self.thickness)
 
-        # set orientation dependent paramters: (different for x, y z, ...)
+        # set orientation dependent parameters: (different for x, y, z-PML)
         self._set_locations()
         self._set_shape()
         self._set_sigmaE()
@@ -177,6 +177,8 @@ class PML(Boundary):
 
         # set the other parameters
         Nx, Ny, Nz = self.shape  # is defined by _set_shape()
+        self.phi_E = bd.zeros((Nx, Ny, Nz, 3))
+        self.phi_H = bd.zeros((Nx, Ny, Nz, 3))
         self.psi_Ex = bd.zeros((Nx, Ny, Nz, 3))
         self.psi_Ey = bd.zeros((Nx, Ny, Nz, 3))
         self.psi_Ez = bd.zeros((Nx, Ny, Nz, 3))
@@ -184,26 +186,20 @@ class PML(Boundary):
         self.psi_Hy = bd.zeros((Nx, Ny, Nz, 3))
         self.psi_Hz = bd.zeros((Nx, Ny, Nz, 3))
 
-        self.kE = self.k
-        self.aE = bd.zeros((Nx, Ny, Nz, 3)) + self.a
-        self.bE = bd.exp(-(self.sigmaE / self.kE + self.aE) * self.grid.courant_number)
+        self.bE = bd.exp(-(self.sigmaE / self.k + self.a) * self.grid.courant_number)
         self.cE = (
             (self.bE - 1.0)
             * self.sigmaE  # is defined by _set_sigmaE()
-            / (self.sigmaE * self.kE + self.aE * self.kE ** 2)
+            / (self.sigmaE * self.k + self.a * self.k ** 2)
         )
 
-        self.kH = self.k
-        self.aH = bd.zeros((Nx, Ny, Nz, 3)) + self.a
-        self.bH = bd.exp(-(self.sigmaH / self.kH + self.aH) * self.grid.courant_number)
+        self.bH = bd.exp(-(self.sigmaH / self.k + self.a) * self.grid.courant_number)
         self.cH = (
             (self.bH - 1.0)
             * self.sigmaH  # is defined by _set_sigmaH()
-            / (self.sigmaH * self.kH + self.aH * self.kH ** 2)
+            / (self.sigmaH * self.k + self.a * self.k ** 2)
         )
 
-        self.phi_E = bd.zeros((Nx, Ny, Nz, 3))
-        self.phi_H = bd.zeros((Nx, Ny, Nz, 3))
 
     def update_E(self):
         """ Update electric field of the grid
