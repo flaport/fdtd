@@ -75,6 +75,11 @@ class Source:
         self.profile /= self.profile.sum()
         self.profile *= amplitude
 
+        # convert locations to lists [performance boost]
+        self.x = [xx.item() for xx in self.x]
+        self.y = [yy.item() for yy in self.y]
+        self.z = [zz.item() for zz in self.z]
+
     @staticmethod
     def _get_location(
         p0: Tuple[int, int, int], p1: Tuple[int, int, int]
@@ -101,7 +106,10 @@ class Source:
         """ Add the source to the electric field """
         q = self.grid.timesteps_passed
         vect = self.profile * sin(2 * pi * q / self.period + self.phase_shift)
-        self.grid.E[self.x, self.y, self.z, 2] += vect
+        # do not use list indexing here, as this is much slower especially for torch backend
+        # DISABLED: self.grid.E[self.x, self.y, self.z, 2] = self.vect
+        for x, y, z, value in zip(self.x, self.y, self.z, vect):
+            self.grid.E[x, y, z, 2] += value
 
     def update_H(self):
         """ Add the source to the magnetic field """
