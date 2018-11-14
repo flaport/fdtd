@@ -98,12 +98,13 @@ class PeriodicBoundaryZ(Boundary):
         self.grid.H[:, :, -1, :] = self.grid.H[:, :, 0, :]
 
 
-
 ## Perfectly Matched Layer (PML)
 
+
 class PML(Boundary):
-    """ A perfectly matched layer is an impedence-matched area and the boundary of the
-    grid for which all fields incident to the area are prefectly absorbed.
+    """ A perfectly matched layer is an impedence-matched area at the boundary of the
+    grid for which all fields incident perpendicular to the area are absorbed without
+    reflection.
     """
 
     def __init__(self, thickness: Number = 10, a: float = 1e-8):
@@ -114,8 +115,11 @@ class PML(Boundary):
                 integer [gridpoints] or as float [meters].
             a = 1e-8: stability parameter
         """
-        self.grid = None # will be set later
-        self.k = 1.0 # TODO: to make this a PML parameter, the *normal* curl equations need to be updated
+        self.grid = None  # will be set later
+
+        # TODO: to make this a PML parameter, the *normal* curl equations need to be updated
+        self.k = 1.0
+
         self.a = a
         self.thickness = thickness
 
@@ -170,6 +174,7 @@ class PML(Boundary):
         self.thickness = self.grid._handle_distance(self.thickness)
 
         # set orientation dependent parameters: (different for x, y, z-PML)
+        # NOTE: these methods are implemented by the subclasses of PML.
         self._set_locations()
         self._set_shape()
         self._set_sigmaE()
@@ -199,7 +204,6 @@ class PML(Boundary):
             * self.sigmaH  # is defined by _set_sigmaH()
             / (self.sigmaH * self.k + self.a * self.k ** 2)
         )
-
 
     def update_E(self):
         """ Update electric field of the grid
@@ -284,6 +288,7 @@ class PML(Boundary):
 
 class PMLXlow(PML):
     """ A perfectly matched layer to place where X is low. """
+
     def _set_locations(self):
         self.loc = (slice(None, self.thickness), slice(None), slice(None), slice(None))
         self.locx = (slice(None, self.thickness), slice(None), slice(None), 0)
@@ -306,6 +311,7 @@ class PMLXlow(PML):
 
 class PMLXhigh(PML):
     """ A perfectly matched layer to place where X is high. """
+
     def _set_locations(self):
         self.loc = (slice(-self.thickness, None), slice(None), slice(None), slice(None))
         self.locx = (slice(-self.thickness, None), slice(None), slice(None), 0)
@@ -328,6 +334,7 @@ class PMLXhigh(PML):
 
 class PMLYlow(PML):
     """ A perfectly matched layer to place where Y is low. """
+
     def _set_locations(self):
         self.loc = (slice(None), slice(None, self.thickness), slice(None))
         self.locx = (slice(None), slice(None, self.thickness), slice(None), 0)
@@ -350,6 +357,7 @@ class PMLYlow(PML):
 
 class PMLYhigh(PML):
     """ A perfectly matched layer to place where Y is high. """
+
     def _set_locations(self):
         self.loc = (slice(None), slice(-self.thickness, None), slice(None), slice(None))
         self.locx = (slice(None), slice(-self.thickness, None), slice(None), 0)
@@ -372,6 +380,7 @@ class PMLYhigh(PML):
 
 class PMLZlow(PML):
     """ A perfectly matched layer to place where Z is low. """
+
     def _set_locations(self):
         self.loc = (slice(None), slice(None), slice(None, self.thickness), slice(None))
         self.locx = (slice(None), slice(None), slice(None, self.thickness), 0)
@@ -394,6 +403,7 @@ class PMLZlow(PML):
 
 class PMLZhigh(PML):
     """ A perfectly matched layer to place where Z is high. """
+
     def _set_locations(self):
         self.loc = (slice(None), slice(None), slice(-self.thickness, None), slice(None))
         self.locx = (slice(None), slice(None), slice(-self.thickness, None), 0)

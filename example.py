@@ -11,7 +11,7 @@ import fdtd.backend as bd
 
 ## Set Backend
 
-fdtd.set_backend("torch")
+fdtd.set_backend("torch.cuda")
 
 
 ## Simulation
@@ -63,6 +63,6 @@ m = max(abs(fields.min().item()), abs(fields.max().item()))
 for ax, field, title in zip(axes.ravel(), fields, titles):
     ax.set_axis_off()
     ax.set_title(title)
-    ax.imshow(field, vmin=-m, vmax=m, cmap="RdBu")
+    ax.imshow(bd.numpy(field), vmin=-m, vmax=m, cmap="RdBu")
 
 plt.show()

@@ -61,6 +61,7 @@ class NumpyBackend(Backend):
     zeros = staticmethod(numpy.zeros)
     linspace = staticmethod(numpy.linspace)
     arange = staticmethod(numpy.arange)
+    numpy = staticmethod(numpy.asarray)
 
 
 # Torch Backend
@@ -97,6 +98,9 @@ if torch_available:
                 dtype = torch.get_default_dtype()
             return self.torch.tensor(arr, device="cpu", dtype=dtype)
 
+        def numpy(self, arr):
+            return arr.numpy()
+
         def linspace(self, start, stop, num=50, endpoint=True):
             delta = (stop - start) / float(num - float(endpoint))
             if not delta:
@@ -120,6 +124,9 @@ if torch_cuda_available:
             if dtype is None:
                 dtype = torch.get_default_dtype()
             return self.torch.tensor(arr, device="cuda", dtype=dtype)
+
+        def numpy(self, arr):
+            return arr.cpu().numpy()
 
         def linspace(self, start, stop, num=50, endpoint=True):
             delta = (stop - start) / float(num - float(endpoint))
