@@ -54,6 +54,7 @@ class NumpyBackend(Backend):
     cos = staticmethod(numpy.cos)
     stack = staticmethod(numpy.stack)
     transpose = staticmethod(numpy.transpose)
+    squeeze = staticmethod(numpy.squeeze)
 
     # constructors
     array = staticmethod(numpy.array)
@@ -81,6 +82,7 @@ if torch_available:
         sin = staticmethod(torch.sin)
         cos = staticmethod(torch.cos)
         stack = staticmethod(torch.stack)
+        squeeze = staticmethod(torch.squeeze)
 
         @staticmethod
         def transpose(tensor, axes=None):

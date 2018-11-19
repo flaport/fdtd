@@ -22,11 +22,13 @@ P = 1
 
 grid = fdtd.Grid((M, N, P))
 grid.source = fdtd.Source(p0=(48, 80, 0), p1=(52, 80, 0), period=20)
+grid.detector = fdtd.Detector(x=[50], y=slice(None), z=[0])
 grid.xbounds = fdtd.PeriodicBoundaryX()
 grid.ybounds = fdtd.PeriodicBoundaryY()
 grid.zbounds = fdtd.PeriodicBoundaryZ()
 grid.pml = fdtd.PMLYhigh(thickness=10)
 grid.pml2 = fdtd.PMLYlow(thickness=10)
+
 
 print(f"courant number: {grid.courant_number}")
 
@@ -38,12 +40,14 @@ profiler.enable()
 # run simulation
 grid.run(50, progress_bar=False)
 
+
 # print profiler summary
 profiler.print_stats()
 
 
-## Plot Result
+## Plots
 
+# Fields
 fig, axes = plt.subplots(3, 2, squeeze=False)
 titles = ["Ex: xy", "Ey: xy", "Ez: xy", "Hx: xy", "Hy: xy", "Hz: xy"]
 
@@ -66,3 +70,9 @@ for ax, field, title in zip(axes.ravel(), fields, titles):
     ax.imshow(bd.numpy(field), vmin=-m, vmax=m, cmap="RdBu")
 
 plt.show()
+
+# Detected
+Ez = bd.squeeze(bd.stack(grid.detector.E, 0)[...,2])
+plt.imshow(bd.numpy(Ez), cmap="RdBu")
+plt.show()
+

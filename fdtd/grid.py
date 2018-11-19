@@ -118,11 +118,14 @@ class Grid:
         # save current time index
         self.timesteps_passed = 0
 
-        # dictionary to save sources:
+        # dictionary containing the sources:
         self._sources = {}
 
-        # dictionary to save boundaries
+        # dictionary containing the boundaries
         self._boundaries = {}
+
+        # dictionary containing the detectors
+        self._detectors = {}
 
     def _handle_distance(self, distance: Number) -> int:
         """ transform a distance to an integer number of gridpoints """
@@ -218,6 +221,10 @@ class Grid:
         for src in self._sources.values():
             src.update_E()
 
+        # detect electric field
+        for det in self._detectors.values():
+            det.detect_E()
+
     def update_H(self):
         """ update the magnetic field by using the curl of the electric field """
 
@@ -236,6 +243,10 @@ class Grid:
         for src in self._sources.values():
             src.update_H()
 
+        # detect electric field
+        for det in self._detectors.values():
+            det.detect_H()
+
     def reset(self):
         """ reset the grid by setting all fields to zero """
         self.H *= 0.0
@@ -252,13 +263,30 @@ class Grid:
         boundary.register_grid(self)
         self._boundaries[name] = boundary
 
+    def add_detector(self, name, detector):
+        """ add a detector to the grid """
+        detector.register_grid(self)
+        self._detectors[name] = detector
+
     def __setattr__(self, key, attr):
         if isinstance(attr, Source):
             self.add_source(key, attr)
-        if isinstance(attr, Boundary):
+        elif isinstance(attr, Boundary):
             self.add_boundary(key, attr)
+        elif isinstance(attr, Detector):
+            self.add_detector(key, attr)
         else:
             super().__setattr__(key, attr)
+
+    def __getattr__(self, key):
+        if key in self._sources:
+            return self._sources[key]
+        elif key in self._boundaries:
+            return self._boundaries[key]
+        elif key in self._detectors:
+            return self._detectors[key]
+        else:
+            super().__getattr__(key)
 
 
 ## Imports
@@ -267,3 +295,5 @@ class Grid:
 # relative
 from .sources import Source
 from .boundaries import Boundary
+from .detectors import Detector
+
