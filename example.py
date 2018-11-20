@@ -72,7 +72,6 @@ for ax, field, title in zip(axes.ravel(), fields, titles):
 plt.show()
 
 # Detected
-Ez = bd.squeeze(bd.stack(grid.detector.E, 0)[...,2])
+Ez = bd.squeeze(bd.stack(grid.detector.E, 0)[..., 2])
 plt.imshow(bd.numpy(Ez), cmap="RdBu")
 plt.show()
-

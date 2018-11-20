@@ -296,4 +296,3 @@ class Grid:
 from .sources import Source
 from .boundaries import Boundary
 from .detectors import Detector
-
