@@ -8,7 +8,7 @@ An as quick as possible explanation of the FDTD discretization of the maxwell eq
 
 An electromagnetic FDTD solver solves the time-dependent Maxwell Equations
 
-```
+```python
     curl(H) = ε*ε0*dE/dt
     curl(E) = -µ*µ0*dH/dt
 ```
@@ -21,7 +21,7 @@ square root can be absorbed into E and H respectively, such that `E := √ε0*E`
 and `H := √µ0*H`.
 
 Doing this, the Maxwell equations can be written as update equations:
-```
+```python
     E  += c*dt*inv(ε)*curl(H)
     H  -= c*dt*inv(µ)*curl(E)
 ```
@@ -39,7 +39,7 @@ way of writing the curl of the electric and magnetic fields: the curl of an
 H-type field will be an E-type field and vice versa.
 
 This way, the curl of E can be written as
-```
+```python
     curl(E)[m,n,p] = (dEz/dy - dEy/dz, dEx/dz - dEz/dx, dEy/dx - dEx/dy)[m,n,p]
                    =( ((Ez[m,n+1,p]-Ez[m,n,p])/dy - (Ey[m,n,p+1]-Ey[m,n,p])/dz),
                       ((Ex[m,n,p+1]-Ex[m,n,p])/dz - (Ez[m+1,n,p]-Ez[m,n,p])/dx),
@@ -84,7 +84,7 @@ def curl_H(H):
 ```
 
 The update equations can now be rewritten as
-```
+```python
     E  += (c*dt/du)*inv(ε)*curl_H
     H  -= (c*dt/du)*inv(µ)*curl_E
 ```
@@ -102,12 +102,12 @@ diagonal is `1/√D`.
 This yields the final update equations for the FDTD algorithm:
 
 
-```
+```python
     E  += sc*inv(ε)*curl_H
     H  -= sc*inv(µ)*curl_E
 ```
 
-This is also how it is implemented:
+This is also how it is implemented:  
 
 ```python
 class Grid:
@@ -128,19 +128,19 @@ class Grid:
 
 
 Ampere's Law can be updated to incorporate a current density:
-```
+```python
     curl(H) = J + ε*ε0*dE/dt
 ```
 Making again the usual substitutions `sc := c*dt/du`, `E := √ε0*E` and `H := √µ0*H`, the
 update equations can be modified to include the current density:
 
-```
+```python
     E += sc*inv(ε)*curl_H - dt*inv(ε)*J/√ε0
 ```
 
 Making one final substitution `Es := -dt*inv(ε)*J/√ε0` allows us to write this in a
 very clean way:
-```
+```python
     E += sc*inv(ε)*curl_H + Es
 ```
 
@@ -149,7 +149,7 @@ Where we defined Es as the *electric field source term*.
 It is often useful to also define a *magnetic field source term* `Hs`, which would be
 derived from the *magnetic current density* if it were to exist. In the same way,
 Faraday's update equation can be rewritten as
-```
+```python
     H  -= sc*inv(µ)*curl_E + Hs
 ```
 
@@ -179,29 +179,29 @@ class Grid:
 ## Lossy Medium
 
 When a material has a *electric conductivity* σe, a conduction-current will ensure that the medium is lossy. Ampere's law with a conduction current becomes
-```
+```python
     curl(H) = σe*E + ε*ε0*dE/dt
 ```
 
 making the usual subsitutions, this becomes:
-```
+```python
     E(t+dt) - E(t) = sc*inv(ε)*curl_H(t+dt/2) - dt*inv(ε)*σe*E(t+dt/2)/ε0
 ```
 
 This update equation depends on the electric field on a half-integer timestep (a *magnetic field timestep*). We need to make a substitution to interpolate the electric field to this timestep:
-```
+```python
     (1 + 0.5*dt*inv(ε)*σ/√ε0)*E(t+dt) = sc*inv(ε)*curl_H(t+dt/2) + (1 - 0.5*dt*inv(ε)*σe/ε0)*E(t)
 ```
 
 Which, after substitution `σ := inv(ε)*σe/ε0` yield the new update equations:
-```
+```python
     f = 0.5*dt*σ
     E *= inv(1 + f) * (1 - f)
     E += inv(1 + f)*sc*inv(ε)*curl_H
 ```
 
 If we want to keep track of the absorbed energy:
-```
+```python
     f = 0.5*dt*σ
     Enoabs = E + sc*inv(ε)*curl_H
     E *= inv(1 + f) * (1 - f)
@@ -215,14 +215,14 @@ algorithm will be. It is therefore sometimes the right decision to transfer the 
 the permeability µ usually has a much easier form.
 
 Which, after substitution `σ := inv(µ)*σm/µ0`, we get the magnetic field update equations:
-```
+```python
     f = 0.5*dt*σ
     H *= inv(1 + f) * (1 - f)
     H += inv(1 + f)*sc*inv(µ)*curl_E
 ```
 
 or if we want to keep track of the absorbed energy:
-```
+```python
     f = 0.5*dt*inv(µ)*σ
     Hnoabs = E + sc*inv(µ)*curl_E
     H *= inv(1 + f) * (1 - f)
@@ -233,7 +233,7 @@ or if we want to keep track of the absorbed energy:
 
 The same amount of energy will be absorbed by introducing a *magnetic conductivity* σm
 as by introducing a *electric conductivity* σe if:
-```
+```python
     inv(µ)*σm/µ0 = inv(ε)*σe/ε0
 ```
 This is the motivation for substituting.
@@ -291,69 +291,69 @@ a single direction. This is what makes a PML in fact a nonphysical material.
 Consider Ampere's law for the `Ez` component, where the usual subsitutions
 `E := √ε0*E`, `H := √µ0*H` and `σ := inv(ε)*σe/ε0` are
 already introduced:
-```
+```python
     ε*dEz/dt + ε*σ*Ez = c*dHy/dx - c*dHx/dy
 ```
 This becomes in the frequency domain:
-```
+```python
     iω*ε*Ez + ε*σ*Ez = c*dHy/dx - c*dHx/dy
 ```
 We can split this equation in a x-propagating wave and a y-propagating wave:
-```
+```python
     iω*ε*Ezx + ε*σx*Ezx = iω*ε*(1 + σx/iω)*Ezx = c*dHy/dx
     iω*ε*Ezy + ε*σy*Ezy = iω*ε*(1 + σy/iω)*Ezy = -c*dHx/dy
 ```
 
 We can define the `S`-operators as follows
-```
+```python
     Su = 1 + σu/iω          with u in {x, y, z}
 ```
 In general, we prefer to add a stability factor `au` and a scaling factor `ku` to `Su`:
-```
+```python
     Su = ku + σu/(iω+au)    with u in {x, y, z}
 ```
 Summing the two equations for `Ez` back together after dividing by the respective `S`-operator gives
-```
+```python
     iω*ε*Ez = (c/Sx)*dHy/dx - (c/Sy)*dHx/dy
 ```
 Converting this back to the time domain gives
-```
+```python
     ε*dEz/dt = c*sx[*]dHy/dx - c*sx[*]dHx/dy
 ```
 where `sx` denotes the inverse fourier transform of `(1/Sx)` and `[*]` denotes a convolution.
 The expression for `su` can be proven [after some derivation] to look as follows:
-```
+```python
     su = (1/ku)*δ(t) + Cu(t)    with u in {x, y, z}
 ```
 where `δ(t)` denotes the dirac delta function and `C(t)` an exponentially
 decaying function given by:
-```
+```python
     Cu(t) = -(σu/ku**2)*exp(-(au+σu/ku)*t)     for all t > 0 and u in {x, y, z}
 ```
 Plugging this in gives:
-```
+```python
     dEz/dt = (c/kx)*inv(ε)*dHy/dx - (c/ky)*inv(ε)*dHx/dy + c*inv(ε)*Cx[*]dHy/dx - c*inv(ε)*Cx[*]dHx/dy
            = (c/kx)*inv(ε)*dHy/dx - (c/ky)*inv(ε)*dHx/dy + c*inv(ε)*Фez/du      with du=dx=dy=dz
 ```
 This can be written as an update equation:
-```
+```python
     Ez += (1/kx)*sc*inv(ε)*dHy - (1/ky)*sc*inv(ε)*dHx + sc*inv(ε)*Фez
 ```
 Where we defined `Фeu` as
-```
+```python
     Фeu = Ψeuv - Ψezw           with u, v, w in {x, y, z}
 ```
 and `Ψeuv` as the convolution updating the component `Eu` by taking the derivative of `Hw` in the `v` direction:
-```
+```python
     Ψeuv = dv*Cv[*]dHw/dv     with u, v, w in {x, y, z}
 ```
 This can be rewritten [after some derivation] as an update equation in itself:
-```
+```python
      Ψeuv = bv*Ψeuv + cv*dv*(dHw/dv)
           = bv*Ψeuv + cv*dHw            with u, v, w in {x, y, z}
 ```
 Where the constants `bu` and `cu` are derived to be:
-```
+```python
     bu = exp(-(au + σu/ku)*dt)              with u in {x, y, z}
     cu = σu*(bu - 1)/(σu*ku + au*ku**2)     with u in {x, y, z}
 ```
