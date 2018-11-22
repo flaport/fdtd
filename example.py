@@ -17,17 +17,20 @@ fdtd.set_backend("torch.cuda")
 ## Simulation
 
 # create FDTD Grid
-M = N = 100
+M = 150
+N = 100
 P = 1
 
 grid = fdtd.Grid((M, N, P))
-grid.source = fdtd.Source(p0=(48, 80, 0), p1=(52, 80, 0), period=20)
+grid.source = fdtd.Source(p0=(48, 76, 0), p1=(52, 84, 0), period=20)
 grid.detector = fdtd.Detector(x=[50], y=slice(None), z=[0])
 grid.xbounds = fdtd.PeriodicBoundaryX()
 grid.ybounds = fdtd.PeriodicBoundaryY()
 grid.zbounds = fdtd.PeriodicBoundaryZ()
 grid.pml = fdtd.PMLYhigh(thickness=10)
 grid.pml2 = fdtd.PMLYlow(thickness=10)
+grid.pml3 = fdtd.PMLXhigh(thickness=10)
+grid.pml4 = fdtd.PMLXlow(thickness=10)
 
 
 print(f"courant number: {grid.courant_number}")
@@ -48,30 +51,39 @@ profiler.print_stats()
 ## Plots
 
 # Fields
-fig, axes = plt.subplots(3, 2, squeeze=False)
-titles = ["Ex: xy", "Ey: xy", "Ez: xy", "Hx: xy", "Hy: xy", "Hz: xy"]
+if False:
+    fig, axes = plt.subplots(3, 2, squeeze=False)
+    titles = ["Ex: xy", "Ey: xy", "Ez: xy", "Hx: xy", "Hy: xy", "Hz: xy"]
 
-fields = bd.stack(
-    [
-        grid.E[:, :, 0, 1],
-        grid.E[:, :, 0, 0],
-        grid.E[:, :, 0, 2],
-        grid.H[:, :, 0, 0],
-        grid.H[:, :, 0, 1],
-        grid.H[:, :, 0, 2],
-    ]
-)
+    fields = bd.stack(
+        [
+            grid.E[:, :, 0, 1],
+            grid.E[:, :, 0, 0],
+            grid.E[:, :, 0, 2],
+            grid.H[:, :, 0, 0],
+            grid.H[:, :, 0, 1],
+            grid.H[:, :, 0, 2],
+        ]
+    )
 
-m = max(abs(fields.min().item()), abs(fields.max().item()))
+    m = max(abs(fields.min().item()), abs(fields.max().item()))
 
-for ax, field, title in zip(axes.ravel(), fields, titles):
-    ax.set_axis_off()
-    ax.set_title(title)
-    ax.imshow(bd.numpy(field), vmin=-m, vmax=m, cmap="RdBu")
+    for ax, field, title in zip(axes.ravel(), fields, titles):
+        ax.set_axis_off()
+        ax.set_title(title)
+        ax.imshow(bd.numpy(field), vmin=-m, vmax=m, cmap="RdBu")
 
-plt.show()
+    plt.show()
 
 # Detected
-Ez = bd.squeeze(bd.stack(grid.detector.E, 0)[..., 2])
-plt.imshow(bd.numpy(Ez), cmap="RdBu")
-plt.show()
+if False:
+    Ez = bd.squeeze(bd.stack(grid.detector.E, 0)[..., 2])
+
+    plt.imshow(bd.numpy(Ez), cmap="RdBu")
+    plt.show()
+
+
+# Visualize Grid
+if True:
+    grid.visualize()
+

@@ -52,6 +52,7 @@ class NumpyBackend(Backend):
     exp = staticmethod(numpy.exp)
     sin = staticmethod(numpy.sin)
     cos = staticmethod(numpy.cos)
+    sum = staticmethod(numpy.sum)
     stack = staticmethod(numpy.stack)
     transpose = staticmethod(numpy.transpose)
     squeeze = staticmethod(numpy.squeeze)
@@ -81,6 +82,7 @@ if torch_available:
         exp = staticmethod(torch.exp)
         sin = staticmethod(torch.sin)
         cos = staticmethod(torch.cos)
+        sum = staticmethod(torch.sum)
         stack = staticmethod(torch.stack)
         squeeze = staticmethod(torch.squeeze)
 
@@ -101,7 +103,10 @@ if torch_available:
             return self.torch.tensor(arr, device="cpu", dtype=dtype)
 
         def numpy(self, arr):
-            return arr.numpy()
+            if self.torch.is_tensor(arr):
+                return arr.numpy()
+            else:
+                return numpy.array(arr)
 
         def linspace(self, start, stop, num=50, endpoint=True):
             delta = (stop - start) / float(num - float(endpoint))
@@ -128,7 +133,10 @@ if torch_cuda_available:
             return self.torch.tensor(arr, device="cuda", dtype=dtype)
 
         def numpy(self, arr):
-            return arr.cpu().numpy()
+            if self.torch.is_tensor(arr):
+                return arr.cpu().numpy()
+            else:
+                return numpy.array(arr)
 
         def linspace(self, start, stop, num=50, endpoint=True):
             delta = (stop - start) / float(num - float(endpoint))
