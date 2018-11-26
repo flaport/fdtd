@@ -28,7 +28,7 @@ class Detector:
         self.H = []
 
     def register_grid(self, grid: Grid):
-        """ Register a grid to the boundary """
+        """ Register a grid to the detector """
         self.grid = grid
 
         if isinstance(self.x, Number):

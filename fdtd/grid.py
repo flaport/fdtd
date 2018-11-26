@@ -65,6 +65,7 @@ def curl_H(H: Tensorlike) -> Tensorlike:
 ## FDTD Grid Class
 class Grid:
     from .visualization import visualize
+
     def __init__(
         self,
         shape: Tuple[Number, Number, Number],
@@ -127,6 +128,9 @@ class Grid:
 
         # dictionary containing the detectors
         self._detectors = {}
+
+        # dictionary containing the objects in the grid
+        self._objects = {}
 
     def _handle_distance(self, distance: Number) -> int:
         """ transform a distance to an integer number of gridpoints """
@@ -214,6 +218,10 @@ class Grid:
         curl = curl_H(self.H)
         self.E += self.courant_number * self.inverse_permittivity * curl
 
+        # update objects
+        for obj in self._objects.values():
+            obj.update_E(curl)
+
         # update boundaries: step 2
         for boundary in self._boundaries.values():
             boundary.update_E()
@@ -235,6 +243,10 @@ class Grid:
 
         curl = curl_E(self.E)
         self.H -= self.courant_number * self.inverse_permeability * curl
+
+        # update objects
+        for obj in self._objects.values():
+            obj.update_H(curl)
 
         # update boundaries: step 2
         for boundary in self._boundaries.values():
@@ -269,6 +281,11 @@ class Grid:
         detector.register_grid(self)
         self._detectors[name] = detector
 
+    def add_object(self, name, obj):
+        """ add an object to the grid """
+        obj.register_grid(self)
+        self._objects[name] = obj
+
     def __setattr__(self, key, attr):
         if isinstance(attr, Source):
             self.add_source(key, attr)
@@ -276,8 +293,10 @@ class Grid:
             self.add_boundary(key, attr)
         elif isinstance(attr, Detector):
             self.add_detector(key, attr)
+        elif isinstance(attr, Object):
+            self.add_object(key, attr)
         else:
-            super().__setattr__(key, attr)
+            self.__dict__[key] = attr
 
     def __getattr__(self, key):
         if key in self._sources:
@@ -286,8 +305,10 @@ class Grid:
             return self._boundaries[key]
         elif key in self._detectors:
             return self._detectors[key]
+        elif key in self._objects:
+            return self._objects[key]
         else:
-            super().__getattr__(key)
+            return self.__dict__[key]
 
 
 ## Imports
@@ -297,3 +318,4 @@ class Grid:
 from .sources import Source
 from .boundaries import Boundary
 from .detectors import Detector
+from .objects import Object
