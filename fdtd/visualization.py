@@ -10,7 +10,10 @@ from .backend import backend as bd
 
 # 2D visualization function
 
-def visualize(grid, cmap='Blues', pbcolor='red', pmlcolor=(0,0,0,0.1)):
+
+def visualize(
+    grid, cmap="Blues", pbcolor="red", pmlcolor=(0, 0, 0, 0.1), objcolor=(1, 0, 0, 0.1)
+):
     """ visualize the grid and the optical energy inside the grid
 
     Args:
@@ -24,40 +27,41 @@ def visualize(grid, cmap='Blues', pbcolor='red', pmlcolor=(0,0,0,0.1)):
     # imports (placed here to circumvent circular imports)
     from .boundaries import PeriodicBoundaryX, PeriodicBoundaryY, PeriodicBoundaryZ
     from .boundaries import PMLXlow, PMLXhigh, PMLYlow, PMLYhigh, PMLZlow, PMLZhigh
+    from .objects import Object
 
     # just to create the right legend entries:
-    plt.plot([], lw=5, color=pmlcolor, label='PML')
-    plt.plot([], lw=3, color=pbcolor, label='Periodic Boundary')
+    plt.plot([], lw=5, color=pmlcolor, label="PML")
+    plt.plot([], lw=3, color=pbcolor, label="Periodic Boundary")
 
     # Grid energy
-    grid_energy = bd.sum(grid.E**2 + grid.H**2, -1)
+    grid_energy = bd.sum(grid.E ** 2 + grid.H ** 2, -1)
     if grid.Nx == 1:
         assert grid.Ny > 1 and grid.Nz > 1
-        xlabel, ylabel = 'y', 'z'
+        xlabel, ylabel = "y", "z"
         Nx, Ny = grid.Ny, grid.Nz
         pbx, pby = PeriodicBoundaryY, PeriodicBoundaryZ
         pmlxl, pmlxh, pmlyl, pmlyh = PMLYlow, PMLYhigh, PMLZlow, PMLZhigh
-        grid_energy = grid_energy[0,:,:]
+        grid_energy = grid_energy[0, :, :]
     elif grid.Ny == 1:
         assert grid.Nx > 1 and grid.Nz > 1
-        xlabel, ylabel = 'z', 'x'
+        xlabel, ylabel = "z", "x"
         Nx, Ny = grid.Nz, grid.Nx
         pbx, pby = PeriodicBoundaryZ, PeriodicBoundaryX
         pmlxl, pmlxh, pmlyl, pmlyh = PMLZlow, PMLZhigh, PMLXlow, PMLXhigh
-        grid_energy = grid_energy[:,0,:].T
+        grid_energy = grid_energy[:, 0, :].T
     elif grid.Nz == 1:
         assert grid.Nx > 1 and grid.Ny > 1
-        xlabel, ylabel = 'x', 'y'
+        xlabel, ylabel = "x", "y"
         Nx, Ny = grid.Nx, grid.Ny
         pbx, pby = PeriodicBoundaryX, PeriodicBoundaryY
         pmlxl, pmlxh, pmlyl, pmlyh = PMLXlow, PMLXhigh, PMLYlow, PMLYhigh
-        grid_energy = grid_energy[:,:,0]
+        grid_energy = grid_energy[:, :, 0]
     else:
         raise ValueError("Visualization only works for 2D grids")
     plt.imshow(bd.numpy(grid_energy), cmap=cmap)
 
     # Sources
-    plt.plot([]) # cycle to C1
+    plt.plot([])  # cycle to C1
     for name, source in grid._sources.items():
         if grid.Nx == 1:
             x = [source.y[0], source.y[-1]]
@@ -74,53 +78,73 @@ def visualize(grid, cmap='Blues', pbcolor='red', pmlcolor=(0,0,0,0.1)):
     # Boundaries
     for name, boundary in grid._boundaries.items():
         if isinstance(boundary, pbx):
-            x = [-.5, -.5, float("nan"), Nx-.5, Nx-.5]
-            y = [-.5, Ny-.5, float("nan"), -.5, Ny-.5]
+            x = [-0.5, -0.5, float("nan"), Nx - 0.5, Nx - 0.5]
+            y = [-0.5, Ny - 0.5, float("nan"), -0.5, Ny - 0.5]
             plt.plot(y, x, color=pbcolor, linewidth=3)
         elif isinstance(boundary, pby):
-            x = [-.5, Nx-.5, float("nan"), -.5, Nx-.5]
-            y = [-.5, -.5, float("nan"), Ny-.5, Ny-.5]
+            x = [-0.5, Nx - 0.5, float("nan"), -0.5, Nx - 0.5]
+            y = [-0.5, -0.5, float("nan"), Ny - 0.5, Ny - 0.5]
             plt.plot(y, x, color=pbcolor, linewidth=3)
         elif isinstance(boundary, pmlyl):
             patch = ptc.Rectangle(
-                xy=(-0.5,-0.5),
+                xy=(-0.5, -0.5),
                 width=boundary.thickness,
                 height=Nx,
                 linewidth=0,
-                edgecolor='none',
+                edgecolor="none",
                 facecolor=pmlcolor,
             )
             plt.gca().add_patch(patch)
         elif isinstance(boundary, pmlxl):
             patch = ptc.Rectangle(
-                xy=(-0.5,-0.5),
+                xy=(-0.5, -0.5),
                 width=Ny,
                 height=boundary.thickness,
                 linewidth=0,
-                edgecolor='none',
+                edgecolor="none",
                 facecolor=pmlcolor,
             )
             plt.gca().add_patch(patch)
         elif isinstance(boundary, pmlyh):
             patch = ptc.Rectangle(
-                xy=(Ny-0.5-boundary.thickness,-0.5),
+                xy=(Ny - 0.5 - boundary.thickness, -0.5),
                 width=boundary.thickness,
                 height=Nx,
                 linewidth=0,
-                edgecolor='none',
+                edgecolor="none",
                 facecolor=pmlcolor,
             )
             plt.gca().add_patch(patch)
         elif isinstance(boundary, pmlxh):
             patch = ptc.Rectangle(
-                xy=(-.5,Nx-boundary.thickness-0.5),
+                xy=(-0.5, Nx - boundary.thickness - 0.5),
                 width=Ny,
                 height=boundary.thickness,
                 linewidth=0,
-                edgecolor='none',
+                edgecolor="none",
                 facecolor=pmlcolor,
             )
             plt.gca().add_patch(patch)
+
+    for name, obj in grid._objects.items():
+        if (xlabel, ylabel) == ("y", "z"):
+            x = (obj.y.start, obj.y.stop)
+            y = (obj.z.start, obj.z.stop)
+        elif (xlabel, ylabel) == ("z", "x"):
+            x = (obj.z.start, obj.z.stop)
+            y = (obj.x.start, obj.x.stop)
+        else:
+            x = (obj.x.start, obj.x.stop)
+            y = (obj.y.start, obj.y.stop)
+        patch = ptc.Rectangle(
+            xy=(min(y) - 0.5, min(x) - 0.5),
+            width=max(y) - min(y),
+            height=max(x) - min(x),
+            linewidth=0,
+            edgecolor="none",
+            facecolor=objcolor,
+        )
+        plt.gca().add_patch(patch)
 
     # finalize the plot
     plt.ylabel(xlabel)
@@ -130,4 +154,3 @@ def visualize(grid, cmap='Blues', pbcolor='red', pmlcolor=(0,0,0,0.1)):
     plt.figlegend()
     plt.tight_layout()
     plt.show()
-

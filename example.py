@@ -31,6 +31,9 @@ grid.pml = fdtd.PMLYhigh(thickness=10)
 grid.pml2 = fdtd.PMLYlow(thickness=10)
 grid.pml3 = fdtd.PMLXhigh(thickness=10)
 grid.pml4 = fdtd.PMLXlow(thickness=10)
+grid.obj = fdtd.Object(
+    permittivity=np.inf, x=slice(11, 32), y=slice(30, 84), z=slice(0, 1)
+)
 
 
 print(f"courant number: {grid.courant_number}")
@@ -86,4 +89,3 @@ if False:
 # Visualize Grid
 if True:
     grid.visualize()
-
