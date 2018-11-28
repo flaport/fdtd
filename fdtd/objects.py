@@ -46,8 +46,16 @@ class Object:
         self.Nz = abs(self.z.stop - self.z.start)
 
         self.inverse_permittivity = (
-            bd.zeros((self.Nx, self.Ny, self.Nz, 3))/self._permittivity
+            bd.ones((self.Nx, self.Ny, self.Nz, 3))/self._permittivity
         )
+
+        if self.Nx > 1:
+            self.inverse_permittivity[-1,:,:,0] = self.grid.inverse_permittivity[-1,self.y,self.z,0]
+        if self.Ny > 1:
+            self.inverse_permittivity[:,-1,:,1] = self.grid.inverse_permittivity[self.x,-1,self.z,1]
+        if self.Nz > 1:
+            self.inverse_permittivity[:,:,-1,2] = self.grid.inverse_permittivity[self.x,self.y,-1,1]
+
         self.grid.inverse_permittivity[self.x, self.y, self.z] = 0
 
     def update_E(self, curl_H):
