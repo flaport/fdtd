@@ -17,25 +17,32 @@ fdtd.set_backend("numpy")
 ## Simulation
 
 # create FDTD Grid
-M = 150
-N = 100
-P = 1
+grid = fdtd.Grid((150, 100, 1))
 
-grid = fdtd.Grid((M, N, P))
-grid.source = fdtd.Source(p0=(48, 76, 0), p1=(52, 84, 0), period=20)
-grid.detector = fdtd.Detector(x=[50], y=slice(None), z=[0])
-grid.xbounds = fdtd.PeriodicBoundaryX()
-grid.ybounds = fdtd.PeriodicBoundaryY()
-grid.zbounds = fdtd.PeriodicBoundaryZ()
-grid.pml = fdtd.PMLYhigh(thickness=10)
-grid.pml2 = fdtd.PMLYlow(thickness=10)
-grid.pml3 = fdtd.PMLXhigh(thickness=10)
-grid.pml4 = fdtd.PMLXlow(thickness=10)
-grid.obj = fdtd.AnisotropicObject(
-    permittivity=2.5, x=slice(11, 32), y=slice(30, 84), z=slice(0, 1)
-)
+# sources
+grid[48:52, 76:84, 0:0] = fdtd.LineSource(period=20, name="source")
+
+# detectors
+grid[50, :, 0] = fdtd.Detector(name="detector")
+
+# x boundaries
+# grid[0, :, :] = fdtd.PeriodicBoundary(name="xbounds")
+grid[0:10, :, :] = fdtd.PML(name="pml_xlow")
+grid[-10:, :, :] = fdtd.PML(name="pml_xhigh")
+
+# y boundaries
+# grid[:, 0, :] = fdtd.PeriodicBoundary(name="ybounds")
+grid[:, 0:10, :] = fdtd.PML(name="pml_ylow")
+grid[:, -10:, :] = fdtd.PML(name="pml_yhigh")
+
+# z boundaries
+grid[:, :, 0] = fdtd.PeriodicBoundary(name="zbounds")
+
+# objects
+grid[11:32, 30:84, 0:1] = fdtd.AnisotropicObject(permittivity=2.5, name="object")
 
 
+print(grid)
 print(f"courant number: {grid.courant_number}")
 
 # create and enable profiler
@@ -54,14 +61,14 @@ profiler.print_stats()
 ## Plots
 
 # Fields
-if False:
-    fig, axes = plt.subplots(3, 2, squeeze=False)
+if True:
+    fig, axes = plt.subplots(2, 3, squeeze=False)
     titles = ["Ex: xy", "Ey: xy", "Ez: xy", "Hx: xy", "Hy: xy", "Hz: xy"]
 
     fields = bd.stack(
         [
-            grid.E[:, :, 0, 1],
             grid.E[:, :, 0, 0],
+            grid.E[:, :, 0, 1],
             grid.E[:, :, 0, 2],
             grid.H[:, :, 0, 0],
             grid.H[:, :, 0, 1],
@@ -76,13 +83,6 @@ if False:
         ax.set_title(title)
         ax.imshow(bd.numpy(field), vmin=-m, vmax=m, cmap="RdBu")
 
-    plt.show()
-
-# Detected
-if False:
-    Ez = bd.squeeze(bd.stack(grid.detector.E, 0)[..., 2])
-
-    plt.imshow(bd.numpy(Ez), cmap="RdBu")
     plt.show()
 
 

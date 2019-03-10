@@ -10,16 +10,46 @@ from .backend import backend as bd
 
 
 ## Boundary Conditions [base class]
-class Boundary:
+class _Boundary:
     """ an FDTD Boundary [base class] """
 
-    def __init__(self):
-        """ Create a boundary """
+    def __init__(self, name:str=None):
+        """ Create a boundary 
+        
+        Args:
+            name: str = None: name of the boundary
+        """
         self.grid = None  # will be registered later
+        self.name = name
 
-    def register_grid(self, grid: Grid):
-        """ Register a grid to the boundary """
+    def _register_grid(
+        self, grid: Grid, x: slice = None, y: slice = None, z: slice = None
+    ):
+        """ Register a grid to the boundary
+
+        Args:
+            grid: Grid: the grid to register the boundary to
+            x: slice = None: the x-location of the boundary
+            y: slice = None: the y-location of the boundary
+            z: slice = None: the z-location of the boundary
+        
+        Note:
+            This is a helper method. To register the boundary to the grid,
+            index the grid and assign to it:
+            grid[0,:,:] = Boundary(name="boundary_name")
+        """
         self.grid = grid
+        self.grid._boundaries.append(self)
+        self.x = x
+        self.y = y
+        self.z = z
+        if self.name is not None:
+            if not hasattr(grid, self.name):
+                setattr(grid, self.name, self)
+            else:
+                raise ValueError(
+                    f"The grid already has an attribute with name {self.name}"
+                )
 
     def update_phi_E(self):
         """ Update convolution [phi_E]
@@ -54,13 +84,49 @@ class Boundary:
         pass
 
     def __repr__(self):
-        return self.__class__.__name__.lower()
+        return f"{self.__class__.__name__}(name={repr(self.name)})"
 
 
 ## Periodic Boundaries
+class PeriodicBoundary(_Boundary):
+    """ An FDTD Periodic Boundary
+    
+    Note:
+        Registering a periodic boundary to the grid will change the periodic
+        boundary in one of its subclasses: _PeriodicBoundaryX,
+        _PeriodicBoundaryY or _PeriodicBoundaryY, depending on the position
+        in the grid.
+    """
+    def _register_grid(self, grid: Grid, x: slice = None, y: slice = None, z: slice = None):
+        if x == 0 or x == -1:
+            self.__class__ = _PeriodicBoundaryX  # subclass of PeriodicBoundary
+            if hasattr(grid, "_xlow_boundary") or hasattr(grid, "_xhigh_boundary"):
+                raise AttributeError("grid already has an xlow/xhigh boundary!")
+            setattr(grid, "_xlow_boundary", self)
+            setattr(grid, "_xhigh_boundary", self)
+        elif y == 0 or y == -1:
+            self.__class__ = _PeriodicBoundaryY  # subclass of PeriodicBoundary
+            if hasattr(grid, "_ylow_boundary") or hasattr(grid, "_yhigh_boundary"):
+                raise AttributeError("grid already has an ylow/yhigh boundary!")
+            setattr(grid, "_ylow_boundary", self)
+            setattr(grid, "_yhigh_boundary", self)
+        elif z == 0 or z == -1:
+            self.__class__ = _PeriodicBoundaryZ  # subclass of PeriodicBoundary
+            if hasattr(grid, "_zlow_boundary") or hasattr(grid, "_zhigh_boundary"):
+                raise AttributeError("grid already has an zlow/zhigh boundary!")
+            setattr(grid, "_zlow_boundary", self)
+            setattr(grid, "_zhigh_boundary", self)
+        else:
+            raise IndexError(
+                "A periodic boundary should be placed at the boundary of the "
+                "grid (index 0)"
+            )
+
+        super()._register_grid(grid=grid, x=x, y=y, z=z)
+
 
 # Periodic Boundaries in the X-direction
-class PeriodicBoundaryX(Boundary):
+class _PeriodicBoundaryX(PeriodicBoundary):
     def update_E(self):
         """ Update electric field such that periodic boundary conditions in the
         X-direction apply """
@@ -73,7 +139,7 @@ class PeriodicBoundaryX(Boundary):
 
 
 # Periodic Boundaries in the Y-direction
-class PeriodicBoundaryY(Boundary):
+class _PeriodicBoundaryY(PeriodicBoundary):
     def update_E(self):
         """ Update electric field such that periodic boundary conditions in the
         Y-direction apply """
@@ -86,7 +152,7 @@ class PeriodicBoundaryY(Boundary):
 
 
 # Periodic Boundaries in the Z-direction
-class PeriodicBoundaryZ(Boundary):
+class _PeriodicBoundaryZ(PeriodicBoundary):
     def update_E(self):
         """ Update electric field such that periodic boundary conditions in the
         Z-direction apply """
@@ -101,27 +167,32 @@ class PeriodicBoundaryZ(Boundary):
 ## Perfectly Matched Layer (PML)
 
 
-class PML(Boundary):
-    """ A perfectly matched layer is an impedence-matched area at the boundary of the
-    grid for which all fields incident perpendicular to the area are absorbed without
+class PML(_Boundary):
+    """ A perfectly matched layer (PML)
+    
+    a PML is an impedence-matched area at the boundary of the grid for which
+    all fields incident perpendicular to the area are absorbed without
     reflection.
+
+    Note:
+        Registering a PML to the grid will change the PML to one of its
+        subclasses: _PMLXlow, _PMLYlow or _PMLZlow, _PMLXhigh, _PMLYhigh,
+        _PMLZhigh depending on the position in the grid.
     """
 
-    def __init__(self, thickness: Number = 10, a: float = 1e-8):
+    def __init__(self, a: float = 1e-8, name: str = None):
         """ Perfectly Matched Layer
 
         Args:
-            thickness: The thickness of the PML. The thickness can be specified as
-                integer [gridpoints] or as float [meters].
             a = 1e-8: stability parameter
+            name: str = None: name of the PML
         """
-        self.grid = None  # will be set later
+        super().__init__(name=name)
 
         # TODO: to make this a PML parameter, the *normal* curl equations need to be updated
         self.k = 1.0
 
         self.a = a
-        self.thickness = thickness
 
     def _set_locations(self):
         """ helper function
@@ -164,14 +235,61 @@ class PML(Boundary):
         """ create a cubicly increasing profile for the conductivity """
         return 40 * vect ** 3 / (self.thickness + 1) ** 4
 
-    def register_grid(self, grid: Grid):
-        """ Register a grid for the PML
+    def _register_grid(self, grid: Grid, x: slice, y: slice, z: slice):
+        super()._register_grid(grid)
+
+        if (x.start is None or x.start == 0) and (x.stop is not None) and (x.stop > 0):
+            self.__class__ = _PMLXlow
+            if hasattr(grid, "_xlow_boundary"):
+                raise AttributeError("grid already has an xlow boundary!")
+            setattr(grid, "_xlow_boundary", self)
+            self._calculate_parameters(thickness=x.stop)
+        elif (x.start is not None) and (x.stop is None) and (x.start < 0):
+            self.__class__ = _PMLXhigh
+            if hasattr(grid, "_xhigh_boundary"):
+                raise AttributeError("grid already has an xhigh boundary!")
+            setattr(grid, "_xhigh_boundary", self)
+            self._calculate_parameters(thickness=-x.start)
+        elif (y.start is None or y.start == 0) and (y.stop is not None) and (y.stop > 0):
+            self.__class__ = _PMLYlow
+            if hasattr(grid, "_ylow_boundary"):
+                raise AttributeError("grid already has an ylow boundary!")
+            setattr(grid, "_ylow_boundary", self)
+            self._calculate_parameters(thickness=y.stop)
+        elif (y.start is not None) and (y.stop is None) and (y.start < 0):
+            self.__class__ = _PMLYhigh
+            if hasattr(grid, "_yhigh_boundary"):
+                raise AttributeError("grid already has an yhigh boundary!")
+            setattr(grid, "_yhigh_boundary", self)
+            self._calculate_parameters(thickness=-y.start)
+        elif (
+            (z.start is None or z.start == 0) and (z.stop is not None) and (z.stop > 0)
+        ):
+            self.__class__ = _PMLZlow
+            if hasattr(grid, "_zlow_boundary"):
+                raise AttributeError("grid already has an zlow boundary!")
+            setattr(grid, "_zlow_boundary", self)
+            self._calculate_parameters(thickness=z.stop)
+        elif (z.start is not None) and (z.stop is None) and (z.start < 0):
+            self.__class__ = _PMLZhigh
+            if hasattr(grid, "_zhigh_boundary"):
+                raise AttributeError("grid already has an zhigh boundary!")
+            setattr(grid, "_zhigh_boundary", self)
+            self._calculate_parameters(thickness=-z.start)
+        else:
+            raise IndexError(
+                "not a valid slice for a PML. Make sure the slice is at the border of the PML"
+            )
+
+    def _calculate_parameters(self, thickness: Number = 10):
+        """ Calculate the parameters for the PML
 
         Args:
-            grid: The grid to register the PML in
+            thickness: Number = 10: The thickness of the PML. The thickness can be specified as
+                integer [gridpoints] or as float [meters].
         """
-        self.grid = grid
-        self.thickness = self.grid._handle_distance(self.thickness)
+
+        self.thickness = self.grid._handle_distance(thickness)
 
         # set orientation dependent parameters: (different for x, y, z-PML)
         # NOTE: these methods are implemented by the subclasses of PML.
@@ -286,7 +404,7 @@ class PML(Boundary):
         self.phi_H[..., 2] = self.psi_Hz[..., 0] - self.psi_Hz[..., 1]
 
 
-class PMLXlow(PML):
+class _PMLXlow(PML):
     """ A perfectly matched layer to place where X is low. """
 
     def _set_locations(self):
@@ -309,7 +427,7 @@ class PMLXlow(PML):
         self.sigmaH[:-1, :, :, 0] = sigma[:, None, None]
 
 
-class PMLXhigh(PML):
+class _PMLXhigh(PML):
     """ A perfectly matched layer to place where X is high. """
 
     def _set_locations(self):
@@ -332,7 +450,7 @@ class PMLXhigh(PML):
         self.sigmaH[:-1, :, :, 0] = sigma[:, None, None]
 
 
-class PMLYlow(PML):
+class _PMLYlow(PML):
     """ A perfectly matched layer to place where Y is low. """
 
     def _set_locations(self):
@@ -355,7 +473,7 @@ class PMLYlow(PML):
         self.sigmaH[:, :-1, :, 1] = sigma[None, :, None]
 
 
-class PMLYhigh(PML):
+class _PMLYhigh(PML):
     """ A perfectly matched layer to place where Y is high. """
 
     def _set_locations(self):
@@ -378,7 +496,7 @@ class PMLYhigh(PML):
         self.sigmaH[:, :-1, :, 1] = sigma[None, :, None]
 
 
-class PMLZlow(PML):
+class _PMLZlow(PML):
     """ A perfectly matched layer to place where Z is low. """
 
     def _set_locations(self):
@@ -401,7 +519,7 @@ class PMLZlow(PML):
         self.sigmaH[:, :, :-1, 2] = sigma[None, None, :]
 
 
-class PMLZhigh(PML):
+class _PMLZhigh(PML):
     """ A perfectly matched layer to place where Z is high. """
 
     def _set_locations(self):

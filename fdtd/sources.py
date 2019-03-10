@@ -13,52 +13,56 @@ from .backend import Tensorlike
 from .backend import backend as bd
 
 
-## Source class
-class Source:
+## LineSource class
+class LineSource:
     def __init__(
         self,
-        p0: Tuple[Number, Number, Number],
-        p1: Tuple[Number, Number, Number],
         period: Number = 1,
         power: float = 1.0,
         phase_shift: float = 0.0,
+        name: str = None,
     ):
-        """ Create a Source with a gaussian profile spanning from `p0` to `p1`.
+        """ Create a LineSource with a gaussian profile spanning from `p0` to `p1`.
 
         Args:
-            p0: First point of the source. The coordinates can be specified as integers
-                [gridpoints] or as floats [meters].
-            p1: Last point of the source. The coordinates can be specified as integers
-                [gridpoints] or as floats [meters].
-            period = 1: The period of the source. The period can be specified as integer
-                [timesteps] or as float [seconds]
+            period = 1: The period of the source. The period can be specified
+                as integer [timesteps] or as float [seconds]
             power = 1.0: The power of the source
             phase_shift = 0.0: The phase offset of the source.
 
         Note:
-            The initialization of the source is not finished before it is registered on the
-            grid. This is done automatically by setting the source to be an attribute of the
-            grid.
+            The initialization of the source is not finished before it is
+            registered on the grid.
 
         """
         self.grid = None
         self.period = period
         self.power = power
         self.phase_shift = phase_shift
-        self.p0 = p0
-        self.p1 = p1
+        self.name = name
 
-    def register_grid(self, grid: Grid):
+    def _register_grid(self, grid: Grid, x: slice, y: slice, z: slice):
         """ Register a grid for the source.
 
         Args:
             grid: The grid to register the source in.
-
+            x: slice: start and stop x-location of the source
+            y: slice: start and stop y-location of the source
+            z: slice: start and stop z-location of the source
         """
         self.grid = grid
+        self.grid._sources.append(self)
+        if self.name is not None:
+            if not hasattr(grid, self.name):
+                setattr(grid, self.name, self)
+            else:
+                raise ValueError(
+                    f"The grid already has an attribute with name {self.name}"
+                )
+
         self.period = grid._handle_time(self.period)
-        self.p0 = self.grid._handle_tuple(self.p0)
-        self.p1 = self.grid._handle_tuple(self.p1)
+        self.p0 = self.grid._handle_tuple((x.start, y.start, z.start))
+        self.p1 = self.grid._handle_tuple((x.stop, y.stop, z.stop))
         self.x, self.y, self.z = self._get_location(self.p0, self.p1)
         L = self.x.shape[0]
 
@@ -87,8 +91,10 @@ class Source:
         """ get the line of points spanning between `p0` and `p1`.
 
         Args:
-            p0: The first point of the source specified as a tuple of gridpoint coordinates
-            p1: The second point of the source specified as a tuple of gridpoint coordinates
+            p0: The first point of the source specified as a tuple of
+                gridpoint coordinates
+            p1: The second point of the source specified as a tuple of
+                gridpoint coordinates
 
         Returns:
             x, y, z: the x, y and z coordinates of the source
@@ -116,4 +122,4 @@ class Source:
         pass
 
     def __repr__(self):
-        return f"Source(p0={self.p0}, p1={self.p1}, period={self.period}, power={self.power})"
+        return f"{self.__class__.__name__}(period={self.period}, power={self.power}, phase_shift={self.phase_shift}, name={repr(self.name)})"

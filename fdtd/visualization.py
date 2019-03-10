@@ -12,7 +12,7 @@ from .backend import backend as bd
 
 
 def visualize(
-    grid, cmap="Blues", pbcolor="red", pmlcolor=(0, 0, 0, 0.1), objcolor=(1, 0, 0, 0.1)
+    grid, cmap="Blues", pbcolor="C3", pmlcolor=(0, 0, 0, 0.1), objcolor=(1, 0, 0, 0.1), srccolor="C0"
 ):
     """ visualize the grid and the optical energy inside the grid
 
@@ -21,17 +21,28 @@ def visualize(
 
     Kwargs:
         cmap='Blues': the colormap to visualize the energy in the grid
-        pbcolor='red': the color to show the periodic boundaries
-        pmlcolor=(0,0,0,0.1): the color to show the PML
+        pbcolor='C3': the color to visualize the periodic boundaries
+        pmlcolor=(0,0,0,0.1): the color to visualize the PML
+        objcolor=(1,0,0,0.1): the color to visualize the objects in the grid
+        objcolor='C0': the color to visualize the sources in the grid
     """
     # imports (placed here to circumvent circular imports)
-    from .boundaries import PeriodicBoundaryX, PeriodicBoundaryY, PeriodicBoundaryZ
-    from .boundaries import PMLXlow, PMLXhigh, PMLYlow, PMLYhigh, PMLZlow, PMLZhigh
+    from .boundaries import _PeriodicBoundaryX, _PeriodicBoundaryY, _PeriodicBoundaryZ
+    from .boundaries import (
+        _PMLXlow,
+        _PMLXhigh,
+        _PMLYlow,
+        _PMLYhigh,
+        _PMLZlow,
+        _PMLZhigh,
+    )
     from .objects import Object
 
     # just to create the right legend entries:
-    plt.plot([], lw=5, color=pmlcolor, label="PML")
-    plt.plot([], lw=3, color=pbcolor, label="Periodic Boundary")
+    plt.plot([], lw=7, color=objcolor, label="Objects")
+    plt.plot([], lw=7, color=pmlcolor, label="PML")
+    plt.plot([], lw=3, color=pbcolor, label="Periodic Boundaries")
+    plt.plot([], lw=3, color=srccolor, label="Sources")
 
     # Grid energy
     grid_energy = bd.sum(grid.E ** 2 + grid.H ** 2, -1)
@@ -39,30 +50,30 @@ def visualize(
         assert grid.Ny > 1 and grid.Nz > 1
         xlabel, ylabel = "y", "z"
         Nx, Ny = grid.Ny, grid.Nz
-        pbx, pby = PeriodicBoundaryY, PeriodicBoundaryZ
-        pmlxl, pmlxh, pmlyl, pmlyh = PMLYlow, PMLYhigh, PMLZlow, PMLZhigh
+        pbx, pby = _PeriodicBoundaryY, _PeriodicBoundaryZ
+        pmlxl, pmlxh, pmlyl, pmlyh = _PMLYlow, _PMLYhigh, _PMLZlow, _PMLZhigh
         grid_energy = grid_energy[0, :, :]
     elif grid.Ny == 1:
         assert grid.Nx > 1 and grid.Nz > 1
         xlabel, ylabel = "z", "x"
         Nx, Ny = grid.Nz, grid.Nx
-        pbx, pby = PeriodicBoundaryZ, PeriodicBoundaryX
-        pmlxl, pmlxh, pmlyl, pmlyh = PMLZlow, PMLZhigh, PMLXlow, PMLXhigh
+        pbx, pby = _PeriodicBoundaryZ, _PeriodicBoundaryX
+        pmlxl, pmlxh, pmlyl, pmlyh = _PMLZlow, _PMLZhigh, _PMLXlow, _PMLXhigh
         grid_energy = grid_energy[:, 0, :].T
     elif grid.Nz == 1:
         assert grid.Nx > 1 and grid.Ny > 1
         xlabel, ylabel = "x", "y"
         Nx, Ny = grid.Nx, grid.Ny
-        pbx, pby = PeriodicBoundaryX, PeriodicBoundaryY
-        pmlxl, pmlxh, pmlyl, pmlyh = PMLXlow, PMLXhigh, PMLYlow, PMLYhigh
+        pbx, pby = _PeriodicBoundaryX, _PeriodicBoundaryY
+        pmlxl, pmlxh, pmlyl, pmlyh = _PMLXlow, _PMLXhigh, _PMLYlow, _PMLYhigh
         grid_energy = grid_energy[:, :, 0]
     else:
         raise ValueError("Visualization only works for 2D grids")
     plt.imshow(bd.numpy(grid_energy), cmap=cmap)
 
     # Sources
-    plt.plot([])  # cycle to C1
-    for name, source in grid._sources.items():
+    for source in grid._sources:
+        name = source.name
         if grid.Nx == 1:
             x = [source.y[0], source.y[-1]]
             y = [source.z[0], source.z[-1]]
@@ -73,10 +84,11 @@ def visualize(
             x = [source.x[0], source.x[-1]]
             y = [source.y[0], source.y[-1]]
 
-        plt.plot(y, x, lw=4, label=name)
+        plt.plot(y, x, lw=3, color=srccolor)
 
     # Boundaries
-    for name, boundary in grid._boundaries.items():
+    for boundary in grid._boundaries:
+        name = boundary.name
         if isinstance(boundary, pbx):
             x = [-0.5, -0.5, float("nan"), Nx - 0.5, Nx - 0.5]
             y = [-0.5, Ny - 0.5, float("nan"), -0.5, Ny - 0.5]
@@ -126,7 +138,8 @@ def visualize(
             )
             plt.gca().add_patch(patch)
 
-    for name, obj in grid._objects.items():
+    for obj in grid._objects:
+        name = obj.name
         if (xlabel, ylabel) == ("y", "z"):
             x = (obj.y.start, obj.y.stop)
             y = (obj.z.start, obj.z.stop)

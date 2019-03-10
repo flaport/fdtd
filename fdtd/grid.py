@@ -1,10 +1,13 @@
-## Imports
-import numpy as np
-from tqdm import tqdm
+# Standard Library
+from textwrap import dedent
 
 # Typing
 from typing import Tuple
 from numbers import Number
+
+## Imports
+import numpy as np
+from tqdm import tqdm
 
 # Relative
 from .backend import backend as bd
@@ -17,13 +20,14 @@ SPEED_LIGHT: float = 299_792_458.0  # [m/s] speed of light
 
 ## Functions
 def curl_E(E: Tensorlike) -> Tensorlike:
-    """ Transforms an E-type field into an H-type field by performing a curl operation
-
-    Args:
-        E: Electric field to take the curl of (E-type field located on integer grid points)
-
-    Returns:
-        curl_E: the curl of E (H-type field located on half-integer grid points)
+    """ Transforms an E-type field into an H-type field by performing a curl
+    operation
+    
+    Args: E: Electric field to take the curl of (E-type field located on
+        integer grid points)
+    
+    Returns: curl_E: the curl of E (H-type field located on half-integer grid
+        points)
     """
     curl_E = bd.zeros(E.shape)
 
@@ -40,10 +44,12 @@ def curl_E(E: Tensorlike) -> Tensorlike:
 
 
 def curl_H(H: Tensorlike) -> Tensorlike:
-    """ Transforms an H-type field into an E-type field by performing a curl operation
+    """ Transforms an H-type field into an E-type field by performing a curl
+    operation
 
     Args:
-        H: Magnetic field to take the curl of (H-type field located on half-integer grid points)
+        H: Magnetic field to take the curl of (H-type field located on
+            half-integer grid points)
 
     Returns:
         curl_H: the curl of H (E-type field located on integer grid points)
@@ -80,10 +86,10 @@ class Grid:
             grid_spacing = 50e-9: distance between the grid cells.
             permittivity = 1.0: the relative permittivity of the background.
             permeability = 1.0: the relative permeability of the background.
-            courant_number = None: the courant number of the FDTD simulation. Defaults to
-                the inverse of the square root of the number of dimensions > 1 (optimal
-                value). The timestep of the simulation will be derived from this number
-                using the CFL-condition.
+            courant_number = None: the courant number of the FDTD simulation.
+                Defaults to the inverse of the square root of the number of
+                dimensions > 1 (optimal value). The timestep of the simulation
+                will be derived from this number using the CFL-condition.
         """
         # save the grid spacing
         self.grid_spacing = float(grid_spacing)
@@ -121,16 +127,16 @@ class Grid:
         self.timesteps_passed = 0
 
         # dictionary containing the sources:
-        self._sources = {}
+        self._sources = []
 
         # dictionary containing the boundaries
-        self._boundaries = {}
+        self._boundaries = []
 
         # dictionary containing the detectors
-        self._detectors = {}
+        self._detectors = []
 
         # dictionary containing the objects in the grid
-        self._objects = {}
+        self._objects = []
 
     def _handle_distance(self, distance: Number) -> int:
         """ transform a distance to an integer number of gridpoints """
@@ -189,7 +195,8 @@ class Grid:
 
         Args:
             total_time: the total time for the simulation to run.
-            progress_bar = True: choose to show a progress bar during simulation
+            progress_bar = True: choose to show a progress bar during
+                simulation
 
         """
         if isinstance(total_time, float):
@@ -212,52 +219,52 @@ class Grid:
         """ update the electric field by using the curl of the magnetic field """
 
         # update boundaries: step 1
-        for boundary in self._boundaries.values():
+        for boundary in self._boundaries:
             boundary.update_phi_E()
 
         curl = curl_H(self.H)
         self.E += self.courant_number * self.inverse_permittivity * curl
 
         # update objects
-        for obj in self._objects.values():
+        for obj in self._objects:
             obj.update_E(curl)
 
         # update boundaries: step 2
-        for boundary in self._boundaries.values():
+        for boundary in self._boundaries:
             boundary.update_E()
 
         # add sources to grid:
-        for src in self._sources.values():
+        for src in self._sources:
             src.update_E()
 
         # detect electric field
-        for det in self._detectors.values():
+        for det in self._detectors:
             det.detect_E()
 
     def update_H(self):
         """ update the magnetic field by using the curl of the electric field """
 
         # update boundaries: step 1
-        for boundary in self._boundaries.values():
+        for boundary in self._boundaries:
             boundary.update_phi_H()
 
         curl = curl_E(self.E)
         self.H -= self.courant_number * self.inverse_permeability * curl
 
         # update objects
-        for obj in self._objects.values():
+        for obj in self._objects:
             obj.update_H(curl)
 
         # update boundaries: step 2
-        for boundary in self._boundaries.values():
+        for boundary in self._boundaries:
             boundary.update_H()
 
         # add sources to grid:
-        for src in self._sources.values():
+        for src in self._sources:
             src.update_H()
 
         # detect electric field
-        for det in self._detectors.values():
+        for det in self._detectors:
             det.detect_H()
 
     def reset(self):
@@ -268,54 +275,57 @@ class Grid:
 
     def add_source(self, name, source):
         """ add a source to the grid """
-        source.register_grid(self)
+        source._register_grid(self)
         self._sources[name] = source
 
     def add_boundary(self, name, boundary):
         """ add a boundary to the grid """
-        boundary.register_grid(self)
+        boundary._register_grid(self)
         self._boundaries[name] = boundary
 
     def add_detector(self, name, detector):
         """ add a detector to the grid """
-        detector.register_grid(self)
+        detector._register_grid(self)
         self._detectors[name] = detector
 
     def add_object(self, name, obj):
         """ add an object to the grid """
-        obj.register_grid(self)
+        obj._register_grid(self)
         self._objects[name] = obj
 
-    def __setattr__(self, key, attr):
-        if isinstance(attr, Source):
-            self.add_source(key, attr)
-        elif isinstance(attr, Boundary):
-            self.add_boundary(key, attr)
-        elif isinstance(attr, Detector):
-            self.add_detector(key, attr)
-        elif isinstance(attr, Object):
-            self.add_object(key, attr)
+    def __setitem__(self, key, attr):
+        if not isinstance(key, tuple):
+            x, y, z = key, slice(None), slice(None)
+        elif len(key) == 1:
+            x, y, z = key[0], slice(None), slice(None)
+        elif len(key) == 2:
+            x, y, z = key[0], key[1], slice(None)
+        elif len(key) == 3:
+            x, y, z = key
         else:
-            self.__dict__[key] = attr
+            raise KeyError("maximum number of indices for the grid is 3")
+        attr._register_grid(grid=self, x=x, y=y, z=z)
 
-    def __getattr__(self, key):
-        if key in self._sources:
-            return self._sources[key]
-        elif key in self._boundaries:
-            return self._boundaries[key]
-        elif key in self._detectors:
-            return self._detectors[key]
-        elif key in self._objects:
-            return self._objects[key]
-        else:
-            return self.__dict__[key]
+    def __str__(self):
+        """ string representation of the grid
 
+        lists all the components and their locations in the grid.
+        """
+        s = "Grid\n----\n\nsources:\n"
+        for src in self._sources:
+            s += "\t" + repr(src) + "\n"
+            s += f"\t\t@x={src.x}, y={src.y}, z={src.z}\n"
+        s = s + "\n\ndetectors:\n"
+        for det in self._detectors:
+            s += "\t" + repr(det) + "\n"
+            s += f"\t\t@x={det.x}, y={det.y}, z={det.z}\n"
+        s = s + "\n\nboundaries:\n"
+        for bnd in self._boundaries:
+            s += "\t" + repr(bnd) + "\n"
+            s += f"\t\t@x={bnd.x}, y={bnd.y}, z={bnd.z}\n"
+        s = s + "\n\nobjects:\n"
+        for obj in self._objects:
+            s += "\t" + repr(obj) + "\n"
+            s += f"\t\t@x={obj.x}, y={obj.y}, z={obj.z}\n"
 
-## Imports
-# placed here to prevent circular imports
-
-# relative
-from .sources import Source
-from .boundaries import Boundary
-from .detectors import Detector
-from .objects import Object
+        return s
