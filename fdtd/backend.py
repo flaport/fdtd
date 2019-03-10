@@ -55,7 +55,12 @@ class NumpyBackend(Backend):
     sum = staticmethod(numpy.sum)
     stack = staticmethod(numpy.stack)
     transpose = staticmethod(numpy.transpose)
+    reshape = staticmethod(numpy.reshape)
     squeeze = staticmethod(numpy.squeeze)
+
+    @staticmethod
+    def bmm(arr1, arr2):
+        return numpy.einsum("ijk,ikl->ijl", arr1, arr2)
 
     # constructors
     array = staticmethod(numpy.array)
@@ -85,12 +90,14 @@ if torch_available:
         sum = staticmethod(torch.sum)
         stack = staticmethod(torch.stack)
         squeeze = staticmethod(torch.squeeze)
+        reshape = staticmethod(torch.reshape)
+        bmm = staticmethod(torch.bmm)
 
         @staticmethod
-        def transpose(tensor, axes=None):
+        def transpose(arr, axes=None):
             if axes is None:
-                axes = tuple(range(len(tensor.shape) - 1, -1, -1))
-            return tensor.permute(*axes)
+                axes = tuple(range(len(arr.shape) - 1, -1, -1))
+            return arr.permute(*axes)
 
         # constructors
         ones = staticmethod(torch.ones)
