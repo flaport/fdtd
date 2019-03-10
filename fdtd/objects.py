@@ -46,15 +46,21 @@ class Object:
         self.Nz = abs(self.z.stop - self.z.start)
 
         self.inverse_permittivity = (
-            bd.ones((self.Nx, self.Ny, self.Nz, 3))/self._permittivity
+            bd.ones((self.Nx, self.Ny, self.Nz, 3)) / self._permittivity
         )
 
         if self.Nx > 1:
-            self.inverse_permittivity[-1,:,:,0] = self.grid.inverse_permittivity[-1,self.y,self.z,0]
+            self.inverse_permittivity[-1, :, :, 0] = self.grid.inverse_permittivity[
+                -1, self.y, self.z, 0
+            ]
         if self.Ny > 1:
-            self.inverse_permittivity[:,-1,:,1] = self.grid.inverse_permittivity[self.x,-1,self.z,1]
+            self.inverse_permittivity[:, -1, :, 1] = self.grid.inverse_permittivity[
+                self.x, -1, self.z, 1
+            ]
         if self.Nz > 1:
-            self.inverse_permittivity[:,:,-1,2] = self.grid.inverse_permittivity[self.x,self.y,-1,1]
+            self.inverse_permittivity[:, :, -1, 2] = self.grid.inverse_permittivity[
+                self.x, self.y, -1, 1
+            ]
 
         self.grid.inverse_permittivity[self.x, self.y, self.z] = 0
 
@@ -62,6 +68,34 @@ class Object:
         loc = (self.x, self.y, self.z)
         self.grid.E[loc] += (
             self.grid.courant_number * self.inverse_permittivity * curl_H[loc]
+        )
+
+    def update_H(self, curl_E):
+        pass
+
+
+class AnisotropicObject(Object):
+    """ An object with anisotropic permittivity tensor """
+
+    def register_grid(self, grid: Grid):
+        """ Register a grid to the object """
+        super().register_grid(grid)
+        eye = bd.zeros((self.Nx * self.Ny * self.Nz, 3, 3))
+        eye[:, range(3), range(3)] = 1.0
+        self.inverse_permittivity = bd.reshape(
+            bd.reshape(self.inverse_permittivity, (-1, 1, 3)) * eye,
+            (self.Nx, self.Ny, self.Nz, 3, 3),
+        )
+
+    def update_E(self, curl_H):
+        loc = (self.x, self.y, self.z)
+        self.grid.E[loc] += bd.reshape(
+            self.grid.courant_number
+            * bd.bmm(
+                bd.reshape(self.inverse_permittivity, (-1, 3, 3)),
+                bd.reshape(curl_H[loc], (-1, 3, 1)),
+            ),
+            (self.Nx, self.Ny, self.Nz, 3),
         )
 
     def update_H(self, curl_E):

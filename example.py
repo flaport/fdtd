@@ -11,7 +11,7 @@ import fdtd.backend as bd
 
 ## Set Backend
 
-fdtd.set_backend("torch.cuda")
+fdtd.set_backend("numpy")
 
 
 ## Simulation
@@ -31,8 +31,8 @@ grid.pml = fdtd.PMLYhigh(thickness=10)
 grid.pml2 = fdtd.PMLYlow(thickness=10)
 grid.pml3 = fdtd.PMLXhigh(thickness=10)
 grid.pml4 = fdtd.PMLXlow(thickness=10)
-grid.obj = fdtd.Object(
-    permittivity=np.inf, x=slice(11, 32), y=slice(30, 84), z=slice(0, 1)
+grid.obj = fdtd.AnisotropicObject(
+    permittivity=2.5, x=slice(11, 32), y=slice(30, 84), z=slice(0, 1)
 )
 
 

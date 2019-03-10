@@ -1,7 +1,7 @@
 from .grid import Grid
 from .sources import Source
 from .detectors import Detector
-from .objects import Object
+from .objects import Object, AnisotropicObject
 from .boundaries import (
     PeriodicBoundaryX,
     PeriodicBoundaryY,
