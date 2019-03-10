@@ -49,6 +49,8 @@ class Object:
             bd.ones((self.Nx, self.Ny, self.Nz, 3)) / self._permittivity
         )
 
+        # set the permittivity values of the object at its border to be equal
+        # to the grid permittivity. This way, the object is made symmetric.
         if self.Nx > 1:
             self.inverse_permittivity[-1, :, :, 0] = self.grid.inverse_permittivity[
                 -1, self.y, self.z, 0
@@ -59,7 +61,7 @@ class Object:
             ]
         if self.Nz > 1:
             self.inverse_permittivity[:, :, -1, 2] = self.grid.inverse_permittivity[
-                self.x, self.y, -1, 1
+                self.x, self.y, -1, 2
             ]
 
         self.grid.inverse_permittivity[self.x, self.y, self.z] = 0
