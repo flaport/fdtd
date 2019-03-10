@@ -124,6 +124,7 @@ class Grid:
         self.H -= self.courant_number * self.inverse_permeability * curl_E(self.E)
 ```
 
+
 ## Sources
 
 
@@ -201,18 +202,10 @@ Which, after substitution `σ := inv(ε)*σe/ε0` yield the new update equations
 ```
 
 If we want to keep track of the absorbed energy:
-```python
-    f = 0.5*dt*σ
-    Enoabs = E + sc*inv(ε)*curl_H
-    E *= inv(1 + f) * (1 - f)
-    E += inv(1 + f)*sc*inv(ε)*curl_H
-    dE = Enoabs - E
-    abs += ε*E*dE + 0.5*ε*dE**2
-```
 
 Note that the more complicated the permittivity tensor ε is, the more time consuming this
 algorithm will be. It is therefore sometimes the right decision to transfer the absorption to the magnetic domain by introducing a (*nonphysical*) magnetic conductivity, because
-the permeability µ usually has a much easier form.
+the permeability tensor µ is usually just equal to one.
 
 Which, after substitution `σ := inv(µ)*σm/µ0`, we get the magnetic field update equations:
 ```python
@@ -221,23 +214,65 @@ Which, after substitution `σ := inv(µ)*σm/µ0`, we get the magnetic field upd
     H += inv(1 + f)*sc*inv(µ)*curl_E
 ```
 
-or if we want to keep track of the absorbed energy:
+## Energy Density and Poynting Vector
+The electromagnetic energy density can be given by
+```python
+    e = (1/2)*ε*ε0*E**2 + (1/2)*µ*µ0*H**2
+```
+making the above substitutions, this becomes in simulation units:
+```python
+    e = (1/2)*ε*E**2 + (1/2)*µ*H**2
+```
+The Poynting vector is given by
+```python
+    P = E×H
+```
+Which in simulation units becomes
+```python
+    P = c*E×H
+```
+The energy introduced by a source `Es` can be derived from tracking the change in energy density
+```python
+    de = ε*Es·E + (1/2)*ε*Es**2
+```
+This could also be derived from Poyntings energy conservation law:
+```python
+    de/dt = -grad(S) - J·E
+```
+where the first term just describes the redistribution of energy in a volume and the second term describes
+the energy introduced by a current density.
+
+Note: although it is unphysical, one could also have introduced a magnetic source. This source would have introduced the following energy:
+```python
+    de = ε*Hs·H + (1/2)*µ*Hs**2
+```
+Since the µ-tensor is usually just equal to one, using a magnetic source term is often more efficient.
+
+Similarly, one can also keep track of the absorbed energy due to an electric conductivity in the following way:
+```python
+    f = 0.5*dt*σ
+    Enoabs = E + sc*inv(ε)*curl_H
+    E *= inv(1 + f) * (1 - f)
+    E += inv(1 + f)*sc*inv(ε)*curl_H
+    dE = Enoabs - E
+    e_abs += ε*E*dE + 0.5*ε*dE**2
+```
+
+or if we want to keep track of the absorbed energy by magnetic a magnetic conductivity:
 ```python
     f = 0.5*dt*inv(µ)*σ
     Hnoabs = E + sc*inv(µ)*curl_E
     H *= inv(1 + f) * (1 - f)
     H += inv(1 + f)*sc*inv(µ)*curl_E
     dH = Hnoabs - H
-    abs += µ*H*dH + 0.5*µ*dH**2
+    e_abs += µ*H*dH + 0.5*µ*dH**2
 ```
 
-The same amount of energy will be absorbed by introducing a *magnetic conductivity* σm
+The electric term and magnetic term in the energy density are usually of the same size. Therefore, the same amount of energy will be absorbed by introducing a *magnetic conductivity* σm
 as by introducing a *electric conductivity* σe if:
 ```python
     inv(µ)*σm/µ0 = inv(ε)*σe/ε0
 ```
-This is the motivation for substituting.
-
 
 ## Boundary Conditions
 
@@ -254,7 +289,6 @@ Concretely: `E[0]` needs to be set to equal `E[-1]`. For the magnetic field, the
 inverse is true: `H` is dependent on `curl_E`, which means that its last indices
 will not be set. This has to be done by the boundary condition: `H[-1]` needs to
 be set equal to `H[0]`:
-
 
 ```python
 class PeriodicBoundaryX:
