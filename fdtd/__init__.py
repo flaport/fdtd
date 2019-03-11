@@ -5,7 +5,7 @@ __version__ = "0.0.0"
 
 from .grid import Grid
 from .sources import LineSource
-from .detectors import Detector
+from .detectors import LineDetector
 from .objects import Object, AnisotropicObject
 from .boundaries import PeriodicBoundary, PML
 from .backend import backend
