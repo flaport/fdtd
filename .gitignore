@@ -46,3 +46,8 @@ htmlcov/*
 
 # mypy
 .mypy_cache
+
+# pip
+build
+dist
+
