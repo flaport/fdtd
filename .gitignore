@@ -44,13 +44,5 @@ tempCodeRunnerFile.py
 htmlcov/*
 .coverage
 
-# latex
-*.gz
-*.tex
-*.pdf
-*.aux
-*.out
-*.toc
-*.tdo
-*.bbl
-*.blg
+# mypy
+.mypy_cache
