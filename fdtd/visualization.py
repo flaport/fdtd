@@ -12,7 +12,13 @@ from .backend import backend as bd
 
 
 def visualize(
-    grid, cmap="Blues", pbcolor="C3", pmlcolor=(0, 0, 0, 0.1), objcolor=(1, 0, 0, 0.1), srccolor="C0", detcolor="C2"
+    grid,
+    cmap="Blues",
+    pbcolor="C3",
+    pmlcolor=(0, 0, 0, 0.1),
+    objcolor=(1, 0, 0, 0.1),
+    srccolor="C0",
+    detcolor="C2",
 ):
     """ visualize the grid and the optical energy inside the grid
 
@@ -91,24 +97,48 @@ def visualize(
     for detector in grid._detectors:
         name = detector.name
         if grid.Nx == 1:
-            x = [detector.y.start, detector.y.stop] if isinstance(detector.y, slice) else [detector.y[0], detector.y[-1]]
+            x = (
+                [detector.y.start, detector.y.stop]
+                if isinstance(detector.y, slice)
+                else [detector.y[0], detector.y[-1]]
+            )
             x[0] = x[0] if x[0] is not None else 0
             x[1] = x[1] if x[1] is not None else grid.Ny
-            y = [detector.z.start, detector.z.stop] if isinstance(detector.z, slice) else [detector.z[0], detector.z[-1]]
+            y = (
+                [detector.z.start, detector.z.stop]
+                if isinstance(detector.z, slice)
+                else [detector.z[0], detector.z[-1]]
+            )
             y[0] = y[0] if y[0] is not None else 0
             y[1] = y[1] if y[1] is not None else grid.Nz
         elif grid.Ny == 1:
-            x = [detector.z.start, detector.z.stop] if isinstance(detector.z, slice) else [detector.z[0], detector.z[-1]]
+            x = (
+                [detector.z.start, detector.z.stop]
+                if isinstance(detector.z, slice)
+                else [detector.z[0], detector.z[-1]]
+            )
             x[0] = x[0] if x[0] is not None else 0
             x[1] = x[1] if x[1] is not None else grid.Nz
-            y = [detector.x.start, detector.x.stop] if isinstance(detector.x, slice) else [detector.x[0], detector.x[-1]]
+            y = (
+                [detector.x.start, detector.x.stop]
+                if isinstance(detector.x, slice)
+                else [detector.x[0], detector.x[-1]]
+            )
             y[0] = y[0] if y[0] is not None else 0
             y[1] = y[1] if y[1] is not None else grid.Nx
         elif grid.Nz == 1:
-            x = [detector.x.start, detector.x.stop] if isinstance(detector.x, slice) else [detector.x[0], detector.x[-1]]
+            x = (
+                [detector.x.start, detector.x.stop]
+                if isinstance(detector.x, slice)
+                else [detector.x[0], detector.x[-1]]
+            )
             x[0] = x[0] if x[0] is not None else 0
             x[1] = x[1] if x[1] is not None else grid.Nx
-            y = [detector.y.start, detector.y.stop] if isinstance(detector.y, slice) else [detector.y[0], detector.y[-1]]
+            y = (
+                [detector.y.start, detector.y.stop]
+                if isinstance(detector.y, slice)
+                else [detector.y[0], detector.y[-1]]
+            )
             y[0] = y[0] if y[0] is not None else 0
             y[1] = y[1] if y[1] is not None else grid.Ny
 

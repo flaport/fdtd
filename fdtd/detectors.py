@@ -23,11 +23,7 @@ class Detector:
         self.name = name
 
     def _register_grid(
-        self,
-        grid: Grid,
-        x: ListOrSlice,
-        y: ListOrSlice,
-        z: ListOrSlice,
+        self, grid: Grid, x: ListOrSlice, y: ListOrSlice, z: ListOrSlice
     ):
         """ Register a grid to the detector
 

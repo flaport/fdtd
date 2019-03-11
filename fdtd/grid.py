@@ -113,11 +113,11 @@ class Grid:
 
         # save the inverse of the relative permittiviy and the relative permeability
         # these tensors can be anisotropic!
-        self.inverse_permittivity = (
-            bd.ones((self.Nx, self.Ny, self.Nz, 3)) / float(permittivity)
+        self.inverse_permittivity = bd.ones((self.Nx, self.Ny, self.Nz, 3)) / float(
+            permittivity
         )
-        self.inverse_permeability = (
-            bd.ones((self.Nx, self.Ny, self.Nz, 3)) / float(permeability)
+        self.inverse_permeability = bd.ones((self.Nx, self.Ny, self.Nz, 3)) / float(
+            permeability
         )
 
         # save current time index
@@ -164,9 +164,17 @@ class Grid:
 
     def _handle_slice(self, s: slice) -> slice:
         """ validate the slice and transform possibly float values to ints """
-        start = s.start if not isinstance(s.start, float) else self._handle_distance(s.start)
-        stop = s.stop if not isinstance(s.stop, float) else self._handle_distance(s.stop)
-        step = s.step if not isinstance(s.step, float) else self._handle_distance(s.step)
+        start = (
+            s.start
+            if not isinstance(s.start, float)
+            else self._handle_distance(s.start)
+        )
+        stop = (
+            s.stop if not isinstance(s.stop, float) else self._handle_distance(s.stop)
+        )
+        step = (
+            s.step if not isinstance(s.step, float) else self._handle_distance(s.step)
+        )
         return slice(start, stop, step)
 
     def _handle_single_key(self, key):

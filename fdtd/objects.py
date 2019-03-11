@@ -19,11 +19,7 @@ class Object:
         self._permittivity = permittivity
 
     def _register_grid(
-        self,
-        grid: Grid,
-        x: ListOrSlice,
-        y: ListOrSlice,
-        z: ListOrSlice,
+        self, grid: Grid, x: ListOrSlice, y: ListOrSlice, z: ListOrSlice
     ):
         """ Register the object to the grid
 
@@ -71,15 +67,19 @@ class Object:
 
         self.grid.inverse_permittivity[self.x, self.y, self.z] = 0
 
-    def _handle_slice(self, s: ListOrSlice, max_index: int=None) -> slice:
+    def _handle_slice(self, s: ListOrSlice, max_index: int = None) -> slice:
         if isinstance(s, list):
             if len(s) == 1:
                 return slice(s[0], s[0] + 1, None)
-            raise IndexError("One can only use slices or single indices to index the grid for an Object")
+            raise IndexError(
+                "One can only use slices or single indices to index the grid for an Object"
+            )
         if isinstance(s, slice):
             start, stop, step = s.start, s.stop, s.step
             if step is not None and step != 1:
-                raise IndexError("Can only use slices with unit step to index the grid for an Object")
+                raise IndexError(
+                    "Can only use slices with unit step to index the grid for an Object"
+                )
             if start is None:
                 start = 0
             if stop is None:

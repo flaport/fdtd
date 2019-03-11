@@ -22,10 +22,17 @@ SPEED_LIGHT: float = 299_792_458.0  # [m/s] speed of light
 ## Simulation
 
 # create FDTD Grid
-grid = fdtd.Grid((2.5e-5, 1.5e-5, 1), grid_spacing=0.1*WAVELENGTH, permittivity=1.0, permeability=1.0)
+grid = fdtd.Grid(
+    (2.5e-5, 1.5e-5, 1),
+    grid_spacing=0.1 * WAVELENGTH,
+    permittivity=1.0,
+    permeability=1.0,
+)
 
 # sources
-grid[7.5e-6:8.0e-6, 11.8e-6:13.0e-6, 0] = fdtd.LineSource(period=WAVELENGTH/SPEED_LIGHT, name="source")
+grid[7.5e-6:8.0e-6, 11.8e-6:13.0e-6, 0] = fdtd.LineSource(
+    period=WAVELENGTH / SPEED_LIGHT, name="source"
+)
 
 # detectors
 grid[12e-6, :, 0] = fdtd.Detector(name="detector")

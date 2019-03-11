@@ -12,7 +12,7 @@ from .backend import backend as bd
 class _Boundary:
     """ an FDTD Boundary [base class] """
 
-    def __init__(self, name:str=None):
+    def __init__(self, name: str = None):
         """ Create a boundary
 
         Args:
@@ -22,11 +22,7 @@ class _Boundary:
         self.name = name
 
     def _register_grid(
-        self,
-        grid: Grid,
-        x: ListOrSlice,
-        y: ListOrSlice,
-        z: ListOrSlice,
+        self, grid: Grid, x: ListOrSlice, y: ListOrSlice, z: ListOrSlice
     ):
         """ Register a grid to the boundary
 
@@ -57,10 +53,16 @@ class _Boundary:
     def _handle_slice(self, s: ListOrSlice) -> IntOrSlice:
         if isinstance(s, list):
             if len(s) > 1:
-                raise ValueError("Use slices or single numbers to index the grid for a boundary")
+                raise ValueError(
+                    "Use slices or single numbers to index the grid for a boundary"
+                )
             return s[0]
         if isinstance(s, slice):
-            if s.start is not None and s.stop is not None and (s.start == s.stop or abs(s.start - s.stop) == 1):
+            if (
+                s.start is not None
+                and s.stop is not None
+                and (s.start == s.stop or abs(s.start - s.stop) == 1)
+            ):
                 return s.start
             return s
         raise ValueError("Invalid grid indexing used for boundary")
@@ -111,13 +113,10 @@ class PeriodicBoundary(_Boundary):
         _PeriodicBoundaryY or _PeriodicBoundaryY, depending on the position
         in the grid.
     """
+
     def _register_grid(
-            self,
-            grid: Grid,
-            x: ListOrSlice,
-            y: ListOrSlice,
-            z: ListOrSlice,
-        ):
+        self, grid: Grid, x: ListOrSlice, y: ListOrSlice, z: ListOrSlice
+    ):
 
         super()._register_grid(grid=grid, x=x, y=y, z=z)
 
@@ -144,7 +143,6 @@ class PeriodicBoundary(_Boundary):
                 "A periodic boundary should be placed at the boundary of the "
                 "grid (index 0)"
             )
-
 
 
 # Periodic Boundaries in the X-direction
@@ -258,48 +256,60 @@ class PML(_Boundary):
         return 40 * vect ** 3 / (self.thickness + 1) ** 4
 
     def _register_grid(
-            self,
-            grid: Grid,
-            x: ListOrSlice,
-            y: ListOrSlice,
-            z: ListOrSlice
-        ):
+        self, grid: Grid, x: ListOrSlice, y: ListOrSlice, z: ListOrSlice
+    ):
 
         super()._register_grid(grid=grid, x=x, y=y, z=z)
 
-        if (self.x.start is None or self.x.start == 0) and (self.x.stop is not None) and (self.x.stop > 0):
+        if (
+            (self.x.start is None or self.x.start == 0)
+            and (self.x.stop is not None)
+            and (self.x.stop > 0)
+        ):
             self.__class__ = _PMLXlow
             if hasattr(grid, "_xlow_boundary"):
                 raise AttributeError("grid already has an xlow boundary!")
             setattr(grid, "_xlow_boundary", self)
             self._calculate_parameters(thickness=self.x.stop)
-        elif (self.x.start is not None) and (self.x.stop is None) and (self.x.start < 0):
+        elif (
+            (self.x.start is not None) and (self.x.stop is None) and (self.x.start < 0)
+        ):
             self.__class__ = _PMLXhigh
             if hasattr(grid, "_xhigh_boundary"):
                 raise AttributeError("grid already has an xhigh boundary!")
             setattr(grid, "_xhigh_boundary", self)
             self._calculate_parameters(thickness=-self.x.start)
-        elif (self.y.start is None or self.y.start == 0) and (self.y.stop is not None) and (self.y.stop > 0):
+        elif (
+            (self.y.start is None or self.y.start == 0)
+            and (self.y.stop is not None)
+            and (self.y.stop > 0)
+        ):
             self.__class__ = _PMLYlow
             if hasattr(grid, "_ylow_boundary"):
                 raise AttributeError("grid already has an ylow boundary!")
             setattr(grid, "_ylow_boundary", self)
             self._calculate_parameters(thickness=self.y.stop)
-        elif (self.y.start is not None) and (self.y.stop is None) and (self.y.start < 0):
+        elif (
+            (self.y.start is not None) and (self.y.stop is None) and (self.y.start < 0)
+        ):
             self.__class__ = _PMLYhigh
             if hasattr(grid, "_yhigh_boundary"):
                 raise AttributeError("grid already has an yhigh boundary!")
             setattr(grid, "_yhigh_boundary", self)
             self._calculate_parameters(thickness=-self.y.start)
         elif (
-            (self.z.start is None or self.z.start == 0) and (self.z.stop is not None) and (self.z.stop > 0)
+            (self.z.start is None or self.z.start == 0)
+            and (self.z.stop is not None)
+            and (self.z.stop > 0)
         ):
             self.__class__ = _PMLZlow
             if hasattr(grid, "_zlow_boundary"):
                 raise AttributeError("grid already has an zlow boundary!")
             setattr(grid, "_zlow_boundary", self)
             self._calculate_parameters(thickness=self.z.stop)
-        elif (self.z.start is not None) and (self.z.stop is None) and (self.z.start < 0):
+        elif (
+            (self.z.start is not None) and (self.z.stop is None) and (self.z.start < 0)
+        ):
             self.__class__ = _PMLZhigh
             if hasattr(grid, "_zhigh_boundary"):
                 raise AttributeError("grid already has an zhigh boundary!")

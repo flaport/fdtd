@@ -14,6 +14,7 @@ from .backend import backend as bd
 ## LineSource class
 class LineSource:
     """ A source along a line in the grid """
+
     def __init__(
         self,
         period: Number = 15,
@@ -41,12 +42,8 @@ class LineSource:
         self.name = name
 
     def _register_grid(
-            self,
-            grid: Grid,
-            x: ListOrSlice,
-            y: ListOrSlice,
-            z: ListOrSlice
-        ):
+        self, grid: Grid, x: ListOrSlice, y: ListOrSlice, z: ListOrSlice
+    ):
         """ Register a grid for the source.
 
         Args:
@@ -90,11 +87,8 @@ class LineSource:
         self.profile *= amplitude
 
     def _handle_slices(
-        self,
-        x: ListOrSlice,
-        y: ListOrSlice,
-        z: ListOrSlice
-        ) -> Tuple[List, List, List]:
+        self, x: ListOrSlice, y: ListOrSlice, z: ListOrSlice
+    ) -> Tuple[List, List, List]:
         """ Convert slices in the grid to lists
 
         This is necessary to make the source span the diagonal of the volume
@@ -113,7 +107,9 @@ class LineSource:
         # if list-indices were chosen:
         if isinstance(x, list) and isinstance(y, list) and isinstance(z, list):
             if len(x) != len(y) or len(y) != len(z) or len(z) != len(x):
-                raise IndexError("sources require grid to be indexed with slices or equal length list-indices")
+                raise IndexError(
+                    "sources require grid to be indexed with slices or equal length list-indices"
+                )
             return x, y, z
 
         # if a combination of list-indices and slices were chosen,
