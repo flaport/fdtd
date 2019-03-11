@@ -1,3 +1,10 @@
+""" FDTD visualization
+
+This module supplies visualization methods for the FDTD Grid. They are
+imported by the Grid class and hence are available as Grid methods.
+
+"""
+
 ## Imports
 
 # plotting
@@ -42,7 +49,6 @@ def visualize(
         _PMLZlow,
         _PMLZhigh,
     )
-    from .objects import Object
 
     # just to create the right legend entries:
     plt.plot([], lw=7, color=objcolor, label="Objects")
@@ -80,7 +86,6 @@ def visualize(
 
     # Sources
     for source in grid._sources:
-        name = source.name
         if grid.Nx == 1:
             x = [source.y[0], source.y[-1]]
             y = [source.z[0], source.z[-1]]
@@ -95,7 +100,6 @@ def visualize(
 
     # Detectors
     for detector in grid._detectors:
-        name = detector.name
         if grid.Nx == 1:
             x = (
                 [detector.y.start, detector.y.stop]
@@ -146,7 +150,6 @@ def visualize(
 
     # Boundaries
     for boundary in grid._boundaries:
-        name = boundary.name
         if isinstance(boundary, pbx):
             x = [-0.5, -0.5, float("nan"), Nx - 0.5, Nx - 0.5]
             y = [-0.5, Ny - 0.5, float("nan"), -0.5, Ny - 0.5]
@@ -197,7 +200,6 @@ def visualize(
             plt.gca().add_patch(patch)
 
     for obj in grid._objects:
-        name = obj.name
         if (xlabel, ylabel) == ("y", "z"):
             x = (obj.y.start, obj.y.stop)
             y = (obj.z.start, obj.z.stop)

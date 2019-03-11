@@ -1,3 +1,9 @@
+""" FDTD Common types
+
+Here are common types imported and constructed
+
+"""
+
 ## Standard Library Types
 from typing import Union, Tuple, List
 from numbers import Number

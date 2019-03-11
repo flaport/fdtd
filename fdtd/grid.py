@@ -1,7 +1,13 @@
+""" The FDTD Grid
+
+The grid is the core of the FDTD Library. It is where everything comes
+together and where the biggest part of the calculations are done.
+
+"""
+
 ## Imports
 
 # 3rd party
-import numpy as np
 from tqdm import tqdm
 
 # typing
@@ -26,18 +32,18 @@ def curl_E(E: Tensorlike) -> Tensorlike:
     Returns: curl_E: the curl of E (H-type field located on half-integer grid
         points)
     """
-    curl_E = bd.zeros(E.shape)
+    curl = bd.zeros(E.shape)
 
-    curl_E[:, :-1, :, 0] += E[:, 1:, :, 2] - E[:, :-1, :, 2]
-    curl_E[:, :, :-1, 0] -= E[:, :, 1:, 1] - E[:, :, :-1, 1]
+    curl[:, :-1, :, 0] += E[:, 1:, :, 2] - E[:, :-1, :, 2]
+    curl[:, :, :-1, 0] -= E[:, :, 1:, 1] - E[:, :, :-1, 1]
 
-    curl_E[:, :, :-1, 1] += E[:, :, 1:, 0] - E[:, :, :-1, 0]
-    curl_E[:-1, :, :, 1] -= E[1:, :, :, 2] - E[:-1, :, :, 2]
+    curl[:, :, :-1, 1] += E[:, :, 1:, 0] - E[:, :, :-1, 0]
+    curl[:-1, :, :, 1] -= E[1:, :, :, 2] - E[:-1, :, :, 2]
 
-    curl_E[:-1, :, :, 2] += E[1:, :, :, 1] - E[:-1, :, :, 1]
-    curl_E[:, :-1, :, 2] -= E[:, 1:, :, 0] - E[:, :-1, :, 0]
+    curl[:-1, :, :, 2] += E[1:, :, :, 1] - E[:-1, :, :, 1]
+    curl[:, :-1, :, 2] -= E[:, 1:, :, 0] - E[:, :-1, :, 0]
 
-    return curl_E
+    return curl
 
 
 def curl_H(H: Tensorlike) -> Tensorlike:
@@ -51,22 +57,29 @@ def curl_H(H: Tensorlike) -> Tensorlike:
     Returns:
         curl_H: the curl of H (E-type field located on integer grid points)
     """
-    curl_H = bd.zeros(H.shape)
+    curl = bd.zeros(H.shape)
 
-    curl_H[:, 1:, :, 0] += H[:, 1:, :, 2] - H[:, :-1, :, 2]
-    curl_H[:, :, 1:, 0] -= H[:, :, 1:, 1] - H[:, :, :-1, 1]
+    curl[:, 1:, :, 0] += H[:, 1:, :, 2] - H[:, :-1, :, 2]
+    curl[:, :, 1:, 0] -= H[:, :, 1:, 1] - H[:, :, :-1, 1]
 
-    curl_H[:, :, 1:, 1] += H[:, :, 1:, 0] - H[:, :, :-1, 0]
-    curl_H[1:, :, :, 1] -= H[1:, :, :, 2] - H[:-1, :, :, 2]
+    curl[:, :, 1:, 1] += H[:, :, 1:, 0] - H[:, :, :-1, 0]
+    curl[1:, :, :, 1] -= H[1:, :, :, 2] - H[:-1, :, :, 2]
 
-    curl_H[1:, :, :, 2] += H[1:, :, :, 1] - H[:-1, :, :, 1]
-    curl_H[:, 1:, :, 2] -= H[:, 1:, :, 0] - H[:, :-1, :, 0]
+    curl[1:, :, :, 2] += H[1:, :, :, 1] - H[:-1, :, :, 1]
+    curl[:, 1:, :, 2] -= H[:, 1:, :, 0] - H[:, :-1, :, 0]
 
-    return curl_H
+    return curl
 
 
 ## FDTD Grid Class
 class Grid:
+    """ The FDTD Grid
+
+    The grid is the core of the FDTD Library. It is where everything comes
+    together and where the biggest part of the calculations are done.
+
+    """
+
     from .visualization import visualize
 
     def __init__(
@@ -187,7 +200,7 @@ class Grid:
                 return self._handle_slice(key)
             else:
                 return [self._handle_distance(key)]
-        return x
+        return key
 
     @property
     def x(self) -> int:

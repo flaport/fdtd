@@ -1,3 +1,5 @@
+""" Python 3D FDTD Simulator """
+
 from .grid import Grid
 from .sources import LineSource
 from .detectors import Detector

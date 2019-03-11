@@ -1,7 +1,15 @@
+""" FDTD Boundaries
+
+Boundaries for the FDTD Grid. Available Boundaries:
+
+ - PeriodicBoundary
+ - PML
+
+"""
 ## Imports
 
 # typing
-from .typing import Number, Tensorlike, ListOrSlice, IntOrSlice
+from .typing import Tensorlike, ListOrSlice, IntOrSlice
 
 # relative
 from .grid import Grid
@@ -73,7 +81,6 @@ class _Boundary:
         Note:
             this method is called *before* the electric field is updated
         """
-        pass
 
     def update_phi_H(self):
         """ Update convolution [phi_H]
@@ -81,7 +88,6 @@ class _Boundary:
         Note:
             this method is called *before* the magnetic field is updated
         """
-        pass
 
     def update_E(self):
         """ Update electric field of the grid
@@ -89,7 +95,6 @@ class _Boundary:
         Note:
             this method is called *after* the grid fields are updated
         """
-        pass
 
     def update_H(self):
         """ Update magnetic field of the grid
@@ -97,7 +102,6 @@ class _Boundary:
         Note:
             this method is called *after* the grid fields are updated
         """
-        pass
 
     def __repr__(self):
         return f"{self.__class__.__name__}(name={repr(self.name)})"
@@ -211,6 +215,7 @@ class PML(_Boundary):
 
         # TODO: to make this a PML parameter, the *normal* curl equations need to be updated
         self.k = 1.0
+        self.thickness = 0
 
         self.a = a
 

@@ -1,7 +1,19 @@
+""" FDTD Objects
+
+The objects to place in the grid. Objects define all the regions in the grid
+with a modified update equation, such as for example regions with anisotropic
+permittivity etc.
+
+Available Objects:
+ - Object
+ - AnisotropicObject
+
+"""
+
 ## Imports
 
 # typing
-from .typing import Number, Tensorlike, ListOrSlice
+from .typing import Tensorlike, ListOrSlice
 
 # relative
 from .grid import Grid
@@ -106,7 +118,6 @@ class Object:
             curl_E: the curl of electric field in the grid.
 
         """
-        pass
 
     def __repr__(self):
         return f"{self.__class__.__name__}(name={repr(self.name)})"
@@ -158,4 +169,3 @@ class AnisotropicObject(Object):
             curl_E: the curl of electric field in the grid.
 
         """
-        pass

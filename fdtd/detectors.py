@@ -1,11 +1,18 @@
+""" FDTD Detectors
+
+Detectors for the FDTD Grid. Available Detectors:
+
+ - Detector
+
+"""
+
 ## Imports
 
 # typing
-from .typing import Number, ListOrSlice
+from .typing import ListOrSlice
 
 # relative
 from .grid import Grid
-from .backend import backend as bd
 
 ## Detector
 class Detector:

@@ -1,3 +1,10 @@
+""" FDTD Sources
+
+Sources are objects that inject power into the grid. Available Sources:
+
+- LineSource
+
+"""
 ## Imports
 
 # other
@@ -143,7 +150,10 @@ class LineSource:
 
     def update_H(self):
         """ Add the source to the magnetic field """
-        pass
 
     def __repr__(self):
-        return f"{self.__class__.__name__}(period={self.period}, power={self.power}, phase_shift={self.phase_shift}, name={repr(self.name)})"
+        return (
+            f"{self.__class__.__name__}(period={self.period}, "
+            f"power={self.power}, phase_shift={self.phase_shift}, "
+            f"name={repr(self.name)})"
+        )

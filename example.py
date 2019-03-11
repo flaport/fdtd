@@ -1,7 +1,11 @@
+""" FDTD Example
+
+A simple example on how to use the FDTD Library
+
+"""
+
 ## Imports
 
-import time
-import numpy as np
 import matplotlib.pyplot as plt
 from line_profiler import LineProfiler
 
