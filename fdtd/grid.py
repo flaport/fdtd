@@ -85,7 +85,7 @@ class Grid:
     def __init__(
         self,
         shape: Tuple[Number, Number, Number],
-        grid_spacing: float = 25e-9,
+        grid_spacing: float = 155e-9,
         permittivity: float = 1.0,
         permeability: float = 1.0,
         courant_number: float = None,
@@ -111,14 +111,20 @@ class Grid:
         self.D = int(self.Nx > 1) + int(self.Ny > 1) + int(self.Nz > 1)
 
         # courant number of the simulation (optimal value)
+        max_courant_number = float(self.D) ** (-0.5)
         if courant_number is None:
-            courant_number = (
-                float(self.D) ** (-0.5) * 0.99
-            )  # slight stability factor added
-        self.courant_number = float(courant_number)
+            # slight stability factor added
+            self.courant_number = 0.99 * max_courant_number
+        elif courant_number > max_courant_number:
+            raise ValueError(
+                f"courant_number {courant_number} too high for "
+                f"a {self.D}D simulation"
+            )
+        else:
+            self.courant_number = float(courant_number)
 
         # timestep of the simulation
-        self.timestep = self.courant_number * self.grid_spacing / SPEED_LIGHT
+        self.time_step = self.courant_number * self.grid_spacing / SPEED_LIGHT
 
         # save electric and magnetic field
         self.E = bd.zeros((self.Nx, self.Ny, self.Nz, 3))
@@ -126,27 +132,33 @@ class Grid:
 
         # save the inverse of the relative permittiviy and the relative permeability
         # these tensors can be anisotropic!
+
+        if bd.is_array(permittivity) and len(permittivity.shape) == 3:
+            permittivity = permittivity[:, :, :, None]
         self.inverse_permittivity = bd.ones((self.Nx, self.Ny, self.Nz, 3)) / float(
             permittivity
         )
+
+        if bd.is_array(permeability) and len(permeability.shape) == 3:
+            permeability = permeability[:, :, :, None]
         self.inverse_permeability = bd.ones((self.Nx, self.Ny, self.Nz, 3)) / float(
             permeability
         )
 
         # save current time index
-        self.timesteps_passed = 0
+        self.time_steps_passed = 0
 
         # dictionary containing the sources:
-        self._sources = []
+        self.sources = []
 
         # dictionary containing the boundaries
-        self._boundaries = []
+        self.boundaries = []
 
         # dictionary containing the detectors
-        self._detectors = []
+        self.detectors = []
 
         # dictionary containing the objects in the grid
-        self._objects = []
+        self.objects = []
 
     def _handle_distance(self, distance: Number) -> int:
         """ transform a distance to an integer number of gridpoints """
@@ -157,7 +169,7 @@ class Grid:
     def _handle_time(self, time: Number) -> int:
         """ transform a time value to an integer number of timesteps """
         if not isinstance(time, int):
-            return int(float(time) / self.timestep + 0.5)
+            return int(float(time) / self.time_step + 0.5)
         return time
 
     def _handle_tuple(
@@ -225,7 +237,7 @@ class Grid:
     @property
     def time_passed(self) -> float:
         """ get the total time passed """
-        return self.timesteps_passed * self.timestep
+        return self.time_steps_passed * self.time_step
 
     def run(self, total_time: Number, progress_bar: bool = True):
         """ run an FDTD simulation.
@@ -237,7 +249,7 @@ class Grid:
 
         """
         if isinstance(total_time, float):
-            total_time /= self.timestep
+            total_time /= self.time_step
         time = range(0, int(total_time), 1)
         if progress_bar:
             time = tqdm(time)
@@ -250,85 +262,85 @@ class Grid:
         """
         self.update_E()
         self.update_H()
-        self.timesteps_passed += 1
+        self.time_steps_passed += 1
 
     def update_E(self):
         """ update the electric field by using the curl of the magnetic field """
 
         # update boundaries: step 1
-        for boundary in self._boundaries:
+        for boundary in self.boundaries:
             boundary.update_phi_E()
 
         curl = curl_H(self.H)
         self.E += self.courant_number * self.inverse_permittivity * curl
 
         # update objects
-        for obj in self._objects:
+        for obj in self.objects:
             obj.update_E(curl)
 
         # update boundaries: step 2
-        for boundary in self._boundaries:
+        for boundary in self.boundaries:
             boundary.update_E()
 
         # add sources to grid:
-        for src in self._sources:
+        for src in self.sources:
             src.update_E()
 
         # detect electric field
-        for det in self._detectors:
+        for det in self.detectors:
             det.detect_E()
 
     def update_H(self):
         """ update the magnetic field by using the curl of the electric field """
 
         # update boundaries: step 1
-        for boundary in self._boundaries:
+        for boundary in self.boundaries:
             boundary.update_phi_H()
 
         curl = curl_E(self.E)
         self.H -= self.courant_number * self.inverse_permeability * curl
 
         # update objects
-        for obj in self._objects:
+        for obj in self.objects:
             obj.update_H(curl)
 
         # update boundaries: step 2
-        for boundary in self._boundaries:
+        for boundary in self.boundaries:
             boundary.update_H()
 
         # add sources to grid:
-        for src in self._sources:
+        for src in self.sources:
             src.update_H()
 
         # detect electric field
-        for det in self._detectors:
+        for det in self.detectors:
             det.detect_H()
 
     def reset(self):
         """ reset the grid by setting all fields to zero """
         self.H *= 0.0
         self.E *= 0.0
-        self.timesteps_passed *= 0
+        self.time_steps_passed *= 0
 
     def add_source(self, name, source):
         """ add a source to the grid """
         source._register_grid(self)
-        self._sources[name] = source
+        self.sources[name] = source
 
     def add_boundary(self, name, boundary):
         """ add a boundary to the grid """
         boundary._register_grid(self)
-        self._boundaries[name] = boundary
+        self.boundaries[name] = boundary
 
     def add_detector(self, name, detector):
         """ add a detector to the grid """
         detector._register_grid(self)
-        self._detectors[name] = detector
+        self.detectors[name] = detector
 
     def add_object(self, name, obj):
         """ add an object to the grid """
         obj._register_grid(self)
-        self._objects[name] = obj
+        self.objects[name] = obj
 
     def __setitem__(self, key, attr):
         if not isinstance(key, tuple):
@@ -349,26 +361,32 @@ class Grid:
             z=self._handle_single_key(z),
         )
 
+    def __repr__(self):
+        return (
+            f"{self.__class__.__name__}(shape=({self.Nx},{self.Ny},{self.Nz}), "
+            f"grid_spacing={self.grid_spacing:.2e}, courant_number={self.courant_number:.2f})"
+        )
+
     def __str__(self):
         """ string representation of the grid
 
         lists all the components and their locations in the grid.
         """
-        s = "Grid\n----\n\nsources:\n"
-        for src in self._sources:
-            s += "\t" + repr(src) + "\n"
-            s += f"\t\t@x={src.x}, y={src.y}, z={src.z}\n"
-        s = s + "\n\ndetectors:\n"
-        for det in self._detectors:
-            s += "\t" + repr(det) + "\n"
-            s += f"\t\t@x={det.x}, y={det.y}, z={det.z}\n"
-        s = s + "\n\nboundaries:\n"
-        for bnd in self._boundaries:
-            s += "\t" + repr(bnd) + "\n"
-            s += f"\t\t@x={bnd.x}, y={bnd.y}, z={bnd.z}\n"
-        s = s + "\n\nobjects:\n"
-        for obj in self._objects:
-            s += "\t" + repr(obj) + "\n"
-            s += f"\t\t@x={obj.x}, y={obj.y}, z={obj.z}\n"
-
+        s = repr(self) + "\n"
+        if self.sources:
+            s = s + "\nsources:\n"
+            for src in self.sources:
+                s += str(src)
+        if self.detectors:
+            s = s + "\ndetectors:\n"
+            for det in self.detectors:
+                s += str(det)
+        if self.boundaries:
+            s = s + "\nboundaries:\n"
+            for bnd in self.boundaries:
+                s += str(bnd)
+        if self.objects:
+            s = s + "\nobjects:\n"
+            for obj in self.objects:
+                s += str(obj)
         return s
