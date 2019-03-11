@@ -42,7 +42,7 @@ class Object:
             z: the z-location of the object in the grid
         """
         self.grid = grid
-        self.grid._objects.append(self)
+        self.grid.objects.append(self)
         if self.name is not None:
             if not hasattr(grid, self.name):
                 setattr(grid, self.name, self)
@@ -58,6 +58,9 @@ class Object:
         self.Ny = abs(self.y.stop - self.y.start)
         self.Nz = abs(self.z.stop - self.z.start)
 
+        # set the permittivity of the object
+        if bd.is_array(self._permittivity) and len(self._permittivity.shape) == 3:
+            self._permittivity = self._permitivity[:, :, :, None]
         self.inverse_permittivity = (
             bd.ones((self.Nx, self.Ny, self.Nz, 3)) / self._permittivity
         )
@@ -121,6 +124,26 @@ class Object:
 
     def __repr__(self):
         return f"{self.__class__.__name__}(name={repr(self.name)})"
+
+    def __str__(self):
+        s = "    " + repr(self) + "\n"
+
+        def _handle_slice(s):
+            return (
+                str(s)
+                .replace("slice(", "")
+                .replace(")", "")
+                .replace(", ", ":")
+                .replace("None", "")
+            )
+
+        x = _handle_slice(self.x)
+        y = _handle_slice(self.y)
+        z = _handle_slice(self.z)
+        s += f"        @ x={x}, y={y}, z={z}".replace(":,", ",")
+        if s[-1] == ":":
+            s = s[:-1]
+        return s + "\n"
 
 
 class AnisotropicObject(Object):
