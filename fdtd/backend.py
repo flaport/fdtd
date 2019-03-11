@@ -67,6 +67,10 @@ class NumpyBackend(Backend):
         """ batch matrix multiply two arrays """
         return numpy.einsum("ijk,ikl->ijl", arr1, arr2)
 
+    def is_array(self, arr):
+        """ check if an object is an array """
+        return isinstance(arr, numpy.ndarray)
+
     # constructors
     array = staticmethod(numpy.array)
     ones = staticmethod(numpy.ones)
@@ -102,6 +106,10 @@ if TORCH_AVAILABLE:
             if axes is None:
                 axes = tuple(range(len(arr.shape) - 1, -1, -1))
             return arr.permute(*axes)
+
+        def is_array(self, arr):
+            """ check if an object is an array """
+            return torch.is_tensor(arr)
 
         # constructors
         ones = staticmethod(torch.ones)
@@ -174,12 +182,12 @@ backend = NumpyBackend()
 ## Set backend
 def set_backend(name: str):
     """ Set the backend for the FDTD simulations
-    
+
     This function monkeypatches the backend object by changing its class.
     This way, all methods of the backend object will be replaced.
 
     Args:
-        name: name of the backend. Allowed backend names: 
+        name: name of the backend. Allowed backend names:
             - "numpy" (defaults to float64 arrays)
             - "torch" (defaults to float64 tensors)
             - "torch.float32"
@@ -197,7 +205,7 @@ def set_backend(name: str):
             "Do you have a GPU on your computer?\n"
             "Is PyTorch with cuda support installed?"
         )
-    
+
     # change backend by monkeypatching
     if name == "numpy":
         backend.__class__ = NumpyBackend
