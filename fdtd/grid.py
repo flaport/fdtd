@@ -1,17 +1,14 @@
-# Standard Library
-from textwrap import dedent
-
-# Typing
-from typing import Tuple
-from numbers import Number
-
 ## Imports
+
+# 3rd party
 import numpy as np
 from tqdm import tqdm
 
-# Relative
+# typing
+from .typing import Tuple, Number, Tensorlike
+
+# relative
 from .backend import backend as bd
-from .backend import Tensorlike
 
 
 ## Constants
@@ -22,10 +19,10 @@ SPEED_LIGHT: float = 299_792_458.0  # [m/s] speed of light
 def curl_E(E: Tensorlike) -> Tensorlike:
     """ Transforms an E-type field into an H-type field by performing a curl
     operation
-    
+
     Args: E: Electric field to take the curl of (E-type field located on
         integer grid points)
-    
+
     Returns: curl_E: the curl of E (H-type field located on half-integer grid
         points)
     """
@@ -117,10 +114,10 @@ class Grid:
         # save the inverse of the relative permittiviy and the relative permeability
         # these tensors can be anisotropic!
         self.inverse_permittivity = (
-            bd.ones((self.Nx, self.Ny, self.Nz, 3)) / permittivity
+            bd.ones((self.Nx, self.Ny, self.Nz, 3)) / float(permittivity)
         )
         self.inverse_permeability = (
-            bd.ones((self.Nx, self.Ny, self.Nz, 3)) / permeability
+            bd.ones((self.Nx, self.Ny, self.Nz, 3)) / float(permeability)
         )
 
         # save current time index
@@ -164,6 +161,25 @@ class Grid:
         y = self._handle_distance(y)
         z = self._handle_distance(z)
         return x, y, z
+
+    def _handle_slice(self, s: slice) -> slice:
+        """ validate the slice and transform possibly float values to ints """
+        start = s.start if not isinstance(s.start, float) else self._handle_distance(s.start)
+        stop = s.stop if not isinstance(s.stop, float) else self._handle_distance(s.stop)
+        step = s.step if not isinstance(s.step, float) else self._handle_distance(s.step)
+        return slice(start, stop, step)
+
+    def _handle_single_key(self, key):
+        """ transform a single index key to a slice or list """
+        try:
+            len(key)
+            return [self._handle_distance(k) for k in key]
+        except TypeError:
+            if isinstance(key, slice):
+                return self._handle_slice(key)
+            else:
+                return [self._handle_distance(key)]
+        return x
 
     @property
     def x(self) -> int:
@@ -304,7 +320,13 @@ class Grid:
             x, y, z = key
         else:
             raise KeyError("maximum number of indices for the grid is 3")
-        attr._register_grid(grid=self, x=x, y=y, z=z)
+
+        attr._register_grid(
+            grid=self,
+            x=self._handle_single_key(x),
+            y=self._handle_single_key(y),
+            z=self._handle_single_key(z),
+        )
 
     def __str__(self):
         """ string representation of the grid

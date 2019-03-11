@@ -1,16 +1,11 @@
 ## Imports
 
 # typing
-from numbers import Number
-from typing import Union
+from .typing import Number, ListOrSlice
 
 # relative
 from .grid import Grid
 from .backend import backend as bd
-
-
-## Types
-number_list_or_slice = Union[Number, list, slice]
 
 ## Detector
 class Detector:
@@ -18,7 +13,7 @@ class Detector:
 
     def __init__(self, name=None):
         """ Create a detector
-        
+
         Args:
             name: str=None: name of the Detector
         """
@@ -30,17 +25,17 @@ class Detector:
     def _register_grid(
         self,
         grid: Grid,
-        x: number_list_or_slice = None,
-        y: number_list_or_slice = None,
-        z: number_list_or_slice = None,
+        x: ListOrSlice,
+        y: ListOrSlice,
+        z: ListOrSlice,
     ):
         """ Register a grid to the detector
-        
+
         Args:
-            grid: Grid: the grid to place the detector into 
-            x: slice = None: the x-location in the grid
-            y: slice = None: the y-location in the grid
-            z: slice = None: the z-location in the grid
+            grid: the grid to place the detector into
+            x: the x-location in the grid
+            y: the y-location in the grid
+            z: the z-location in the grid
         """
         self.grid = grid
         self.grid._detectors.append(self)
@@ -51,27 +46,9 @@ class Detector:
                 raise ValueError(
                     f"The grid already has an attribute with name {self.name}"
                 )
-
-        if isinstance(x, Number):
-            self.x = [grid._handle_distance(x)]
-        elif not isinstance(x, slice):
-            self.x = [grid._handle_distance(xx) for xx in x]
-        else:
-            self.x = x
-
-        if isinstance(y, Number):
-            self.y = [grid._handle_distance(y)]
-        elif not isinstance(y, slice):
-            self.y = [grid._handle_distance(yy) for yy in y]
-        else:
-            self.y = y
-
-        if isinstance(z, Number):
-            self.z = [grid._handle_distance(z)]
-        elif not isinstance(z, slice):
-            self.z = [grid._handle_distance(zz) for zz in z]
-        else:
-            self.z = z
+        self.x = x
+        self.y = y
+        self.z = z
 
     def detect_E(self):
         """ detect the electric field at a certain location in the grid """

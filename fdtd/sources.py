@@ -4,25 +4,24 @@
 from math import pi, sin
 
 # typing
-from typing import Tuple
-from numbers import Number
+from .typing import Tuple, Number, ListOrSlice, List
 
 # relatvie
 from .grid import Grid
-from .backend import Tensorlike
 from .backend import backend as bd
 
 
 ## LineSource class
 class LineSource:
+    """ A source along a line in the grid """
     def __init__(
         self,
-        period: Number = 1,
+        period: Number = 15,
         power: float = 1.0,
         phase_shift: float = 0.0,
         name: str = None,
     ):
-        """ Create a LineSource with a gaussian profile spanning from `p0` to `p1`.
+        """ Create a LineSource with a gaussian profile
 
         Args:
             period = 1: The period of the source. The period can be specified
@@ -41,14 +40,25 @@ class LineSource:
         self.phase_shift = phase_shift
         self.name = name
 
-    def _register_grid(self, grid: Grid, x: slice, y: slice, z: slice):
+    def _register_grid(
+            self,
+            grid: Grid,
+            x: ListOrSlice,
+            y: ListOrSlice,
+            z: ListOrSlice
+        ):
         """ Register a grid for the source.
 
         Args:
             grid: The grid to register the source in.
-            x: slice: start and stop x-location of the source
-            y: slice: start and stop y-location of the source
-            z: slice: start and stop z-location of the source
+            x: The x-location of the volume in the grid
+            y: The y-location of the volume in the grid
+            z: The z-location of the volume in the grid
+
+        Note:
+            As its name suggests, this source is a LINE source.
+            Hence the source spans the diagonal of the cube
+            defined by the slices in the grid.
         """
         self.grid = grid
         self.grid._sources.append(self)
@@ -60,52 +70,70 @@ class LineSource:
                     f"The grid already has an attribute with name {self.name}"
                 )
 
-        self.period = grid._handle_time(self.period)
-        self.p0 = self.grid._handle_tuple((x.start, y.start, z.start))
-        self.p1 = self.grid._handle_tuple((x.stop, y.stop, z.stop))
-        self.x, self.y, self.z = self._get_location(self.p0, self.p1)
-        L = self.x.shape[0]
+        self.x, self.y, self.z = self._handle_slices(x, y, z)
 
+        self.period = grid._handle_time(self.period)
         amplitude = (
             self.power * self.grid.inverse_permittivity[self.x, self.y, self.z, 2]
         ) ** 0.5
+
+        L = len(self.x)
         self.vect = bd.array(
-            (self.x - self.x[L // 2]) ** 2
-            + (self.y - self.y[L // 2]) ** 2
-            + (self.z - self.z[L // 2]) ** 2,
+            (bd.array(self.x) - self.x[L // 2]) ** 2
+            + (bd.array(self.y) - self.y[L // 2]) ** 2
+            + (bd.array(self.z) - self.z[L // 2]) ** 2,
             bd.float,
         )
+
         self.profile = bd.exp(-self.vect ** 2 / (2 * (0.5 * self.vect.max()) ** 2))
         self.profile /= self.profile.sum()
         self.profile *= amplitude
 
-        # convert locations to lists [performance boost]
-        self.x = [xx.item() for xx in self.x]
-        self.y = [yy.item() for yy in self.y]
-        self.z = [zz.item() for zz in self.z]
+    def _handle_slices(
+        self,
+        x: ListOrSlice,
+        y: ListOrSlice,
+        z: ListOrSlice
+        ) -> Tuple[List, List, List]:
+        """ Convert slices in the grid to lists
 
-    @staticmethod
-    def _get_location(
-        p0: Tuple[int, int, int], p1: Tuple[int, int, int]
-    ) -> Tuple[Tensorlike, Tensorlike, Tensorlike]:
-        """ get the line of points spanning between `p0` and `p1`.
+        This is necessary to make the source span the diagonal of the volume
+        defined by the slices.
 
         Args:
-            p0: The first point of the source specified as a tuple of
-                gridpoint coordinates
-            p1: The second point of the source specified as a tuple of
-                gridpoint coordinates
+            x: The x-location of the volume in the grid
+            y: The y-location of the volume in the grid
+            z: The z-location of the volume in the grid
 
         Returns:
-            x, y, z: the x, y and z coordinates of the source
+            x, y, z: the x, y and z coordinates of the source as lists
 
         """
-        x0, y0, z0 = p0
-        x1, y1, z1 = p1
+
+        # if list-indices were chosen:
+        if isinstance(x, list) and isinstance(y, list) and isinstance(z, list):
+            if len(x) != len(y) or len(y) != len(z) or len(z) != len(x):
+                raise IndexError("sources require grid to be indexed with slices or equal length list-indices")
+            return x, y, z
+
+        # if a combination of list-indices and slices were chosen,
+        # convert the list-indices to slices.
+        # TODO: maybe issue a warning here?
+        if isinstance(x, list):
+            x = slice(x[0], x[-1], None)
+        if isinstance(y, list):
+            y = slice(y[0], y[-1], None)
+        if isinstance(z, list):
+            z = slice(z[0], z[-1], None)
+
+        # if we get here, we can assume only well-behaved slices:
+        # we convert the slices into index lists
+        x0, y0, z0 = x.start, y.start, z.start
+        x1, y1, z1 = x.stop, y.stop, z.stop
         m = max(abs(x1 - x0), abs(y1 - y0), abs(z1 - z0))
-        x = bd.array(bd.linspace(x0, x1, m, endpoint=False), bd.int)
-        y = bd.array(bd.linspace(y0, y1, m, endpoint=False), bd.int)
-        z = bd.array(bd.linspace(z0, z1, m, endpoint=False), bd.int)
+        x = list(bd.array(bd.linspace(x0, x1, m, endpoint=False), bd.int))
+        y = list(bd.array(bd.linspace(y0, y1, m, endpoint=False), bd.int))
+        z = list(bd.array(bd.linspace(z0, z1, m, endpoint=False), bd.int))
         return x, y, z
 
     def update_E(self):

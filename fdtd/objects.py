@@ -1,12 +1,11 @@
 ## Imports
 
 # typing
-from numbers import Number
+from .typing import Number, Tensorlike, ListOrSlice
 
 # relative
 from .grid import Grid
 from .backend import backend as bd
-from .backend import Tensorlike
 
 
 ## Object
@@ -19,14 +18,20 @@ class Object:
         self.name = name
         self._permittivity = permittivity
 
-    def _register_grid(self, grid: Grid, x: slice, y: slice, z: slice):
-        """ Register a the object to the grid
-        
+    def _register_grid(
+        self,
+        grid: Grid,
+        x: ListOrSlice,
+        y: ListOrSlice,
+        z: ListOrSlice,
+    ):
+        """ Register the object to the grid
+
         Args:
-            grid: Grid: the grid to register the object into
-            x: slice = None: the x-location of the object in the grid
-            y: slice = None: the y-location of the object in the grid
-            z: slice = None: the z-location of the object in the grid
+            grid: the grid to register the object into
+            x: the x-location of the object in the grid
+            y: the y-location of the object in the grid
+            z: the z-location of the object in the grid
         """
         self.grid = grid
         self.grid._objects.append(self)
@@ -37,16 +42,9 @@ class Object:
                 raise ValueError(
                     f"The grid already has an attribute with name {self.name}"
                 )
-
-        self.x = slice(
-            grid._handle_distance(x.start), grid._handle_distance(x.stop), None
-        )
-        self.y = slice(
-            grid._handle_distance(y.start), grid._handle_distance(y.stop), None
-        )
-        self.z = slice(
-            grid._handle_distance(z.start), grid._handle_distance(z.stop), None
-        )
+        self.x = self._handle_slice(x, max_index=self.grid.Nx)
+        self.y = self._handle_slice(y, max_index=self.grid.Ny)
+        self.z = self._handle_slice(z, max_index=self.grid.Nz)
 
         self.Nx = abs(self.x.stop - self.x.start)
         self.Ny = abs(self.y.stop - self.y.start)
@@ -73,9 +71,25 @@ class Object:
 
         self.grid.inverse_permittivity[self.x, self.y, self.z] = 0
 
+    def _handle_slice(self, s: ListOrSlice, max_index: int=None) -> slice:
+        if isinstance(s, list):
+            if len(s) == 1:
+                return slice(s[0], s[0] + 1, None)
+            raise IndexError("One can only use slices or single indices to index the grid for an Object")
+        if isinstance(s, slice):
+            start, stop, step = s.start, s.stop, s.step
+            if step is not None and step != 1:
+                raise IndexError("Can only use slices with unit step to index the grid for an Object")
+            if start is None:
+                start = 0
+            if stop is None:
+                stop = max_index
+            return slice(start, stop, None)
+        raise ValueError("Invalid grid indexing used for object")
+
     def update_E(self, curl_H):
         """ custom update equations for inside the object
-        
+
         Args:
             curl_H: the curl of magnetic field in the grid.
 
@@ -87,7 +101,7 @@ class Object:
 
     def update_H(self, curl_E):
         """ custom update equations for inside the object
-        
+
         Args:
             curl_E: the curl of electric field in the grid.
 
@@ -104,8 +118,8 @@ class AnisotropicObject(Object):
     def _register_grid(
         self, grid: Grid, x: slice = None, y: slice = None, z: slice = None
     ):
-        """ Register a grid to the object 
-        
+        """ Register a grid to the object
+
         Args:
             grid: Grid: the grid to register the object into
             x: slice = None: the x-location of the object in the grid
@@ -122,7 +136,7 @@ class AnisotropicObject(Object):
 
     def update_E(self, curl_H):
         """ custom update equations for inside the anisotropic object
-        
+
         Args:
             curl_H: the curl of magnetic field in the grid.
 
@@ -139,7 +153,7 @@ class AnisotropicObject(Object):
 
     def update_H(self, curl_E):
         """ custom update equations for inside the anisotropic object
-        
+
         Args:
             curl_E: the curl of electric field in the grid.
 
