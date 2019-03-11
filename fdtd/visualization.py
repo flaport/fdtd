@@ -20,19 +20,26 @@ from .backend import backend as bd
 
 def visualize(
     grid,
+    x=None,
+    y=None,
+    z=None,
     cmap="Blues",
     pbcolor="C3",
     pmlcolor=(0, 0, 0, 0.1),
     objcolor=(1, 0, 0, 0.1),
     srccolor="C0",
     detcolor="C2",
+    show=True,
 ):
-    """ visualize the grid and the optical energy inside the grid
+    """ visualize a projection of the grid and the optical energy inside the grid
 
     Args:
         grid: Grid: the grid instance to visualize
 
     Kwargs:
+        x = None: the x-value to make the yz-projection (leave None if using different projection)
+        y = None: the y-value to make the zx-projection (leave None if using different projection)
+        z = None: the z-value to make the xy-projection (leave None if using different projection)
         cmap='Blues': the colormap to visualize the energy in the grid
         pbcolor='C3': the color to visualize the periodic boundaries
         pmlcolor=(0,0,0,0.1): the color to visualize the PML
@@ -50,6 +57,33 @@ def visualize(
         _PMLZhigh,
     )
 
+    # validate x, y and z
+    if x is not None:
+        if not isinstance(x, int):
+            raise ValueError("the `x`-location supplied should be a single integer")
+        if y is not None or z is not None:
+            raise ValueError(
+                "if an `x`-location is supplied, one should not supply a `y` or a `z`-location!"
+            )
+    elif y is not None:
+        if not isinstance(y, int):
+            raise ValueError("the `y`-location supplied should be a single integer")
+        if z is not None or x is not None:
+            raise ValueError(
+                "if a `y`-location is supplied, one should not supply a `z` or a `x`-location!"
+            )
+    elif z is not None:
+        if not isinstance(z, int):
+            raise ValueError("the `z`-location supplied should be a single integer")
+        if x is not None or y is not None:
+            raise ValueError(
+                "if a `z`-location is supplied, one should not supply a `x` or a `y`-location!"
+            )
+    else:
+        raise ValueError(
+            "at least one projection plane (x, y or z) should be supplied to visualize the grid!"
+        )
+
     # just to create the right legend entries:
     plt.plot([], lw=7, color=objcolor, label="Objects")
     plt.plot([], lw=7, color=pmlcolor, label="PML")
@@ -59,105 +93,71 @@ def visualize(
 
     # Grid energy
     grid_energy = bd.sum(grid.E ** 2 + grid.H ** 2, -1)
-    if grid.Nx == 1:
+    if x is not None:
         assert grid.Ny > 1 and grid.Nz > 1
         xlabel, ylabel = "y", "z"
         Nx, Ny = grid.Ny, grid.Nz
         pbx, pby = _PeriodicBoundaryY, _PeriodicBoundaryZ
         pmlxl, pmlxh, pmlyl, pmlyh = _PMLYlow, _PMLYhigh, _PMLZlow, _PMLZhigh
-        grid_energy = grid_energy[0, :, :]
-    elif grid.Ny == 1:
+        grid_energy = grid_energy[x, :, :]
+    elif y is not None:
         assert grid.Nx > 1 and grid.Nz > 1
         xlabel, ylabel = "z", "x"
         Nx, Ny = grid.Nz, grid.Nx
         pbx, pby = _PeriodicBoundaryZ, _PeriodicBoundaryX
         pmlxl, pmlxh, pmlyl, pmlyh = _PMLZlow, _PMLZhigh, _PMLXlow, _PMLXhigh
-        grid_energy = grid_energy[:, 0, :].T
-    elif grid.Nz == 1:
+        grid_energy = grid_energy[:, y, :].T
+    elif z is not None:
         assert grid.Nx > 1 and grid.Ny > 1
         xlabel, ylabel = "x", "y"
         Nx, Ny = grid.Nx, grid.Ny
         pbx, pby = _PeriodicBoundaryX, _PeriodicBoundaryY
         pmlxl, pmlxh, pmlyl, pmlyh = _PMLXlow, _PMLXhigh, _PMLYlow, _PMLYhigh
-        grid_energy = grid_energy[:, :, 0]
+        grid_energy = grid_energy[:, :, z]
     else:
         raise ValueError("Visualization only works for 2D grids")
-    plt.imshow(bd.numpy(grid_energy), cmap=cmap)
 
-    # Sources
-    for source in grid._sources:
-        if grid.Nx == 1:
-            x = [source.y[0], source.y[-1]]
-            y = [source.z[0], source.z[-1]]
-        elif grid.Ny == 1:
-            x = [source.z[0], source.z[-1]]
-            y = [source.x[0], source.x[-1]]
-        elif grid.Nz == 1:
-            x = [source.x[0], source.x[-1]]
-            y = [source.y[0], source.y[-1]]
+    # visualize the energy in the grid
+    plt.imshow(bd.numpy(grid_energy), cmap=cmap, interpolation="sinc")
 
-        plt.plot(y, x, lw=3, color=srccolor)
+    # LineSource
+    for source in grid.sources:
+        if x is not None:
+            _x = [source.y[0], source.y[-1]]
+            _y = [source.z[0], source.z[-1]]
+        elif y is not None:
+            _x = [source.z[0], source.z[-1]]
+            _y = [source.x[0], source.x[-1]]
+        elif z is not None:
+            _x = [source.x[0], source.x[-1]]
+            _y = [source.y[0], source.y[-1]]
 
-    # Detectors
-    for detector in grid._detectors:
-        if grid.Nx == 1:
-            x = (
-                [detector.y.start, detector.y.stop]
-                if isinstance(detector.y, slice)
-                else [detector.y[0], detector.y[-1]]
-            )
-            x[0] = x[0] if x[0] is not None else 0
-            x[1] = x[1] if x[1] is not None else grid.Ny
-            y = (
-                [detector.z.start, detector.z.stop]
-                if isinstance(detector.z, slice)
-                else [detector.z[0], detector.z[-1]]
-            )
-            y[0] = y[0] if y[0] is not None else 0
-            y[1] = y[1] if y[1] is not None else grid.Nz
-        elif grid.Ny == 1:
-            x = (
-                [detector.z.start, detector.z.stop]
-                if isinstance(detector.z, slice)
-                else [detector.z[0], detector.z[-1]]
-            )
-            x[0] = x[0] if x[0] is not None else 0
-            x[1] = x[1] if x[1] is not None else grid.Nz
-            y = (
-                [detector.x.start, detector.x.stop]
-                if isinstance(detector.x, slice)
-                else [detector.x[0], detector.x[-1]]
-            )
-            y[0] = y[0] if y[0] is not None else 0
-            y[1] = y[1] if y[1] is not None else grid.Nx
-        elif grid.Nz == 1:
-            x = (
-                [detector.x.start, detector.x.stop]
-                if isinstance(detector.x, slice)
-                else [detector.x[0], detector.x[-1]]
-            )
-            x[0] = x[0] if x[0] is not None else 0
-            x[1] = x[1] if x[1] is not None else grid.Nx
-            y = (
-                [detector.y.start, detector.y.stop]
-                if isinstance(detector.y, slice)
-                else [detector.y[0], detector.y[-1]]
-            )
-            y[0] = y[0] if y[0] is not None else 0
-            y[1] = y[1] if y[1] is not None else grid.Ny
+        plt.plot(_y, _x, lw=3, color=srccolor)
 
-        plt.plot(y, x, lw=3, color=detcolor)
+    # LineDetector
+    for detector in grid.detectors:
+        if x is not None:
+            _x = [detector.y[0], detector.y[-1]]
+            _y = [detector.z[0], detector.z[-1]]
+        elif y is not None:
+            _x = [detector.z[0], detector.z[-1]]
+            _y = [detector.x[0], detector.x[-1]]
+        elif z is not None:
+            _x = [detector.x[0], detector.x[-1]]
+            _y = [detector.y[0], detector.y[-1]]
+
+        plt.plot(_y, _x, lw=3, color=detcolor)
 
     # Boundaries
-    for boundary in grid._boundaries:
+    for boundary in grid.boundaries:
         if isinstance(boundary, pbx):
-            x = [-0.5, -0.5, float("nan"), Nx - 0.5, Nx - 0.5]
-            y = [-0.5, Ny - 0.5, float("nan"), -0.5, Ny - 0.5]
-            plt.plot(y, x, color=pbcolor, linewidth=3)
+            _x = [-0.5, -0.5, float("nan"), Nx - 0.5, Nx - 0.5]
+            _y = [-0.5, Ny - 0.5, float("nan"), -0.5, Ny - 0.5]
+            plt.plot(_y, _x, color=pbcolor, linewidth=3)
         elif isinstance(boundary, pby):
-            x = [-0.5, Nx - 0.5, float("nan"), -0.5, Nx - 0.5]
-            y = [-0.5, -0.5, float("nan"), Ny - 0.5, Ny - 0.5]
-            plt.plot(y, x, color=pbcolor, linewidth=3)
+            _x = [-0.5, Nx - 0.5, float("nan"), -0.5, Nx - 0.5]
+            _y = [-0.5, -0.5, float("nan"), Ny - 0.5, Ny - 0.5]
+            plt.plot(_y, _x, color=pbcolor, linewidth=3)
         elif isinstance(boundary, pmlyl):
             patch = ptc.Rectangle(
                 xy=(-0.5, -0.5),
@@ -199,20 +199,21 @@ def visualize(
             )
             plt.gca().add_patch(patch)
 
-    for obj in grid._objects:
-        if (xlabel, ylabel) == ("y", "z"):
-            x = (obj.y.start, obj.y.stop)
-            y = (obj.z.start, obj.z.stop)
-        elif (xlabel, ylabel) == ("z", "x"):
-            x = (obj.z.start, obj.z.stop)
-            y = (obj.x.start, obj.x.stop)
-        else:
-            x = (obj.x.start, obj.x.stop)
-            y = (obj.y.start, obj.y.stop)
+    for obj in grid.objects:
+        if x is not None:
+            _x = (obj.y.start, obj.y.stop)
+            _y = (obj.z.start, obj.z.stop)
+        elif y is not None:
+            _x = (obj.z.start, obj.z.stop)
+            _y = (obj.x.start, obj.x.stop)
+        elif z is not None:
+            _x = (obj.x.start, obj.x.stop)
+            _y = (obj.y.start, obj.y.stop)
+
         patch = ptc.Rectangle(
-            xy=(min(y) - 0.5, min(x) - 0.5),
-            width=max(y) - min(y),
-            height=max(x) - min(x),
+            xy=(min(_y) - 0.5, min(_x) - 0.5),
+            width=max(_y) - min(_y),
+            height=max(_x) - min(_x),
             linewidth=0,
             edgecolor="none",
             facecolor=objcolor,
@@ -226,4 +227,5 @@ def visualize(
     plt.xlim(-1, Ny)
     plt.figlegend()
     plt.tight_layout()
-    plt.show()
+    if show:
+        plt.show()
