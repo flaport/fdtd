@@ -1,3 +1,20 @@
+""" Backend for FDTD
+
+Three backends are available:
+
+ - numpy [default]
+ - torch
+ - torch.cuda
+
+A backend can be set with the `set_backend` function:
+
+```
+    import fdtd
+    fdtd.set_backend("torch")
+```
+
+"""
+
 ## Imports
 
 # Numpy Backend
@@ -9,23 +26,12 @@ try:
 
     torch.set_default_dtype(torch.float64)  # we need more precision for FDTD
     torch._C.set_grad_enabled(False)  # we don't need gradients (for now)
-    torch_available = True
-    torch_cuda_available = torch.cuda.is_available()
+    TORCH_AVAILABLE = True
+    TORCH_CUDA_AVAILABLE = torch.cuda.is_available()
 except ImportError:
-    torch_available = False
-    torch_cuda_available = False
+    TORCH_AVAILABLE = False
+    TORCH_CUDA_AVAILABLE = False
 
-
-## Typing
-from typing import Union
-
-if torch_available:
-    Tensorlike = Union[numpy.ndarray, torch.Tensor]
-else:
-    Tensorlike = numpy.ndarray
-
-
-## Backends
 
 # Base Class
 class Backend:
@@ -41,8 +47,6 @@ class Backend:
 # Numpy Backend
 class NumpyBackend(Backend):
     """ Numpy Backend """
-
-    import numpy
 
     # types
     int = numpy.int64
@@ -60,6 +64,7 @@ class NumpyBackend(Backend):
 
     @staticmethod
     def bmm(arr1, arr2):
+        """ batch matrix multiply two arrays """
         return numpy.einsum("ijk,ikl->ijl", arr1, arr2)
 
     # constructors
@@ -72,12 +77,10 @@ class NumpyBackend(Backend):
 
 
 # Torch Backend
-if torch_available:
+if TORCH_AVAILABLE:
 
     class TorchBackend(Backend):
         """ Torch Backend """
-
-        import torch
 
         # types
         int = torch.int64
@@ -95,6 +98,7 @@ if torch_available:
 
         @staticmethod
         def transpose(arr, axes=None):
+            """ transpose an array """
             if axes is None:
                 axes = tuple(range(len(arr.shape) - 1, -1, -1))
             return arr.permute(*axes)
@@ -105,51 +109,56 @@ if torch_available:
         arange = staticmethod(torch.arange)
 
         def array(self, arr, dtype=None):
+            """ make an array """
             if dtype is None:
                 dtype = torch.get_default_dtype()
-            return self.torch.tensor(arr, device="cpu", dtype=dtype)
+            return torch.tensor(arr, device="cpu", dtype=dtype)
 
         def numpy(self, arr):
-            if self.torch.is_tensor(arr):
+            """ convert an array to a numpy.ndarray """
+            if torch.is_tensor(arr):
                 return arr.numpy()
             else:
-                return numpy.array(arr)
+                return numpy.asarray(arr)
 
         def linspace(self, start, stop, num=50, endpoint=True):
+            """ create a linearly spaced array between two points """
             delta = (stop - start) / float(num - float(endpoint))
             if not delta:
                 return self.array([start] * num)
-            return self.torch.arange(start, stop + 0.5 * float(endpoint) * delta, delta)
+            return torch.arange(start, stop + 0.5 * float(endpoint) * delta, delta)
 
 
 # Torch Cuda Backend
-if torch_cuda_available:
+if TORCH_CUDA_AVAILABLE:
 
     class TorchCudaBackend(TorchBackend):
         """ Torch Cuda Backend """
 
         def ones(self, shape):
-            return self.torch.ones(shape, device="cuda")
+            """ create an array consisting of ones """
+            return torch.ones(shape, device="cuda")
 
         def zeros(self, shape):
-            return self.torch.zeros(shape, device="cuda")
+            """ create an array consisting of zeros """
+            return torch.zeros(shape, device="cuda")
 
         def array(self, arr, dtype=None):
             if dtype is None:
                 dtype = torch.get_default_dtype()
-            return self.torch.tensor(arr, device="cuda", dtype=dtype)
+            return torch.tensor(arr, device="cuda", dtype=dtype)
 
         def numpy(self, arr):
-            if self.torch.is_tensor(arr):
+            if torch.is_tensor(arr):
                 return arr.cpu().numpy()
             else:
-                return numpy.array(arr)
+                return numpy.asarray(arr)
 
         def linspace(self, start, stop, num=50, endpoint=True):
             delta = (stop - start) / float(num - float(endpoint))
             if not delta:
                 return self.array([start] * num)
-            return self.torch.arange(
+            return torch.arange(
                 start, stop + 0.5 * float(endpoint) * delta, delta, device="cuda"
             )
 
@@ -171,11 +180,11 @@ def set_backend(name: str):
     """
     # this method monkeypatches the backend object and changes its class.
     if name == "torch":
-        if not torch_available:
+        if not TORCH_AVAILABLE:
             raise RuntimeError("Torch backend is not available. Is PyTorch installed?")
         backend.__class__ = TorchBackend
     elif name == "torch.cuda":
-        if not torch_cuda_available:
+        if not TORCH_CUDA_AVAILABLE:
             raise RuntimeError(
                 "Torch cuda backend is not available. "
                 "Is PyTorch with cuda support installed?"
