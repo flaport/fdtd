@@ -46,7 +46,7 @@ class _Boundary:
             grid[0,:,:] = Boundary(name="boundary_name")
         """
         self.grid = grid
-        self.grid._boundaries.append(self)
+        self.grid.boundaries.append(self)
         self.x = self._handle_slice(x)
         self.y = self._handle_slice(y)
         self.z = self._handle_slice(z)
@@ -104,7 +104,27 @@ class _Boundary:
         """
 
     def __repr__(self):
-        return f"{self.__class__.__name__}(name={repr(self.name)})"
+        return f"PML(name={repr(self.name)})"
+
+    def __str__(self):
+        s = "    " + repr(self) + "\n"
+
+        def _handle_slice(s):
+            return (
+                str(s)
+                .replace("slice(", "")
+                .replace(")", "")
+                .replace(", ", ":")
+                .replace("None", "")
+            )
+
+        x = _handle_slice(self.x)
+        y = _handle_slice(self.y)
+        z = _handle_slice(self.z)
+        s += f"        @ x={x}, y={y}, z={z}".replace(":,", ",")
+        if s[-1] == ":":
+            s = s[:-1]
+        return s + "\n"
 
 
 ## Periodic Boundaries
