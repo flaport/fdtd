@@ -174,23 +174,46 @@ backend = NumpyBackend()
 ## Set backend
 def set_backend(name: str):
     """ Set the backend for the FDTD simulations
+    
+    This function monkeypatches the backend object by changing its class.
+    This way, all methods of the backend object will be replaced.
 
     Args:
-        name: name of the backend. Allowed backends: "numpy", "torch", "torch.cuda".
+        name: name of the backend. Allowed backend names: 
+            - "numpy" (defaults to float64 arrays)
+            - "torch" (defaults to float64 tensors)
+            - "torch.float32"
+            - "torch.float64"
+            - "torch.cuda" (defaults to float64 tensors)
+            - "torch.cuda.float32"
+            - "torch.cuda.float64"
     """
-    # this method monkeypatches the backend object and changes its class.
-    if name == "torch":
-        if not TORCH_AVAILABLE:
-            raise RuntimeError("Torch backend is not available. Is PyTorch installed?")
-        backend.__class__ = TorchBackend
-    elif name == "torch.cuda":
-        if not TORCH_CUDA_AVAILABLE:
-            raise RuntimeError(
-                "Torch cuda backend is not available. "
-                "Is PyTorch with cuda support installed?"
-            )
-        backend.__class__ = TorchCudaBackend
-    elif name == "numpy":
+    # perform checks
+    if "torch" in name and not TORCH_AVAILABLE:
+        raise RuntimeError("Torch backend is not available. Is PyTorch installed?")
+    if "torch.cuda" in name and not TORCH_CUDA_AVAILABLE:
+        raise RuntimeError(
+            "Torch cuda backend is not available.\n"
+            "Do you have a GPU on your computer?\n"
+            "Is PyTorch with cuda support installed?"
+        )
+    
+    # change backend by monkeypatching
+    if name == "numpy":
         backend.__class__ = NumpyBackend
+    elif name == "torch" or name == "torch.float64":
+        torch.set_default_dtype(torch.float64)
+        backend.__class__ = TorchBackend
+    elif name == "torch.float32":
+        torch.set_default_dtype(torch.float32)
+        backend.__class__ = TorchBackend
+        backend.float = torch.float32
+    elif name == "torch.cuda" or name == "torch.float64":
+        torch.set_default_dtype(torch.float64)
+        backend.__class__ = TorchCudaBackend
+    elif name == "torch.cuda.float32":
+        torch.set_default_dtype(torch.float32)
+        backend.__class__ = TorchCudaBackend
+        backend.float = torch.float32
     else:
-        raise RuntimeError(f"unknown backend {name}")
+        raise RuntimeError(f'unknown backend "{name}"')
