@@ -60,7 +60,7 @@ class Object:
 
         # set the permittivity of the object
         if bd.is_array(self._permittivity) and len(self._permittivity.shape) == 3:
-            self._permittivity = self._permitivity[:, :, :, None]
+            self._permittivity = self._permittivity[:, :, :, None]
         self.inverse_permittivity = (
             bd.ones((self.Nx, self.Ny, self.Nz, 3)) / self._permittivity
         )
