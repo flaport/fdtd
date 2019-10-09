@@ -15,7 +15,7 @@ import fdtd.backend as bd
 
 ## Set Backend
 
-fdtd.set_backend("torch.cuda")
+fdtd.set_backend("numpy")
 
 
 ## Constants
@@ -39,7 +39,7 @@ grid[7.5e-6:8.0e-6, 11.8e-6:13.0e-6, 0] = fdtd.LineSource(
 )
 
 # detectors
-grid[12e-6, :, 0] = fdtd.Detector(name="detector")
+grid[12e-6, :, 0] = fdtd.LineDetector(name="detector")
 
 # x boundaries
 # grid[0, :, :] = fdtd.PeriodicBoundary(name="xbounds")
@@ -103,4 +103,6 @@ if True:
 
 # Visualize Grid
 if True:
-    grid.visualize()
+    plt.figure()
+    grid.visualize(z=0)
+
