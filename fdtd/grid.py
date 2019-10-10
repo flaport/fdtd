@@ -71,6 +71,20 @@ def curl_H(H: Tensorlike) -> Tensorlike:
     return curl
 
 
+class GridList(list):
+    """ Special list that removes item from grid when deleted from list """
+
+    def __init__(self, grid):
+        super().__init__([])
+        self.grid = grid
+
+    def __delitem__(self, i):
+        item = self[i]
+        super().__delitem__(i)
+        if hasattr(item, "name") and hasattr(self.grid, item.name):
+            delattr(self.grid, item.name)
+
+
 ## FDTD Grid Class
 class Grid:
     """ The FDTD Grid
@@ -149,16 +163,16 @@ class Grid:
         self.time_steps_passed = 0
 
         # dictionary containing the sources:
-        self.sources = []
+        self.sources = GridList(self)
 
         # dictionary containing the boundaries
-        self.boundaries = []
+        self.boundaries = GridList(self)
 
         # dictionary containing the detectors
-        self.detectors = []
+        self.detectors = GridList(self)
 
         # dictionary containing the objects in the grid
-        self.objects = []
+        self.objects = GridList(self)
 
     def _handle_distance(self, distance: Number) -> int:
         """ transform a distance to an integer number of gridpoints """
@@ -361,6 +375,28 @@ class Grid:
             z=self._handle_single_key(z),
         )
 
+    def __delattr__(self, name):
+        attr = getattr(self, name)
+        super().__delattr__(name)
+        if not isinstance(attr, (Object, Source, Detector, Boundary)):
+            return
+        try:
+            del self.objects[self.objects.index(attr)]
+        except ValueError:
+            pass
+        try:
+            del self.sources[self.sources.index(attr)]
+        except ValueError:
+            pass
+        try:
+            del self.detectors[self.detectors.index(attr)]
+        except ValueError:
+            pass
+        try:
+            del self.boundaries[self.boundaries.index(attr)]
+        except ValueError:
+            pass
+
     def __repr__(self):
         return (
             f"{self.__class__.__name__}(shape=({self.Nx},{self.Ny},{self.Nz}), "
@@ -390,3 +426,11 @@ class Grid:
             for obj in self.objects:
                 s += str(obj)
         return s
+
+
+## Imports (placed here to prevent circular imports)
+# relative
+from .objects import Object
+from .sources import Source
+from .detectors import Detector
+from .boundaries import Boundary

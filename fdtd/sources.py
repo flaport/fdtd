@@ -17,9 +17,13 @@ from .typing import Tuple, Number, ListOrSlice, List
 from .grid import Grid
 from .backend import backend as bd
 
+## Base source class:
+class Source:
+    """ an FDTD Source [base class] """
+
 
 ## LineSource class
-class LineSource:
+class LineSource(Source):
     """ A source along a line in the FDTD grid """
 
     def __init__(

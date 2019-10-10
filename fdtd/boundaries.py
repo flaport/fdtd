@@ -17,7 +17,7 @@ from .backend import backend as bd
 
 
 ## Boundary Conditions [base class]
-class _Boundary:
+class Boundary:
     """ an FDTD Boundary [base class] """
 
     def __init__(self, name: str = None):
@@ -128,7 +128,7 @@ class _Boundary:
 
 
 ## Periodic Boundaries
-class PeriodicBoundary(_Boundary):
+class PeriodicBoundary(Boundary):
     """ An FDTD Periodic Boundary
 
     Note:
@@ -211,7 +211,7 @@ class _PeriodicBoundaryZ(PeriodicBoundary):
 ## Perfectly Matched Layer (PML)
 
 
-class PML(_Boundary):
+class PML(Boundary):
     """ A perfectly matched layer (PML)
 
     a PML is an impedence-matched area at the boundary of the grid for which

@@ -15,6 +15,11 @@ from .typing import ListOrSlice, Tuple, List
 from .grid import Grid
 from .backend import backend as bd
 
+## Base detector class:
+class Detector:
+    """ an FDTD Detector [base class] """
+
+
 ## Detector
 class LineDetector:
     """ A detector along a line in the FDTD grid """

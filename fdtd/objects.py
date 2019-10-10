@@ -22,7 +22,7 @@ from .backend import backend as bd
 
 ## Object
 class Object:
-    """ An object to place in the grid """
+    """ An object to place in the grid [base class] """
 
     def __init__(self, permittivity: Tensorlike, name: str = None):
         """ Create an object """
@@ -63,24 +63,17 @@ class Object:
             self._permittivity = self._permittivity[:, :, :, None]
         self.inverse_permittivity = (
             bd.ones((self.Nx, self.Ny, self.Nz, 3)) / self._permittivity
+            - self.grid.inverse_permittivity[self.x, self.y, self.z]
         )
 
         # set the permittivity values of the object at its border to be equal
         # to the grid permittivity. This way, the object is made symmetric.
         if self.Nx > 1:
-            self.inverse_permittivity[-1, :, :, 0] = self.grid.inverse_permittivity[
-                -1, self.y, self.z, 0
-            ]
+            self.inverse_permittivity[-1, :, :, 0] = 0
         if self.Ny > 1:
-            self.inverse_permittivity[:, -1, :, 1] = self.grid.inverse_permittivity[
-                self.x, -1, self.z, 1
-            ]
+            self.inverse_permittivity[:, -1, :, 1] = 0
         if self.Nz > 1:
-            self.inverse_permittivity[:, :, -1, 2] = self.grid.inverse_permittivity[
-                self.x, self.y, -1, 2
-            ]
-
-        self.grid.inverse_permittivity[self.x, self.y, self.z] = 0
+            self.inverse_permittivity[:, :, -1, 2] = 0
 
     def _handle_slice(self, s: ListOrSlice, max_index: int = None) -> slice:
         if isinstance(s, list):
