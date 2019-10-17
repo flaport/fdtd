@@ -105,4 +105,3 @@ if True:
 if True:
     plt.figure()
     grid.visualize(z=0)
-

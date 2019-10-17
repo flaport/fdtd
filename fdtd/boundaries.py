@@ -141,7 +141,6 @@ class PeriodicBoundary(Boundary):
     def _register_grid(
         self, grid: Grid, x: ListOrSlice, y: ListOrSlice, z: ListOrSlice
     ):
-
         super()._register_grid(grid=grid, x=x, y=y, z=z)
 
         if self.x == 0 or self.x == -1:
@@ -165,7 +164,7 @@ class PeriodicBoundary(Boundary):
         else:
             raise IndexError(
                 "A periodic boundary should be placed at the boundary of the "
-                "grid (index 0)"
+                "grid using a single index (either 0 or -1)"
             )
 
 
