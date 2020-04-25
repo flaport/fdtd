@@ -97,8 +97,12 @@ class Object:
                 )
             if start is None:
                 start = 0
+            if start < 0:
+                start = max_index + start
             if stop is None:
                 stop = max_index
+            if stop < 0:
+                stop = max_index + stop
             return slice(start, stop, None)
         raise ValueError("Invalid grid indexing used for object")
 
