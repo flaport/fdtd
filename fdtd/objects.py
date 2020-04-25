@@ -16,7 +16,7 @@ Available Objects:
 from .typing import Tensorlike, ListOrSlice
 
 # relative
-from .grid import Grid
+from .grid import Grid, VACUUM_PERMITTIVITY
 from .backend import backend as bd
 
 
@@ -28,7 +28,7 @@ class Object:
         """ Create an object """
         self.grid = None
         self.name = name
-        self._permittivity = permittivity
+        self.permittivity = permittivity
 
     def _register_grid(
         self, grid: Grid, x: ListOrSlice, y: ListOrSlice, z: ListOrSlice
@@ -59,10 +59,10 @@ class Object:
         self.Nz = abs(self.z.stop - self.z.start)
 
         # set the permittivity of the object
-        if bd.is_array(self._permittivity) and len(self._permittivity.shape) == 3:
-            self._permittivity = self._permittivity[:, :, :, None]
+        if bd.is_array(self.permittivity) and len(self.permittivity.shape) == 3:
+            self.permittivity = self.permittivity[:, :, :, None]
         self.inverse_permittivity = (
-            bd.ones((self.Nx, self.Ny, self.Nz, 3)) / self._permittivity
+            bd.ones((self.Nx, self.Ny, self.Nz, 3)) / self.permittivity
         )
 
         # set the permittivity values of the object at its border to be equal
@@ -148,6 +148,62 @@ class Object:
         if s[-1] == ":":
             s = s[:-1]
         return s + "\n"
+
+
+class AbsorbingObject(Object):
+    """ An absorbing object takes conductivity into account """
+
+    def __init__(
+        self, permittivity: Tensorlike, conductivity: Tensorlike, name: str = None
+    ):
+        """ Create an absorbing object """
+        super().__init__(permittivity, name)
+        self.conductivity = conductivity
+
+    def _register_grid(
+        self, grid: Grid, x: slice = None, y: slice = None, z: slice = None
+    ):
+        """ Register a grid to the object
+
+        Args:
+            grid: Grid: the grid to register the object into
+            x: slice = None: the x-location of the object in the grid
+            y: slice = None: the y-location of the object in the grid
+            z: slice = None: the z-location of the object in the grid
+        """
+        super()._register_grid(grid=grid, x=x, y=y, z=z)
+        self.absorption_factor = (
+            0.5
+            * self.grid.courant_number
+            * self.inverse_permittivity
+            * self.conductivity
+            * self.grid.grid_spacing
+            / VACUUM_PERMITTIVITY
+        )
+
+    def update_E(self, curl_H):
+        """ custom update equations for inside the anisotropic object
+
+        Args:
+            curl_H: the curl of magnetic field in the grid.
+
+        """
+        loc = (self.x, self.y, self.z)
+        self.grid.E[loc] *= (1 - self.absorption_factor) / (1 + self.absorption_factor)
+        self.grid.E[loc] += (
+            self.grid.courant_number
+            * self.inverse_permittivity
+            * curl_H[loc]
+            / (1 + self.absorption_factor)
+        )
+
+    def update_H(self, curl_E):
+        """ custom update equations for inside the anisotropic object
+
+        Args:
+            curl_E: the curl of electric field in the grid.
+
+        """
 
 
 class AnisotropicObject(Object):

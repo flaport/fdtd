@@ -7,6 +7,9 @@ together and where the biggest part of the calculations are done.
 
 ## Imports
 
+# standard library
+from math import pi
+
 # 3rd party
 from tqdm import tqdm
 
@@ -19,6 +22,10 @@ from .backend import backend as bd
 
 ## Constants
 SPEED_LIGHT: float = 299_792_458.0  # [m/s] speed of light
+VACUUM_PERMEABILITY: float = 4e-7 * pi  # vacuum permeability
+VACUUM_PERMITTIVITY: float = 1.0 / (
+    VACUUM_PERMEABILITY * SPEED_LIGHT ** 2
+)  # vacuum permittivity
 
 
 ## Functions
