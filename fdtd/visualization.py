@@ -47,6 +47,7 @@ def visualize(
         objcolor='C0': the color to visualize the sources in the grid
     """
     # imports (placed here to circumvent circular imports)
+    from .sources import PointSource, LineSource
     from .boundaries import _PeriodicBoundaryX, _PeriodicBoundaryY, _PeriodicBoundaryZ
     from .boundaries import (
         _PMLXlow,
@@ -117,22 +118,33 @@ def visualize(
     else:
         raise ValueError("Visualization only works for 2D grids")
 
-    # visualize the energy in the grid
-    plt.imshow(bd.numpy(grid_energy), cmap=cmap, interpolation="sinc")
-
-    # LineSource
     for source in grid.sources:
-        if x is not None:
-            _x = [source.y[0], source.y[-1]]
-            _y = [source.z[0], source.z[-1]]
-        elif y is not None:
-            _x = [source.z[0], source.z[-1]]
-            _y = [source.x[0], source.x[-1]]
-        elif z is not None:
-            _x = [source.x[0], source.x[-1]]
-            _y = [source.y[0], source.y[-1]]
+        # LineSource
+        if isinstance(source, LineSource):
+            if x is not None:
+                _x = [source.y[0], source.y[-1]]
+                _y = [source.z[0], source.z[-1]]
+            elif y is not None:
+                _x = [source.z[0], source.z[-1]]
+                _y = [source.x[0], source.x[-1]]
+            elif z is not None:
+                _x = [source.x[0], source.x[-1]]
+                _y = [source.y[0], source.y[-1]]
+            plt.plot(_y, _x, lw=3, color=srccolor)
 
-        plt.plot(_y, _x, lw=3, color=srccolor)
+        elif isinstance(source, PointSource):
+            if x is not None:
+                _x = source.y
+                _y = source.z
+            elif y is not None:
+                _x = source.z
+                _y = source.y
+            elif z is not None:
+                _x = source.x
+                _y = source.y
+            plt.plot(_y - 0.5, _x - 0.5, lw=3, marker="o", color=srccolor)
+
+        grid_energy[_x, _y] = 0  # do not visualize energy at location of source
 
     # LineDetector
     for detector in grid.detectors:
@@ -219,6 +231,9 @@ def visualize(
             facecolor=objcolor,
         )
         plt.gca().add_patch(patch)
+
+    # visualize the energy in the grid
+    plt.imshow(bd.numpy(grid_energy), cmap=cmap, interpolation="sinc")
 
     # finalize the plot
     plt.ylabel(xlabel)

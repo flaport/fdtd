@@ -34,8 +34,11 @@ grid = fdtd.Grid(
 )
 
 # sources
-grid[7.5e-6:8.0e-6, 11.8e-6:13.0e-6, 0] = fdtd.LineSource(
-    period=WAVELENGTH / SPEED_LIGHT, name="source"
+grid[50:55, 70:75, 0] = fdtd.LineSource(
+    period=WAVELENGTH / SPEED_LIGHT, name="linesource"
+)
+grid[100, 60, 0] = fdtd.PointSource(
+    period=WAVELENGTH / SPEED_LIGHT, name="pointsource",
 )
 
 # detectors
