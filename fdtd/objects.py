@@ -1,8 +1,7 @@
-""" FDTD Objects
+""" The objects to place in the grid.
 
-The objects to place in the grid. Objects define all the regions in the grid
-with a modified update equation, such as for example regions with anisotropic
-permittivity etc.
+Objects define all the regions in the grid with a modified update equation,
+such as for example regions with anisotropic permittivity etc.
 
 Available Objects:
  - Object
@@ -25,7 +24,11 @@ class Object:
     """ An object to place in the grid """
 
     def __init__(self, permittivity: Tensorlike, name: str = None):
-        """ Create an object """
+        """
+        Args:
+            permittivity: permittivity tensor
+            name: name of the object (will become available as attribute to the grid)
+        """
         self.grid = None
         self.name = name
         self.permittivity = permittivity
@@ -156,7 +159,12 @@ class AbsorbingObject(Object):
     def __init__(
         self, permittivity: Tensorlike, conductivity: Tensorlike, name: str = None
     ):
-        """ Create an absorbing object """
+        """
+        Args:
+            permittivity: permittivity tensor
+            conductivity: conductivity tensor (will introduce the loss)
+            name: name of the object (will become available as attribute to the grid)
+        """
         super().__init__(permittivity, name)
         self.conductivity = conductivity
 
@@ -166,10 +174,10 @@ class AbsorbingObject(Object):
         """ Register a grid to the object
 
         Args:
-            grid: Grid: the grid to register the object into
-            x: slice = None: the x-location of the object in the grid
-            y: slice = None: the y-location of the object in the grid
-            z: slice = None: the z-location of the object in the grid
+            grid: the grid to register the object into
+            x: the x-location of the object in the grid
+            y: the y-location of the object in the grid
+            z: the z-location of the object in the grid
         """
         super()._register_grid(grid=grid, x=x, y=y, z=z)
         self.absorption_factor = (
@@ -215,10 +223,10 @@ class AnisotropicObject(Object):
         """ Register a grid to the object
 
         Args:
-            grid: Grid: the grid to register the object into
-            x: slice = None: the x-location of the object in the grid
-            y: slice = None: the y-location of the object in the grid
-            z: slice = None: the z-location of the object in the grid
+            grid: the grid to register the object into
+            x: the x-location of the object in the grid
+            y: the y-location of the object in the grid
+            z: the z-location of the object in the grid
         """
         super()._register_grid(grid=grid, x=x, y=y, z=z)
         eye = bd.zeros((self.Nx * self.Ny * self.Nz, 3, 3))

@@ -33,11 +33,12 @@ def curl_E(E: Tensorlike) -> Tensorlike:
     """ Transforms an E-type field into an H-type field by performing a curl
     operation
 
-    Args: E: Electric field to take the curl of (E-type field located on
-        integer grid points)
+    Args:
+        E: Electric field to take the curl of (E-type field located on the
+           edges of the grid cell [integer gridpoints])
 
-    Returns: curl_E: the curl of E (H-type field located on half-integer grid
-        points)
+    Returns:
+        The curl of E (H-type field located on the faces of the grid [half-integer grid points])
     """
     curl = bd.zeros(E.shape)
 
@@ -58,11 +59,11 @@ def curl_H(H: Tensorlike) -> Tensorlike:
     operation
 
     Args:
-        H: Magnetic field to take the curl of (H-type field located on
-            half-integer grid points)
+        H: Magnetic field to take the curl of (H-type field located on half-integer grid points)
 
     Returns:
-        curl_H: the curl of H (E-type field located on integer grid points)
+        The curl of H (E-type field located on the edges of the grid [integer grid points])
+
     """
     curl = bd.zeros(H.shape)
 
@@ -100,10 +101,10 @@ class Grid:
         """
         Args:
             shape: shape of the FDTD grid.
-            grid_spacing = 50e-9: distance between the grid cells.
-            permittivity = 1.0: the relative permittivity of the background.
-            permeability = 1.0: the relative permeability of the background.
-            courant_number = None: the courant number of the FDTD simulation.
+            grid_spacing: distance between the grid cells.
+            permittivity: the relative permittivity of the background.
+            permeability: the relative permeability of the background.
+            courant_number: the courant number of the FDTD simulation.
                 Defaults to the inverse of the square root of the number of
                 dimensions > 1 (optimal value). The timestep of the simulation
                 will be derived from this number using the CFL-condition.
@@ -251,7 +252,7 @@ class Grid:
 
         Args:
             total_time: the total time for the simulation to run.
-            progress_bar = True: choose to show a progress bar during
+            progress_bar: choose to show a progress bar during
                 simulation
 
         """

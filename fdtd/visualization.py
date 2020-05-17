@@ -1,4 +1,4 @@
-""" FDTD visualization
+""" visualization methods for the fdtd Grid.
 
 This module supplies visualization methods for the FDTD Grid. They are
 imported by the Grid class and hence are available as Grid methods.
@@ -34,17 +34,14 @@ def visualize(
     """ visualize a projection of the grid and the optical energy inside the grid
 
     Args:
-        grid: Grid: the grid instance to visualize
-
-    Kwargs:
-        x = None: the x-value to make the yz-projection (leave None if using different projection)
-        y = None: the y-value to make the zx-projection (leave None if using different projection)
-        z = None: the z-value to make the xy-projection (leave None if using different projection)
-        cmap='Blues': the colormap to visualize the energy in the grid
-        pbcolor='C3': the color to visualize the periodic boundaries
-        pmlcolor=(0,0,0,0.1): the color to visualize the PML
-        objcolor=(1,0,0,0.1): the color to visualize the objects in the grid
-        objcolor='C0': the color to visualize the sources in the grid
+        x: the x-value to make the yz-projection (leave None if using different projection)
+        y: the y-value to make the zx-projection (leave None if using different projection)
+        z: the z-value to make the xy-projection (leave None if using different projection)
+        cmap: the colormap to visualize the energy in the grid
+        pbcolor: the color to visualize the periodic boundaries
+        pmlcolor: the color to visualize the PML
+        objcolor: the color to visualize the objects in the grid
+        objcolor: the color to visualize the sources in the grid
     """
     # imports (placed here to circumvent circular imports)
     from .sources import PointSource, LineSource

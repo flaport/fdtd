@@ -1,6 +1,9 @@
 # examples folder
 examples/fdtd
 
+# documentation
+docs/_build
+
 # Mac folders
 .DS_Store
 

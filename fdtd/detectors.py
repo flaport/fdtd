@@ -1,6 +1,6 @@
-""" FDTD Detectors
+""" Detectors for the FDTD Grid.
 
-Detectors for the FDTD Grid. Available Detectors:
+Available Detectors:
 
  - LineDetector
 
@@ -23,7 +23,7 @@ class LineDetector:
         """ Create a line detector
 
         Args:
-            name: str=None: name of the Detector
+            name: name of the Detector
 
         """
         self.grid = None

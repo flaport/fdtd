@@ -1,6 +1,6 @@
-""" FDTD Boundaries
+""" Boundaries for the FDTD Grid.
 
-Boundaries for the FDTD Grid. Available Boundaries:
+Available Boundaries:
 
  - PeriodicBoundary
  - PML
@@ -24,7 +24,7 @@ class Boundary:
         """ Create a boundary
 
         Args:
-            name: str = None: name of the boundary
+            name: name of the boundary
         """
         self.grid = None  # will be registered later
         self.name = name
@@ -133,9 +133,9 @@ class PeriodicBoundary(Boundary):
 
     Note:
         Registering a periodic boundary to the grid will change the periodic
-        boundary in one of its subclasses: _PeriodicBoundaryX,
-        _PeriodicBoundaryY or _PeriodicBoundaryY, depending on the position
-        in the grid.
+        boundary in one of its subclasses: ``_PeriodicBoundaryX``,
+        ``_PeriodicBoundaryY`` or ``_PeriodicBoundaryY``, depending on the
+        position in the grid.
     """
 
     def _register_grid(
@@ -218,17 +218,18 @@ class PML(Boundary):
     reflection.
 
     Note:
-        Registering a PML to the grid will change the PML to one of its
-        subclasses: _PMLXlow, _PMLYlow or _PMLZlow, _PMLXhigh, _PMLYhigh,
-        _PMLZhigh depending on the position in the grid.
+        Registering a PML to the grid will monkeypatch the PML to become one of
+        its subclasses: ``_PMLXlow``, ``_PMLYlow`` or ``_PMLZlow``,
+        ``_PMLXhigh``, ``_PMLYhigh``, ``_PMLZhigh`` depending on the position
+        in the grid.
     """
 
     def __init__(self, a: float = 1e-8, name: str = None):
         """ Perfectly Matched Layer
 
         Args:
-            a = 1e-8: stability parameter
-            name: str = None: name of the PML
+            a: stability parameter
+            name: name of the PML
         """
         super().__init__(name=name)
 

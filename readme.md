@@ -33,7 +33,6 @@ pip install -e fdtd
 - matplotlib
 - tqdm
 - pytorch (optional)
-- line_profiler (used in [01-basic-example.py](examples/01-basic-example.py))
 
 ## Contributing
 
@@ -41,7 +40,9 @@ The library is still in a very early stage of development, but all improvements
 or additions (for example new objects, sources or detectors) are welcome.
 Please make a pull-request 😊.
 
-## Introduction to the library
+## Documentation
+
+read the documentation here: [https://fdtd.readthedocs.org](https://fdtd.readthedocs.org)
 
 ### Imports
 
@@ -373,7 +374,7 @@ matplotlib image.
 grid.visualize(z=0)
 ```
 
-![png](images/grid.png)
+![png](docs/_static/grid.png)
 
 ## Background
 
@@ -405,7 +406,7 @@ Doing this, the Maxwell equations can be written as update equations:
 The electric and magnetic field can then be discretized on a grid with
 interlaced Yee-coordinates, which in 3D looks like this:
 
-![grid discretization in 3D](images/yee.svg)
+![grid discretization in 3D](docs/_static/yee.svg)
 
 According to the Yee discretization algorithm, there are inherently two types
 of fields on the grid: `E`-type fields on integer grid locations and `H`-type

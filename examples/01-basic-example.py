@@ -7,7 +7,6 @@ A simple example on how to use the FDTD Library
 ## Imports
 
 import matplotlib.pyplot as plt
-from line_profiler import LineProfiler
 
 import fdtd
 import fdtd.backend as bd

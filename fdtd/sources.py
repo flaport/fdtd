@@ -1,7 +1,8 @@
-""" FDTD Sources
+""" Sources are objects that inject power into the grid.
 
-Sources are objects that inject power into the grid. Available Sources:
+Available sources:
 
+- PointSource
 - LineSource
 
 """
@@ -31,10 +32,11 @@ class PointSource:
         """ Create a LineSource with a gaussian profile
 
         Args:
-            period = 15: The period of the source. The period can be specified
+            period: The period of the source. The period can be specified
                 as integer [timesteps] or as float [seconds]
-            power = 1.0: The power of the source
-            phase_shift = 0.0: The phase offset of the source.
+            power: The power of the source
+            phase_shift: The phase offset of the source.
+            name: name of the source.
 
         """
         self.grid = None
@@ -116,10 +118,10 @@ class LineSource:
         """ Create a LineSource with a gaussian profile
 
         Args:
-            period = 15: The period of the source. The period can be specified
+            period: The period of the source. The period can be specified
                 as integer [timesteps] or as float [seconds]
-            power = 1.0: The power of the source
-            phase_shift = 0.0: The phase offset of the source.
+            power: The power of the source
+            phase_shift: The phase offset of the source.
 
         """
         self.grid = None
