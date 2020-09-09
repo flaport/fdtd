@@ -62,17 +62,8 @@ grid[11:32, 30:84, 0:1] = fdtd.AnisotropicObject(permittivity=2.5, name="object"
 print(grid)
 print(f"courant number: {grid.courant_number}")
 
-# create and enable profiler
-profiler = LineProfiler()
-profiler.add_function(grid.update_E)
-profiler.enable()
-
 # run simulation
 grid.run(50, progress_bar=False)
-
-
-# print profiler summary
-profiler.print_stats()
 
 
 ## Plots
