@@ -34,7 +34,10 @@ try:
     import torch
 
     torch.set_default_dtype(torch.float64)  # we need more precision for FDTD
-    torch._C.set_grad_enabled(False)  # we don't need gradients (for now)
+    try:  # we don't need gradients (for now)
+        torch._C.set_grad_enabled(False)
+    except AttributeError:
+        torch._C._set_grad_enabled(False)
     TORCH_AVAILABLE = True
     TORCH_CUDA_AVAILABLE = torch.cuda.is_available()
 except ImportError:
@@ -172,8 +175,9 @@ if TORCH_AVAILABLE:
             """ create an array from an array-like sequence """
             if dtype is None:
                 dtype = torch.get_default_dtype()
+            if torch.is_tensor(arr):
+                return arr.clone().to(device="cpu", dtype=dtype)
             return torch.tensor(arr, device="cpu", dtype=dtype)
-            return torch.is_tensor(arr)
 
         # constructors
         ones = staticmethod(torch.ones)
@@ -219,6 +223,8 @@ if TORCH_CUDA_AVAILABLE:
             """ create an array from an array-like sequence """
             if dtype is None:
                 dtype = torch.get_default_dtype()
+            if torch.is_tensor(arr):
+                return arr.clone().to(device="cuda", dtype=dtype)
             return torch.tensor(arr, device="cuda", dtype=dtype)
 
         def numpy(self, arr):
@@ -284,7 +290,7 @@ def set_backend(name: str):
         torch.set_default_dtype(torch.float32)
         backend.__class__ = TorchBackend
         backend.float = torch.float32
-    elif name == "torch.cuda" or name == "torch.float64":
+    elif name == "torch.cuda" or name == "torch.cuda.float64":
         torch.set_default_dtype(torch.float64)
         backend.__class__ = TorchCudaBackend
     elif name == "torch.cuda.float32":
