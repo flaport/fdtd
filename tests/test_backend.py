@@ -7,14 +7,20 @@ import pytest
 
 # This library
 import fdtd
-from fdtd.backend import NumpyBackend, TorchBackend
+
+try:
+    from fdtd.backend import NumpyBackend, TorchBackend
+except ImportError:
+    skip_test_backend = True
 
 
 ## Tests
 
 
+@pytest.mark.skipif(skip_test_backend, reason="PyTorch is not installed.")
 def test_set_backend():
     fdtd.set_backend("torch")
     assert isinstance(fdtd.backend, TorchBackend)
     fdtd.set_backend("numpy")
     assert isinstance(fdtd.backend, NumpyBackend)
+
