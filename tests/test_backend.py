@@ -10,6 +10,7 @@ import fdtd
 
 try:
     from fdtd.backend import NumpyBackend, TorchBackend
+    skip_test_backend = False
 except ImportError:
     skip_test_backend = True
 
