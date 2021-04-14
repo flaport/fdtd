@@ -92,6 +92,9 @@ class NumpyBackend(Backend):
     squeeze = staticmethod(numpy.squeeze)
     """ remove dim-1 dimensions """
 
+    broadcast_arrays = staticmethod(numpy.broadcast_arrays)
+    """ broadcast arrays """
+
     @staticmethod
     def bmm(arr1, arr2):
         """ batch matrix multiply two arrays """
@@ -161,6 +164,9 @@ if TORCH_AVAILABLE:
         squeeze = staticmethod(torch.squeeze)
         """ remove dim-1 dimensions """
 
+        broadcast_arrays = staticmethod(torch.broadcast_tensors)
+        """ broadcast arrays """
+
         reshape = staticmethod(torch.reshape)
         """ reshape array into given shape """
 
@@ -202,7 +208,6 @@ if TORCH_AVAILABLE:
                 return arr.numpy()
             else:
                 return numpy.asarray(arr)
-
 
 
 # Torch Cuda Backend
@@ -254,7 +259,7 @@ backend = NumpyBackend()
 
 ## Set backend
 def set_backend(name: str):
-    """ Set the backend for the FDTD simulations
+    """Set the backend for the FDTD simulations
 
     This function monkeypatches the backend object by changing its class.
     This way, all methods of the backend object will be replaced.

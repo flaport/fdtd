@@ -33,7 +33,7 @@ def visualize(
     norm="linear",
     show=True,
 ):
-    """ visualize a projection of the grid and the optical energy inside the grid
+    """visualize a projection of the grid and the optical energy inside the grid
 
     Args:
         x: the x-value to make the yz-projection (leave None if using different projection)
@@ -51,7 +51,7 @@ def visualize(
     if norm not in ("linear", "lin", "log"):
         raise ValueError("Color map normalization should be 'linear' or 'log'.")
     # imports (placed here to circumvent circular imports)
-    from .sources import PointSource, LineSource
+    from .sources import PointSource, LineSource, PlaneSource
     from .boundaries import _PeriodicBoundaryX, _PeriodicBoundaryY, _PeriodicBoundaryZ
     from .boundaries import (
         _PMLXlow,
@@ -123,7 +123,6 @@ def visualize(
         raise ValueError("Visualization only works for 2D grids")
 
     for source in grid.sources:
-        # LineSource
         if isinstance(source, LineSource):
             if x is not None:
                 _x = [source.y[0], source.y[-1]]
@@ -135,7 +134,6 @@ def visualize(
                 _x = [source.x[0], source.x[-1]]
                 _y = [source.y[0], source.y[-1]]
             plt.plot(_y, _x, lw=3, color=srccolor)
-
         elif isinstance(source, PointSource):
             if x is not None:
                 _x = source.y
@@ -147,8 +145,42 @@ def visualize(
                 _x = source.x
                 _y = source.y
             plt.plot(_y - 0.5, _x - 0.5, lw=3, marker="o", color=srccolor)
-
-        grid_energy[_x, _y] = 0  # do not visualize energy at location of source
+            grid_energy[_x, _y] = 0  # do not visualize energy at location of source
+        elif isinstance(source, PlaneSource):
+            if x is not None:
+                _x = (
+                    source.y
+                    if source.y.stop > source.y.start + 1
+                    else slice(source.y.start, source.y.start)
+                )
+                _y = (
+                    source.z
+                    if source.z.stop > source.z.start + 1
+                    else slice(source.z.start, source.z.start)
+                )
+            elif y is not None:
+                _x = (
+                    source.z
+                    if source.z.stop > source.z.start + 1
+                    else slice(source.z.start, source.z.start)
+                )
+                _y = (
+                    source.x
+                    if source.x.stop > source.x.start + 1
+                    else slice(source.x.start, source.x.start)
+                )
+            elif z is not None:
+                _x = (
+                    source.x
+                    if source.x.stop > source.x.start + 1
+                    else slice(source.x.start, source.x.start)
+                )
+                _y = (
+                    source.y
+                    if source.y.stop > source.y.start + 1
+                    else slice(source.y.start, source.y.start)
+                )
+            plt.plot([_y.start, _y.stop], [_x.start, _x.stop], lw=3, color=srccolor)
 
     # LineDetector
     for detector in grid.detectors:
@@ -237,9 +269,9 @@ def visualize(
         plt.gca().add_patch(patch)
 
     # visualize the energy in the grid
-    cmap_norm=None
-    if norm == 'log':
-        cmap_norm = LogNorm(vmin=1e-4, vmax=grid_energy.max()+1e-4)
+    cmap_norm = None
+    if norm == "log":
+        cmap_norm = LogNorm(vmin=1e-4, vmax=grid_energy.max() + 1e-4)
     plt.imshow(bd.numpy(grid_energy), cmap=cmap, interpolation="sinc", norm=cmap_norm)
 
     # finalize the plot
