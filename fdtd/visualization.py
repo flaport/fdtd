@@ -10,6 +10,7 @@ imported by the Grid class and hence are available as Grid methods.
 # plotting
 import matplotlib.pyplot as plt
 import matplotlib.patches as ptc
+from matplotlib.colors import LogNorm
 
 # relative
 from .backend import backend as bd
@@ -29,6 +30,7 @@ def visualize(
     objcolor=(1, 0, 0, 0.1),
     srccolor="C0",
     detcolor="C2",
+    norm="linear",
     show=True,
 ):
     """ visualize a projection of the grid and the optical energy inside the grid
@@ -41,8 +43,13 @@ def visualize(
         pbcolor: the color to visualize the periodic boundaries
         pmlcolor: the color to visualize the PML
         objcolor: the color to visualize the objects in the grid
-        objcolor: the color to visualize the sources in the grid
+        srccolor: the color to visualize the sources in the grid
+        detcolor: the color to visualize the detectors in the grid
+        norm: how to normalize the grid_energy color map ('linear' or 'log').
+        show: call pyplot.show() at the end of the function
     """
+    if norm not in ("linear", "lin", "log"):
+        raise ValueError("Color map normalization should be 'linear' or 'log'.")
     # imports (placed here to circumvent circular imports)
     from .sources import PointSource, LineSource
     from .boundaries import _PeriodicBoundaryX, _PeriodicBoundaryY, _PeriodicBoundaryZ
@@ -230,7 +237,10 @@ def visualize(
         plt.gca().add_patch(patch)
 
     # visualize the energy in the grid
-    plt.imshow(bd.numpy(grid_energy), cmap=cmap, interpolation="sinc")
+    cmap_norm=None
+    if norm == 'log':
+        cmap_norm = LogNorm(vmin=1e-4, vmax=grid_energy.max()+1e-4)
+    plt.imshow(bd.numpy(grid_energy), cmap=cmap, interpolation="sinc", norm=cmap_norm)
 
     # finalize the plot
     plt.ylabel(xlabel)
