@@ -6,3 +6,4 @@ black
 nbstripout
 pre-commit
 ipykernel
+line_profiler
