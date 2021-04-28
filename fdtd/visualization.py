@@ -31,7 +31,11 @@ def visualize(
     srccolor="C0",
     detcolor="C2",
     norm="linear",
-    show=True,
+    show=False,            # default False to allow animate to be true
+    animate=False,         # True to see frame by frame states of grid while running simulation
+    index=None,            # index for each frame of animation (visualize fn runs in a loop, loop variable is passed as index)
+    save=False,            # True to save frames (requires parameters index, folder)
+    folder=None,           # folder path to save frames
 ):
     """visualize a projection of the grid and the optical energy inside the grid
 
@@ -47,6 +51,10 @@ def visualize(
         detcolor: the color to visualize the detectors in the grid
         norm: how to normalize the grid_energy color map ('linear' or 'log').
         show: call pyplot.show() at the end of the function
+        animate: see frame by frame state of grid during simulation
+        index: index for each frame of animation (typically a loop variable is passed)
+        save: save frames in a folder
+        folder: path to folder to save frames
     """
     if norm not in ("linear", "lin", "log"):
         raise ValueError("Color map normalization should be 'linear' or 'log'.")
@@ -61,6 +69,11 @@ def visualize(
         _PMLZlow,
         _PMLZhigh,
     )
+
+    if animate:             # pause for 0.1s, clear plot
+        plt.pause(0.1)
+        plt.clf()
+        plt.ion()           # ionteration on for animation effect
 
     # validate x, y and z
     if x is not None:
@@ -182,7 +195,7 @@ def visualize(
                 )
             plt.plot([_y.start, _y.stop], [_x.start, _x.stop], lw=3, color=srccolor)
 
-    # LineDetector
+    # Detector
     for detector in grid.detectors:
         if x is not None:
             _x = [detector.y[0], detector.y[-1]]
@@ -194,7 +207,12 @@ def visualize(
             _x = [detector.x[0], detector.x[-1]]
             _y = [detector.y[0], detector.y[-1]]
 
-        plt.plot(_y, _x, lw=3, color=detcolor)
+        if detector.__class__.__name__ == "BlockDetector":
+            # BlockDetector
+            plt.plot([_y[0], _y[1], _y[1], _y[0], _y[0]], [_x[0], _x[0], _x[1], _x[1], _x[0]], lw=3, color=detcolor)
+        else:
+            # LineDetector
+            plt.plot(_y, _x, lw=3, color=detcolor)
 
     # Boundaries
     for boundary in grid.boundaries:
@@ -281,5 +299,11 @@ def visualize(
     plt.xlim(-1, Ny)
     plt.figlegend()
     plt.tight_layout()
+
+    # save frame (require folder path and index)
+    if save:
+        plt.savefig("./fdtd_output/" + folder + "/file%02d.png" % index)
+
+    # show if not animating
     if show:
         plt.show()
