@@ -80,6 +80,9 @@ class NumpyBackend(Backend):
     sum = staticmethod(numpy.sum)
     """ sum elements in array """
 
+    max = staticmethod(numpy.max)
+    """ max element in array """
+
     stack = staticmethod(numpy.stack)
     """ stack multiple arrays """
 
@@ -150,6 +153,9 @@ if TORCH_AVAILABLE:
 
         sum = staticmethod(torch.sum)
         """ sum elements in array """
+
+        max = staticmethod(torch.max)
+        """ max element in array """
 
         stack = staticmethod(torch.stack)
         """ stack multiple arrays """
