@@ -20,7 +20,7 @@ from .backend import backend as bd
 
 
 # For Hanning window pulses
-def Hanning(f, t, n):
+def hanning(f, t, n):
     return (1 / 2) * (1 - cos(f * t / n)) * (sin(f * t))
 
 
@@ -36,7 +36,7 @@ class PointSource:
         name: str = None,
         pulse: bool = False,
         cycle: int = 5,
-        dt: float = 10.0,
+        hanning_dt: float = 10.0,
     ):
         """Create a LineSource with a gaussian profile
 
@@ -48,7 +48,7 @@ class PointSource:
             name: name of the source.
             pulse: Set True to use a Hanning window pulse instead of continuous wavefunction.
             cycle: cycles for Hanning window pulse.
-            dt: timestep used for Hanning window pulse.
+            hanning_dt: timestep used for Hanning window pulse width (optional).
 
         """
         self.grid = None
@@ -58,8 +58,8 @@ class PointSource:
         self.name = name
         self.pulse = pulse
         self.cycle = cycle
-        self.dt = dt
         self.frequency = 1.0 / period
+        self.hanning_dt = hanning_dt if hanning_dt is not None else 0.5/self.frequency
 
     def _register_grid(self, grid: Grid, x: Number, y: Number, z: Number):
         """Register a grid for the source.
@@ -100,9 +100,9 @@ class PointSource:
         q = self.grid.time_steps_passed
         # if pulse
         if self.pulse:
-            t1 = int(2 * pi / (self.frequency * self.dt / self.cycle))
+            t1 = int(2 * pi / (self.frequency * self.hanning_dt / self.cycle))
             if q < t1:
-                src = self.amplitude * Hanning(self.frequency, q * self.dt, self.cycle)
+                src = self.amplitude * Hanning(self.frequency, q * self.hanning_dt, self.cycle)
             else:
                 #src = - self.grid.E[self.x, self.y, self.z, 2]
                 src = 0
@@ -142,7 +142,7 @@ class LineSource:
         name: str = None,
         pulse: bool = False,
         cycle: int = 5,
-        dt: float = 10.0,
+        hanning_dt: float = 10.0,
     ):
         """Create a LineSource with a gaussian profile
 
@@ -153,7 +153,7 @@ class LineSource:
             phase_shift: The phase offset of the source.
             pulse: Set True to use a Hanning window pulse instead of continuous wavefunction.
             cycle: cycles for Hanning window pulse.
-            dt: timestep used for Hanning window pulse.
+            hanning_dt: timestep used for Hanning window pulse width (optional).
 
         """
         self.grid = None
@@ -163,8 +163,8 @@ class LineSource:
         self.name = name
         self.pulse = pulse
         self.cycle = cycle
-        self.dt = dt
         self.frequency = 1.0 / period
+        self.hanning_dt = hanning_dt if hanning_dt is not None else 0.5/self.frequency
 
     def _register_grid(
         self, grid: Grid, x: ListOrSlice, y: ListOrSlice, z: ListOrSlice
@@ -285,9 +285,9 @@ class LineSource:
         q = self.grid.time_steps_passed
         # if pulse
         if self.pulse:
-            t1 = int(2 * pi / (self.frequency * self.dt / self.cycle))
+            t1 = int(2 * pi / (self.frequency * self.hanning_dt / self.cycle))
             if q < t1:
-                vect = self.profile * Hanning(self.frequency, q * self.dt, self.cycle)
+                vect = self.profile * Hanning(self.frequency, q * self.hanning_dt, self.cycle)
             else:
                 #src = - self.grid.E[self.x, self.y, self.z, 2]
                 vect = self.profile * 0
