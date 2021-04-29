@@ -102,7 +102,7 @@ class PointSource:
         if self.pulse:
             t1 = int(2 * pi / (self.frequency * self.hanning_dt / self.cycle))
             if q < t1:
-                src = self.amplitude * Hanning(self.frequency, q * self.hanning_dt, self.cycle)
+                src = self.amplitude * hanning(self.frequency, q * self.hanning_dt, self.cycle)
             else:
                 #src = - self.grid.E[self.x, self.y, self.z, 2]
                 src = 0
@@ -287,7 +287,7 @@ class LineSource:
         if self.pulse:
             t1 = int(2 * pi / (self.frequency * self.hanning_dt / self.cycle))
             if q < t1:
-                vect = self.profile * Hanning(self.frequency, q * self.hanning_dt, self.cycle)
+                vect = self.profile * hanning(self.frequency, q * self.hanning_dt, self.cycle)
             else:
                 #src = - self.grid.E[self.x, self.y, self.z, 2]
                 vect = self.profile * 0
