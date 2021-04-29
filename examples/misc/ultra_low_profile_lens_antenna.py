@@ -77,7 +77,7 @@ for j, col in enumerate(lens_mask.T):
 
 # source
 grid[15, 50:150, 0] = fdtd.LineSource(period = 1550e-9 / (3e8), name="source")
-#grid[15, 1.5e-6:14e-6, 0] = fdtd.LineSource(period = 1550e-9 / (3e8), name="source", pulse=True, cycle=3, dt=4e-15)
+#grid[15, 1.5e-6:14e-6, 0] = fdtd.LineSource(period = 1550e-9 / (3e8), name="source", pulse=True, cycle=3, hanning_dt=4e-15)
 
 # detectors
 #for i in range(130):
