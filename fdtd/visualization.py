@@ -12,6 +12,11 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as ptc
 from matplotlib.colors import LogNorm
 
+# 3rd party
+from tqdm import tqdm
+from numpy import log10, where, array
+from scipy.signal import hilbert        # TODO: Write hilbert function to replace using scipy
+
 # relative
 from .backend import backend as bd
 
@@ -307,3 +312,114 @@ def visualize(
     # show if not animating
     if show:
         plt.show()
+
+
+def dBmap2D(blockDet = None, chooseAxis = 2, interpolation="spline16"):
+    """
+    Displays detector readings from an 'fdtd.BlockDetector' in a decibel map spanning a 2D slice region inside the BlockDetector.
+    Compatible with continuous sources (not pulse).
+    Currently, only x-y 2D plot slices are accepted.
+    
+    Parameter:-
+        blockDet (numpy array): 5 axes numpy array (timestep, row, column, height, {x, y, z} parameter) created by 'fdtd.BlockDetector'.
+        (optional) chooseAxis (int): Choose between {0, 1, 2} to display {x, y, z} data. Default 2 (-> z).
+        (optional) interpolation (string): Preferred 'matplotlib.pyplot.imshow' interpolation. Default "spline16".
+    """
+    if blockDet is None:
+        raise ValueError("Function 'dBmap' requires a detector_readings object as parameter.")
+    if len(blockDet.shape) != 5:          # BlockDetector readings object have 5 axes
+        raise ValueError("Function 'dBmap' requires object of readings recorded by 'fdtd.BlockDetector'.")
+
+    # TODO: convert all 2D slices (y-z, x-z plots) into x-y plot data structure
+
+    plt.ioff()
+    plt.close()
+    a = []      # array to store wave intensities
+    for i in tqdm(range(len(blockDet[0]))):
+        a.append([])
+        for j in range(len(blockDet[0][0])):
+            temp = [x[i][j][0][chooseAxis] for x in blockDet]
+            a[i].append(max(temp) - min(temp))
+
+    peakVal, minVal = max(map(max, a)), min(map(min, a))
+    print("Peak at:", [[[i, j] for j, y in enumerate(x) if y == peakVal] for i, x in enumerate(a) if peakVal in x])
+    a = 10*log10([[y/minVal for y in x] for x in a])
+
+    plt.title("dB map of Electrical waves in detector region")
+    plt.imshow(a, cmap="inferno", interpolation=interpolation)
+    cbar = plt.colorbar()
+    cbar.ax.set_ylabel("dB scale", rotation=270)
+    plt.show()
+
+
+def plotDetection(detectorDict = None, specificPlot = None):
+    """
+    1. Plots intensity readings on array of 'fdtd.LineDetector' as a function of timestep.
+    2. Plots time of arrival of pulse at different LineDetector in array.
+    Compatible with pulse sources.
+    
+    Parameter:-
+        detectorDict (dictionary): Dictionary of detector readings, as created by 'fdtd.Grid.save_data()'.
+        (optional) specificPlot (string): Plot for a specific axis data. Choose from {"Ex", "Ey", "Ez", "Hx", "Hy", "Hz"}.
+    """
+    if detectorDict is None:
+        raise Exception("Function plotDetection() requires a dictionary of detector readings as 'detectorDict' parameter.")
+    detectorElement = 0     # cell to consider in each detectors
+    maxArray = {}
+    plt.ioff()
+    plt.close()
+
+    for detector in detectorDict:
+        if len(detectorDict[detector].shape) != 3:
+            print("Detector '{}' not LineDetector; dumped.".format(detector))
+            continue
+        if specificPlot is not None:
+            if detector[-2] != specificPlot[0]:
+                continue
+        if detector[-2] == "E":
+            plt.figure(0, figsize=(15, 15))
+        elif detector[-2] == "H":
+            plt.figure(1, figsize=(15, 15))
+        for dimension in range(len(detectorDict[detector][0][0])):
+            if specificPlot is not None:
+                if ["x", "y", "z"].index(specificPlot[1]) != dimension:
+                    continue
+            # if specificPlot, subplot on 1x1, else subplot on 2x2
+            plt.subplot(2 - int(specificPlot is not None), 2 - int(specificPlot is not None), dimension + 1 if specificPlot is None else 1)
+            hilbertPlot = abs(hilbert([x[0][dimension] for x in detectorDict[detector]]))
+            plt.plot(hilbertPlot, label=detector)
+            plt.title(detector[-2] + "(" + ["x", "y", "z"][dimension] + ")")
+            if detector[-2] not in maxArray:
+                maxArray[detector[-2]] = {}
+            if str(dimension) not in maxArray[detector[-2]]:
+                maxArray[detector[-2]][str(dimension)] = []
+            maxArray[detector[-2]][str(dimension)].append([detector, where(hilbertPlot == max(hilbertPlot))[0][0]])
+
+    # Loop same as above, only to add axes labels
+    for i in range(2):
+        if specificPlot is not None:
+            if ["E", "H"][i] != specificPlot[0]:
+                continue
+        plt.figure(i)
+        for dimension in range(len(detectorDict[detector][0][0])):
+            if specificPlot is not None:
+                if ["x", "y", "z"].index(specificPlot[1]) != dimension:
+                    continue
+            plt.subplot(2 - int(specificPlot is not None), 2 - int(specificPlot is not None), dimension + 1 if specificPlot is None else 1)
+            plt.xlabel("Time steps")
+            plt.ylabel("Magnitude")
+        plt.suptitle("Intensity profile")
+    plt.legend()
+    plt.show()
+
+    for item in maxArray:
+        plt.figure(figsize=(15, 15))
+        for dimension in maxArray[item]:
+            arrival = array(maxArray[item][dimension])
+            plt.plot([int(x) for x in arrival.T[1]], arrival.T[0], label=["x", "y", "z"][int(dimension)])
+        plt.title(item)
+        plt.xlabel("Time of arrival (time steps)")
+        plt.legend()
+        plt.suptitle("Time-of-arrival plot")
+    plt.show()
+
