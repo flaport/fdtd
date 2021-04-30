@@ -9,9 +9,14 @@ together and where the biggest part of the calculations are done.
 
 # standard library
 from math import pi
+from os import path, mkdir, chdir, remove
+from subprocess import call
+from glob import glob
+from datetime import datetime
 
 # 3rd party
 from tqdm import tqdm
+from numpy import savez
 
 # typing
 from .typing import Tuple, Number, Tensorlike
@@ -167,6 +172,9 @@ class Grid:
 
         # dictionary containing the objects in the grid
         self.objects = []
+
+        # folder path to store the simulation
+        self.folder = None
 
     def _handle_distance(self, distance: Number) -> int:
         """ transform a distance to an integer number of gridpoints """
@@ -398,3 +406,68 @@ class Grid:
             for obj in self.objects:
                 s += str(obj)
         return s
+
+
+    def save_simulation(self, simName = None):
+        """
+        Creates a folder and initializes environment to store simulation or related details.
+        saveSimulation() needs to be run before running any function that stores data (generate_video(), save_data()).
+        
+        Parameters:-
+            (optional) simName (string): Preferred name for simulation
+        """
+        if not path.exists("./fdtd_output"):  # Output master folder declaration
+            mkdir("fdtd_output")
+        # making simTitle with timestamp
+        simTitle = str(datetime.now().year) + "-" + str(
+            datetime.now().month) + "-" + str(datetime.now().day) + "-" + str(
+                datetime.now().hour) + "-" + str(datetime.now().minute) + "-" + str(datetime.now().second)
+        # Simulation name (optional)
+        if simName is not None:
+            simTitle = simTitle + " (" + simName + ")"
+        folder = "fdtd_output_" + simTitle
+        self.folder = folder        # storing folder path for saving simulation
+        self.simTitle = simTitle    # storing timestamp title for self.generate_video
+        if path.exists(path.join("./fdtd_output", folder)):  # Overwrite protocol
+            yn = input("File", folder, "exists. Overwrite? [Y/N]: ")
+            if yn.capitalize() == "N":
+                exit()
+        else:
+            mkdir(path.join("./fdtd_output", folder))
+
+
+    def generate_video(self, delete_frames=False):
+        """
+        Compiles frames saved through 'fdtd.Grid.visualize(save=True)' into an mp4 video format.
+        REQUIRES 'fdtd.Grid.saveSimulation()' to be run before this function.
+        
+        Parameters:-
+            (optional) delete_frames (bool): Delete stored frames after conversion to video.
+        """
+        if self.folder is None:
+            raise Exception("Save location not initialized. Please read about 'fdtd.Grid.saveSimulation()' or try running 'grid.saveSimulation()'.")
+        chdir(path.join("./fdtd_output", self.folder))
+        call([
+            'ffmpeg', '-y', '-framerate', '8', '-i', 'file%02d.png', '-r', '30',
+            '-pix_fmt', 'yuv420p', 'fdtd_sim_video_' + self.simTitle + '.mp4'
+        ])
+        if delete_frames:  # delete frames
+            for file_name in glob("*.png"):
+                remove(file_name)
+        chdir("../..")
+
+
+    def save_data(self):
+        """
+        Saves readings from all detectors in the grid into a numpy zip file. Each detector is stored in separate arrays. Electric and magnetic field field readings of each detector are also stored separately with suffix " (E)" and " (H)" (Example: ['detector0 (E)', 'detector0 (H)']). Therefore, the numpy zip file contains arrays twice the number of detectors.
+        REQUIRES 'fdtd.Grid.saveSimulation()' to be run before this function.
+        
+        Parameters: None
+        """
+        if self.folder is None:
+            raise Exception("Save location not initialized. Please read about 'fdtd.Grid.saveSimulation()' or try running 'grid.saveSimulation()'.")
+        dic = {}
+        for detector in self.detectors:
+            dic[detector.name + " (E)"] = [x for x in detector.detector_values()["E"]]
+            dic[detector.name + " (H)"] = [x for x in detector.detector_values()["H"]]
+        savez(path.join("./fdtd_output", self.folder, "detector_readings"), **dic)

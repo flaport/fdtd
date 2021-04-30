@@ -18,6 +18,12 @@ from .typing import Tuple, Number, ListOrSlice, List
 from .grid import Grid
 from .backend import backend as bd
 
+
+# For Hanning window pulses
+def hanning(f, t, n):
+    return (1 / 2) * (1 - cos(f * t / n)) * (sin(f * t))
+
+
 ## PointSource class
 class PointSource:
     """ A source placed at a single point (grid cell) in the grid """
@@ -28,6 +34,9 @@ class PointSource:
         power: float = 1.0,
         phase_shift: float = 0.0,
         name: str = None,
+        pulse: bool = False,
+        cycle: int = 5,
+        hanning_dt: float = 10.0,
     ):
         """Create a LineSource with a gaussian profile
 
@@ -37,6 +46,9 @@ class PointSource:
             power: The power of the source
             phase_shift: The phase offset of the source.
             name: name of the source.
+            pulse: Set True to use a Hanning window pulse instead of continuous wavefunction.
+            cycle: cycles for Hanning window pulse.
+            hanning_dt: timestep used for Hanning window pulse width (optional).
 
         """
         self.grid = None
@@ -44,6 +56,10 @@ class PointSource:
         self.power = power
         self.phase_shift = phase_shift
         self.name = name
+        self.pulse = pulse
+        self.cycle = cycle
+        self.frequency = 1.0 / period
+        self.hanning_dt = hanning_dt if hanning_dt is not None else 0.5/self.frequency
 
     def _register_grid(self, grid: Grid, x: Number, y: Number, z: Number):
         """Register a grid for the source.
@@ -82,7 +98,17 @@ class PointSource:
     def update_E(self):
         """ Add the source to the electric field """
         q = self.grid.time_steps_passed
-        src = self.amplitude * sin(2 * pi * q / self.period + self.phase_shift)
+        # if pulse
+        if self.pulse:
+            t1 = int(2 * pi / (self.frequency * self.hanning_dt / self.cycle))
+            if q < t1:
+                src = self.amplitude * hanning(self.frequency, q * self.hanning_dt, self.cycle)
+            else:
+                #src = - self.grid.E[self.x, self.y, self.z, 2]
+                src = 0
+        # if not pulse
+        else:
+            src = self.amplitude * sin(2 * pi * q / self.period + self.phase_shift)
         self.grid.E[self.x, self.y, self.z, 2] += src
 
     def update_H(self):
@@ -114,6 +140,9 @@ class LineSource:
         power: float = 1.0,
         phase_shift: float = 0.0,
         name: str = None,
+        pulse: bool = False,
+        cycle: int = 5,
+        hanning_dt: float = 10.0,
     ):
         """Create a LineSource with a gaussian profile
 
@@ -122,6 +151,9 @@ class LineSource:
                 as integer [timesteps] or as float [seconds]
             power: The power of the source
             phase_shift: The phase offset of the source.
+            pulse: Set True to use a Hanning window pulse instead of continuous wavefunction.
+            cycle: cycles for Hanning window pulse.
+            hanning_dt: timestep used for Hanning window pulse width (optional).
 
         """
         self.grid = None
@@ -129,6 +161,10 @@ class LineSource:
         self.power = power
         self.phase_shift = phase_shift
         self.name = name
+        self.pulse = pulse
+        self.cycle = cycle
+        self.frequency = 1.0 / period
+        self.hanning_dt = hanning_dt if hanning_dt is not None else 0.5/self.frequency
 
     def _register_grid(
         self, grid: Grid, x: ListOrSlice, y: ListOrSlice, z: ListOrSlice
@@ -247,7 +283,17 @@ class LineSource:
     def update_E(self):
         """ Add the source to the electric field """
         q = self.grid.time_steps_passed
-        vect = self.profile * sin(2 * pi * q / self.period + self.phase_shift)
+        # if pulse
+        if self.pulse:
+            t1 = int(2 * pi / (self.frequency * self.hanning_dt / self.cycle))
+            if q < t1:
+                vect = self.profile * hanning(self.frequency, q * self.hanning_dt, self.cycle)
+            else:
+                #src = - self.grid.E[self.x, self.y, self.z, 2]
+                vect = self.profile * 0
+        # if not pulse
+        else:
+            vect = self.profile * sin(2 * pi * q / self.period + self.phase_shift)
         # do not use list indexing here, as this is much slower especially for torch backend
         # DISABLED: self.grid.E[self.x, self.y, self.z, 2] = vect
         for x, y, z, value in zip(self.x, self.y, self.z, vect):
