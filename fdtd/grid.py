@@ -408,7 +408,7 @@ class Grid:
         return s
 
 
-    def saveSimulation(self, simName = None):
+    def save_simulation(self, simName = None):
         """
         Creates a folder and initializes environment to store simulation or related details.
         saveSimulation() needs to be run before running any function that stores data (generate_video(), save_data()).

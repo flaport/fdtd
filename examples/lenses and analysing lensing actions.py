@@ -8,7 +8,7 @@ start_time = time()		# to compute run-time
 
 # grid
 grid = fdtd.Grid(shape=(260, 15.5e-6, 1), grid_spacing=77.5e-9)
-grid.saveSimulation("Example1")		# initializing environment to save simulation data
+grid.save_simulation("Example1")		# initializing environment to save simulation data
 
 # objects
 # defining a biconvex lens
@@ -68,7 +68,7 @@ grid.save_data()		# saving detector readings
 
 # analysing data stored by above simulation by plotting a 2D decibel map
 df = load(path.join("./fdtd_output", grid.folder, "detector_readings.npz"))
-fdtd.dBmap2D(df["detector (E)"])
+fdtd.dB_map_2D(df["detector (E)"])
 
 end_time = time()
 print("Runtime:", end_time-start_time)

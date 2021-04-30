@@ -8,7 +8,7 @@ start_time = time()		# to compute run-time
 
 # grid
 grid = fdtd.Grid(shape=(9.3e-6, 15.5e-6, 1), grid_spacing=77.5e-9)
-grid.saveSimulation("Example2")		# initializing environment to save simulation data
+grid.save_simulation("Example2")		# initializing environment to save simulation data
 
 # objects
 # defining a graded refractive index slab, with homogenous slab extensions outwards from both ends
@@ -70,7 +70,7 @@ grid.save_data()		# saving detector readings
 
 # analysing data stored by above simulation to find intensity profile and time-of-arrival plot
 df = load(path.join("./fdtd_output", grid.folder, "detector_readings.npz"))
-fdtd.plotDetection(df)
+fdtd.plot_detection(df)
 
 end_time = time()
 print("Runtime:", end_time-start_time)

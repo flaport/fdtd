@@ -14,7 +14,7 @@ from matplotlib.colors import LogNorm
 
 # 3rd party
 from tqdm import tqdm
-from numpy import log10, where, array
+from numpy import log10, where
 from scipy.signal import hilbert        # TODO: Write hilbert function to replace using scipy
 
 # relative
@@ -314,7 +314,7 @@ def visualize(
         plt.show()
 
 
-def dBmap2D(blockDet = None, chooseAxis = 2, interpolation="spline16"):
+def dB_map_2D(blockDet = None, chooseAxis = 2, interpolation="spline16"):
     """
     Displays detector readings from an 'fdtd.BlockDetector' in a decibel map spanning a 2D slice region inside the BlockDetector.
     Compatible with continuous sources (not pulse).
@@ -352,7 +352,7 @@ def dBmap2D(blockDet = None, chooseAxis = 2, interpolation="spline16"):
     plt.show()
 
 
-def plotDetection(detectorDict = None, specificPlot = None):
+def plot_detection(detectorDict = None, specificPlot = None):
     """
     1. Plots intensity readings on array of 'fdtd.LineDetector' as a function of timestep.
     2. Plots time of arrival of pulse at different LineDetector in array.
@@ -415,7 +415,7 @@ def plotDetection(detectorDict = None, specificPlot = None):
     for item in maxArray:
         plt.figure(figsize=(15, 15))
         for dimension in maxArray[item]:
-            arrival = array(maxArray[item][dimension])
+            arrival = bd.numpy(maxArray[item][dimension])
             plt.plot([int(x) for x in arrival.T[1]], arrival.T[0], label=["x", "y", "z"][int(dimension)])
         plt.title(item)
         plt.xlabel("Time of arrival (time steps)")
