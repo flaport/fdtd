@@ -1,10 +1,9 @@
 # Python 3D FDTD Simulator
 
+![Docs](https://readthedocs.org/projects/fdtd/badge/?version=latest)
+
 A 3D electromagnetic FDTD simulator written in Python. The FDTD simulator has
 an optional PyTorch backend, enabling FDTD simulations on a GPU.
-
-**NOTE: This library is under construction. Only some minimal features are
-implemented and the API might change considerably.**
 
 ## Installation
 
@@ -30,15 +29,15 @@ pip install -e fdtd
 
 - python 3.6+
 - numpy
+- scipy
 - matplotlib
 - tqdm
 - pytorch (optional)
 
 ## Contributing
 
-The library is still in a very early stage of development, but all improvements
-or additions (for example new objects, sources or detectors) are welcome.
-Please make a pull-request 😊.
+All improvements or additions (for example new objects, sources or detectors) are
+welcome. Please make a pull-request 😊.
 
 ## Documentation
 
