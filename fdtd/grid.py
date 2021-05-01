@@ -9,8 +9,8 @@ together and where the biggest part of the calculations are done.
 
 # standard library
 from math import pi
-from os import path, mkdir, chdir, remove
-from subprocess import call
+from os import path, makedirs, chdir, remove
+from subprocess import check_call, CalledProcessError
 from glob import glob
 from datetime import datetime
 
@@ -35,7 +35,7 @@ VACUUM_PERMITTIVITY: float = 1.0 / (
 
 ## Functions
 def curl_E(E: Tensorlike) -> Tensorlike:
-    """ Transforms an E-type field into an H-type field by performing a curl
+    """Transforms an E-type field into an H-type field by performing a curl
     operation
 
     Args:
@@ -60,7 +60,7 @@ def curl_E(E: Tensorlike) -> Tensorlike:
 
 
 def curl_H(H: Tensorlike) -> Tensorlike:
-    """ Transforms an H-type field into an E-type field by performing a curl
+    """Transforms an H-type field into an E-type field by performing a curl
     operation
 
     Args:
@@ -86,7 +86,7 @@ def curl_H(H: Tensorlike) -> Tensorlike:
 
 ## FDTD Grid Class
 class Grid:
-    """ The FDTD Grid
+    """The FDTD Grid
 
     The grid is the core of the FDTD Library. It is where everything comes
     together and where the biggest part of the calculations are done.
@@ -256,7 +256,7 @@ class Grid:
         return self.time_steps_passed * self.time_step
 
     def run(self, total_time: Number, progress_bar: bool = True):
-        """ run an FDTD simulation.
+        """run an FDTD simulation.
 
         Args:
             total_time: the total time for the simulation to run.
@@ -273,7 +273,7 @@ class Grid:
             self.step()
 
     def step(self):
-        """ do a single FDTD step by first updating the electric field and then
+        """do a single FDTD step by first updating the electric field and then
         updating the magnetic field
         """
         self.update_E()
@@ -384,7 +384,7 @@ class Grid:
         )
 
     def __str__(self):
-        """ string representation of the grid
+        """string representation of the grid
 
         lists all the components and their locations in the grid.
         """
@@ -407,65 +407,99 @@ class Grid:
                 s += str(obj)
         return s
 
-
-    def save_simulation(self, simName = None):
+    def save_simulation(self, sim_name=None):
         """
         Creates a folder and initializes environment to store simulation or related details.
         saveSimulation() needs to be run before running any function that stores data (generate_video(), save_data()).
-        
-        Parameters:-
-            (optional) simName (string): Preferred name for simulation
-        """
-        if not path.exists("./fdtd_output"):  # Output master folder declaration
-            mkdir("fdtd_output")
-        # making simTitle with timestamp
-        simTitle = str(datetime.now().year) + "-" + str(
-            datetime.now().month) + "-" + str(datetime.now().day) + "-" + str(
-                datetime.now().hour) + "-" + str(datetime.now().minute) + "-" + str(datetime.now().second)
-        # Simulation name (optional)
-        if simName is not None:
-            simTitle = simTitle + " (" + simName + ")"
-        folder = "fdtd_output_" + simTitle
-        self.folder = folder        # storing folder path for saving simulation
-        self.simTitle = simTitle    # storing timestamp title for self.generate_video
-        if path.exists(path.join("./fdtd_output", folder)):  # Overwrite protocol
-            yn = input("File", folder, "exists. Overwrite? [Y/N]: ")
-            if yn.capitalize() == "N":
-                exit()
-        else:
-            mkdir(path.join("./fdtd_output", folder))
 
+        Parameters:-
+            (optional) sim_name (string): Preferred name for simulation
+        """
+        makedirs("fdtd_output", exist_ok=True)  # Output master folder declaration
+        # making full_sim_name with timestamp
+        full_sim_name = (
+            str(datetime.now().year)
+            + "-"
+            + str(datetime.now().month)
+            + "-"
+            + str(datetime.now().day)
+            + "-"
+            + str(datetime.now().hour)
+            + "-"
+            + str(datetime.now().minute)
+            + "-"
+            + str(datetime.now().second)
+        )
+        # Simulation name (optional)
+        if sim_name is not None:
+            full_sim_name = full_sim_name + " (" + sim_name + ")"
+        folder = "fdtd_output_" + full_sim_name
+        self.folder = folder  # storing folder path for saving simulation
+        self.full_sim_name = (
+            full_sim_name  # storing timestamp title for self.generate_video
+        )
+        makedirs(path.join("./fdtd_output", folder), exist_ok=True)
 
     def generate_video(self, delete_frames=False):
-        """
-        Compiles frames saved through 'fdtd.Grid.visualize(save=True)' into an mp4 video format.
-        REQUIRES 'fdtd.Grid.saveSimulation()' to be run before this function.
-        
-        Parameters:-
-            (optional) delete_frames (bool): Delete stored frames after conversion to video.
+        """Compiles frames into a video
+
+        These framed should be saved through ``fdtd.Grid.visualize(save=True)`` while having ``fdtd.Grid.save_simulation()`` enabled.
+
+        Args:
+            delete_frames (optional, bool): delete stored frames after conversion to video.
+
+        Returns:
+            the filename of the generated video.
+
+        Note:
+            this function requires ``ffmpeg`` to be available in your path.
         """
         if self.folder is None:
-            raise Exception("Save location not initialized. Please read about 'fdtd.Grid.saveSimulation()' or try running 'grid.saveSimulation()'.")
+            raise Exception(
+                "Save location not initialized. Please read about 'fdtd.Grid.saveSimulation()' or try running 'grid.saveSimulation()'."
+            )
         chdir(path.join("./fdtd_output", self.folder))
-        call([
-            'ffmpeg', '-y', '-framerate', '8', '-i', 'file%02d.png', '-r', '30',
-            '-pix_fmt', 'yuv420p', 'fdtd_sim_video_' + self.simTitle + '.mp4'
-        ])
+        try:
+            check_call(
+                [
+                    "ffmpeg",
+                    "-y",
+                    "-framerate",
+                    "8",
+                    "-i",
+                    "file%04d.png",
+                    "-r",
+                    "30",
+                    "-pix_fmt",
+                    "yuv420p",
+                    "fdtd_sim_video_" + self.full_sim_name + ".mp4",
+                ]
+            )
+        except (FileNotFoundError, CalledProcessError):
+            raise CalledProcessError(
+                "Error when calling ffmpeg. Is ffmpeg installed and available in your path?"
+            )
         if delete_frames:  # delete frames
             for file_name in glob("*.png"):
                 remove(file_name)
         chdir("../..")
-
+        return path.abspath(
+            path.join(
+                "./fdtd_output", self.folder, f"fdtd_sim_video_{self.full_sim_name}.mp4"
+            )
+        )
 
     def save_data(self):
         """
         Saves readings from all detectors in the grid into a numpy zip file. Each detector is stored in separate arrays. Electric and magnetic field field readings of each detector are also stored separately with suffix " (E)" and " (H)" (Example: ['detector0 (E)', 'detector0 (H)']). Therefore, the numpy zip file contains arrays twice the number of detectors.
-        REQUIRES 'fdtd.Grid.saveSimulation()' to be run before this function.
-        
+        REQUIRES 'fdtd.Grid.save_simulation()' to be run before this function.
+
         Parameters: None
         """
         if self.folder is None:
-            raise Exception("Save location not initialized. Please read about 'fdtd.Grid.saveSimulation()' or try running 'grid.saveSimulation()'.")
+            raise Exception(
+                "Save location not initialized. Please read about 'fdtd.Grid.saveSimulation()' or try running 'grid.saveSimulation()'."
+            )
         dic = {}
         for detector in self.detectors:
             dic[detector.name + " (E)"] = [x for x in detector.detector_values()["E"]]

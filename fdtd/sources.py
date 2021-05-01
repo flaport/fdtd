@@ -9,7 +9,7 @@ Available sources:
 ## Imports
 
 # other
-from math import pi, sin
+from math import pi, sin, cos
 
 # typing
 from .typing import Tuple, Number, ListOrSlice, List
@@ -59,7 +59,7 @@ class PointSource:
         self.pulse = pulse
         self.cycle = cycle
         self.frequency = 1.0 / period
-        self.hanning_dt = hanning_dt if hanning_dt is not None else 0.5/self.frequency
+        self.hanning_dt = hanning_dt if hanning_dt is not None else 0.5 / self.frequency
 
     def _register_grid(self, grid: Grid, x: Number, y: Number, z: Number):
         """Register a grid for the source.
@@ -102,9 +102,11 @@ class PointSource:
         if self.pulse:
             t1 = int(2 * pi / (self.frequency * self.hanning_dt / self.cycle))
             if q < t1:
-                src = self.amplitude * hanning(self.frequency, q * self.hanning_dt, self.cycle)
+                src = self.amplitude * hanning(
+                    self.frequency, q * self.hanning_dt, self.cycle
+                )
             else:
-                #src = - self.grid.E[self.x, self.y, self.z, 2]
+                # src = - self.grid.E[self.x, self.y, self.z, 2]
                 src = 0
         # if not pulse
         else:
@@ -164,7 +166,7 @@ class LineSource:
         self.pulse = pulse
         self.cycle = cycle
         self.frequency = 1.0 / period
-        self.hanning_dt = hanning_dt if hanning_dt is not None else 0.5/self.frequency
+        self.hanning_dt = hanning_dt if hanning_dt is not None else 0.5 / self.frequency
 
     def _register_grid(
         self, grid: Grid, x: ListOrSlice, y: ListOrSlice, z: ListOrSlice
@@ -287,9 +289,11 @@ class LineSource:
         if self.pulse:
             t1 = int(2 * pi / (self.frequency * self.hanning_dt / self.cycle))
             if q < t1:
-                vect = self.profile * hanning(self.frequency, q * self.hanning_dt, self.cycle)
+                vect = self.profile * hanning(
+                    self.frequency, q * self.hanning_dt, self.cycle
+                )
             else:
-                #src = - self.grid.E[self.x, self.y, self.z, 2]
+                # src = - self.grid.E[self.x, self.y, self.z, 2]
                 vect = self.profile * 0
         # if not pulse
         else:
