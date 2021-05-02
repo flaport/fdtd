@@ -8,6 +8,7 @@ together and where the biggest part of the calculations are done.
 ## Imports
 
 # standard library
+import os
 from math import pi
 from os import path, makedirs, chdir, remove
 from subprocess import check_call, CalledProcessError
@@ -434,11 +435,12 @@ class Grid:
         if sim_name is not None:
             full_sim_name = full_sim_name + " (" + sim_name + ")"
         folder = "fdtd_output_" + full_sim_name
-        self.folder = folder  # storing folder path for saving simulation
-        self.full_sim_name = (
-            full_sim_name  # storing timestamp title for self.generate_video
-        )
-        makedirs(path.join("./fdtd_output", folder), exist_ok=True)
+        # storing folder path for saving simulation
+        self.folder = os.path.abspath(path.join("fdtd_output", folder))
+        # storing timestamp title for self.generate_video
+        self.full_sim_name = full_sim_name
+        makedirs(self.folder, exist_ok=True)
+        return self.folder
 
     def generate_video(self, delete_frames=False):
         """Compiles frames into a video
@@ -458,7 +460,8 @@ class Grid:
             raise Exception(
                 "Save location not initialized. Please read about 'fdtd.Grid.saveSimulation()' or try running 'grid.saveSimulation()'."
             )
-        chdir(path.join("./fdtd_output", self.folder))
+        cwd = path.abspath(os.getcwd())
+        chdir(self.folder)
         try:
             check_call(
                 [
@@ -482,12 +485,11 @@ class Grid:
         if delete_frames:  # delete frames
             for file_name in glob("*.png"):
                 remove(file_name)
-        chdir("../..")
-        return path.abspath(
-            path.join(
-                "./fdtd_output", self.folder, f"fdtd_sim_video_{self.full_sim_name}.mp4"
-            )
+        video_path = path.abspath(
+            path.join(self.folder, f"fdtd_sim_video_{self.full_sim_name}.mp4")
         )
+        chdir(cwd)
+        return video_path
 
     def save_data(self):
         """
@@ -504,4 +506,4 @@ class Grid:
         for detector in self.detectors:
             dic[detector.name + " (E)"] = [x for x in detector.detector_values()["E"]]
             dic[detector.name + " (H)"] = [x for x in detector.detector_values()["H"]]
-        savez(path.join("./fdtd_output", self.folder, "detector_readings"), **dic)
+        savez(path.join(self.folder, "detector_readings"), **dic)

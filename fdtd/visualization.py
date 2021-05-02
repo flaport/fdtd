@@ -313,9 +313,7 @@ def visualize(
 
     # save frame (require folder path and index)
     if save:
-        plt.savefig(
-            os.path.join("fdtd_output", folder, f"file{str(index).zfill(4)}.png")
-        )
+        plt.savefig(os.path.join(folder, f"file{str(index).zfill(4)}.png"))
 
     # show if not animating
     if show:
