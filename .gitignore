@@ -1,5 +1,7 @@
 # examples folder
+docs/examples
 examples/fdtd
+examples/fdtd_output
 
 # documentation
 docs/_build

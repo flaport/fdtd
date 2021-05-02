@@ -1,0 +1,9 @@
+pytest
+sphinx
+nbsphinx
+sphinx-rtd-theme
+black
+nbstripout
+pre-commit
+ipykernel
+line_profiler

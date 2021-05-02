@@ -12,8 +12,9 @@ an optional PyTorch backend, enabling FDTD simulations on a GPU.
 Docs
 ----
 .. toctree::
-   :maxdepth: 4
+   :maxdepth: 2
 
+   examples
    fdtd
 
 
