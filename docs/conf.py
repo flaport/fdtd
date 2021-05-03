@@ -20,7 +20,7 @@ import fdtd
 # -- Project information -----------------------------------------------------
 
 project = fdtd.__name__
-copyright = "2021, {fdtd.__author__}"
+copyright = f"2021, {fdtd.__author__}"
 author = fdtd.__author__
 
 # The full version, including alpha/beta/rc tags
