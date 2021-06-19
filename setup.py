@@ -5,6 +5,26 @@ description = """a 3D electromagnetic FDTD simulator written in Python"""
 with open("readme.md", "r") as file:
     long_description = file.read()
 
+reqs = [
+    "tqdm",
+    "numpy",
+    "scipy",
+    "matplotlib",
+]
+
+extras = {
+    "dev": [
+        "pytest",
+        "sphinx",
+        "nbsphinx",
+        "sphinx-rtd-theme",
+        "black",
+        "nbstripout",
+        "pre-commit",
+        "ipykernel",
+        "line_profiler",
+    ]
+}
 author = "Floris laporte"
 version = "0.0.2"
 
@@ -18,6 +38,8 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="http://github.com/flaport/fdtd",
     packages=setuptools.find_packages(),
+    install_requires=reqs,
+    extras_require=extras,
     classifiers=[
         "Programming Language :: Python :: 3",
         "Development Status :: 3 - Alpha",
