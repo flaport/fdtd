@@ -25,6 +25,11 @@ and linking it with pip
 pip install -e fdtd
 ```
 
+Development dependencies can be installed with
+```
+pip install -e ftdt[dev]
+```
+
 ## Dependencies
 
 - python 3.6+
