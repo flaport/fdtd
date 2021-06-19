@@ -1,4 +1,3 @@
-import fdtd
 import setuptools
 
 description = """a 3D electromagnetic FDTD simulator written in Python"""
@@ -6,10 +5,13 @@ description = """a 3D electromagnetic FDTD simulator written in Python"""
 with open("readme.md", "r") as file:
     long_description = file.read()
 
+author = "Floris laporte"
+version = "0.0.2"
+
 setuptools.setup(
-    name=fdtd.__name__,
-    version=fdtd.__version__,
-    author=fdtd.__author__,
+    name="fdtd",
+    version=version,
+    author=author,
     author_email="floris.laporte@gmail.com",
     description=description,
     long_description=long_description,
