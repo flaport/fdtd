@@ -27,7 +27,7 @@ pip install -e fdtd
 
 Development dependencies can be installed with
 ```
-pip install -e ftdt[dev]
+pip install -e fdtd[dev]
 ```
 
 ## Dependencies
