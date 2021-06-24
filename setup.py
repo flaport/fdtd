@@ -15,15 +15,20 @@ reqs = [
 extras = {
     "dev": [
         "pytest",
-        "sphinx",
-        "nbsphinx",
-        "sphinx-rtd-theme",
         "black",
         "nbstripout",
         "pre-commit",
         "ipykernel",
         "line_profiler",
-    ]
+    ],
+    "test": [
+        "pytest",
+    ],
+    "docs": [
+        "sphinx",
+        "nbsphinx",
+        "sphinx-rtd-theme",
+    ],
 }
 author = "Floris laporte"
 version = "0.0.2"
