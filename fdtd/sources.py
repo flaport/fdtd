@@ -507,3 +507,146 @@ class PlaneSource:
         z = f"[{self.z.start}, ... , {self.z.stop}]"
         s += f"        @ x={x}, y={y}, z={z}\n"
         return s
+
+
+
+class SoftArbitraryPointSource:
+    """
+
+    A source placed at a single point (grid cell) in the grid.
+    This source is special: it's both a source and a detector.
+
+
+    """
+
+    def __init__(
+        self,
+        waveform: ,
+        name: str = None,
+        impedance: float = 0.0
+    ):
+        """Create a LineSource with a gaussian profile
+
+        Args:
+            period: The period of the source. The period can be specified
+                as integer [timesteps] or as float [seconds]
+            power: The power of the source
+            phase_shift: The phase offset of the source.
+            name: name of the source.
+            pulse: Set True to use a Hanning window pulse instead of continuous wavefunction.
+            cycle: cycles for Hanning window pulse.
+            hanning_dt: timestep used for Hanning window pulse width (optional).
+
+        """
+        self.grid = None
+        self.name = name
+
+
+    def _register_grid(self, grid: Grid, x: Number, y: Number, z: Number):
+        """Register a grid for the source.
+
+        Args:
+            grid: the grid to place the source into.
+            x: The x-location of the source in the grid
+            y: The y-location of the source in the grid
+            z: The z-location of the source in the grid
+
+        Note:
+            As its name suggests, this source is a POINT source.
+            Hence it should be placed at a single coordinate tuple
+            int the grid.
+        """
+        self.grid = grid
+        self.grid.sources.append(self)
+        if self.name is not None:
+            if not hasattr(grid, self.name):
+                setattr(grid, self.name, self)
+            else:
+                raise ValueError(
+                    f"The grid already has an attribute with name {self.name}"
+                )
+
+        try:
+            (x,), (y,), (z,) = x, y, z
+        except (TypeError, ValueError):
+            raise ValueError("a point source should be placed on a single grid cell.")
+        self.x, self.y, self.z = grid._handle_tuple((x, y, z))
+
+
+    def update_E(self):
+        """ Add the source to the electric field """
+
+
+
+        self.grid.E[self.x, self.y, self.z, 2] += src
+
+    def update_H(self):
+        """ Add the source to the magnetic field """
+
+    def __repr__(self):
+        return (
+            f"{self.__class__.__name__}(period={self.period}, "
+            f"power={self.power}, phase_shift={self.phase_shift}, "
+            f"name={repr(self.name)})"
+        )
+
+    def __str__(self):
+        s = "    " + repr(self) + "\n"
+        x = f"{self.x}"
+        y = f"{self.y}"
+        z = f"{self.z}"
+        s += f"        @ x={x}, y={y}, z={z}\n"
+        return s
+
+
+
+
+
+
+
+    #
+    #
+    # def get_current(self, pcb):
+    #     #really needs to be fixed!
+    #
+    #     #[Luebbers 1996 1992]
+    #
+    #     z_slice = slice(pcb.component_plane_z-1,pcb.component_plane_z)
+    #
+    #     current = (((pcb.grid.H[self.N_x,self.N_y-1,z_slice,X]/sqrt(mu_0))-
+    #                 (pcb.grid.H[self.N_x,self.N_y,z_slice,X]/sqrt(mu_0)))*pcb.cell_size)
+    #     current += (((pcb.grid.H[self.N_x,self.N_y,z_slice,Y]/sqrt(mu_0))-
+    #                 (pcb.grid.H[self.N_x-1,self.N_y,z_slice,Y]/sqrt(mu_0)))*pcb.cell_size)
+    #
+    #     current = float(current.cpu())
+    #     # current /= (pcb.cell_size)
+    #
+    #     #field normalized according to Flaport's thesis, chapter 4.1.6
+    #
+    #     # account for Yee cell inaccuracies [Fang 1994].
+    #     z_slice_2 = slice(pcb.component_plane_z-2,pcb.component_plane_z-1)
+    #
+    #     current_2 = (((pcb.grid.H[self.N_x,self.N_y-1,z_slice_2,X]/sqrt(mu_0))-
+    #                 (pcb.grid.H[self.N_x,self.N_y,z_slice_2,X]/sqrt(mu_0)))*pcb.cell_size)
+    #     current_2 += (((pcb.grid.H[self.N_x,self.N_y,z_slice_2,Y]/sqrt(mu_0))-
+    #                 (pcb.grid.H[self.N_x-1,self.N_y,z_slice_2,Y]/sqrt(mu_0)))*pcb.cell_size)
+    #     # current
+    #     current_2 = float(current_2.cpu())
+    #     # current_2 /= (pcb.cell_size)
+    #
+    #
+    #     current = ((current+current_2) / 2.0)
+    #
+    #     return current
+    #
+    # def set_voltage(self, pcb, voltage):
+    #     z_slice = slice(pcb.component_plane_z-1,pcb.component_plane_z)
+    #
+    #     pcb.grid.E[self.N_x,self.N_y,z_slice,Z] = sqrt(epsilon_0) * (voltage / (pcb.cell_size))
+    #
+    #
+    # def get_voltage(self, pcb):
+    #     z_slice = slice(pcb.component_plane_z-1,pcb.component_plane_z)
+    #
+    #     return (pcb.grid.E[self.N_x,self.N_y,z_slice,Z]/sqrt(epsilon_0))*(pcb.cell_size)
+    #
