@@ -5,16 +5,13 @@ from .backend import backend as bd
 
 '''
 
-
 Novel architectures for brain-inspired photonic computers
 https://www.photonics.intec.ugent.be/download/phd_259.pdf
 
 Chapters 4.1.2 and 4.1.6.
 
-In SI units, the relative magnitude difference between the fields is related by the electromagnetic
-impedance of free space
-, which for the current choice of simulation units equals 1 per
-definitio
+"In SI units, the relative magnitude difference between the fields is related by the electromagnetic
+impedance of free space, which for the current choice of simulation units equals 1 per definition".
 
 '''
 
@@ -24,6 +21,6 @@ def reduced_Ebar_to_E(input):
     Where Ebar is the simulation unit and E is the world unit
     '''
 
-    return 
+    return
 
 def reduced_units_E_to_world_E():

@@ -17,12 +17,7 @@ from .typing import Tuple, Number, ListOrSlice, List
 # relatvie
 from .grid import Grid
 from .backend import backend as bd
-
-
-# For Hanning window pulses
-def hanning(f, t, n):
-    return (1 / 2) * (1 - cos(f * t / n)) * (sin(f * t))
-
+from .waveforms import *
 
 ## PointSource class
 class PointSource:
@@ -510,11 +505,23 @@ class PlaneSource:
 
 
 
+
 class SoftArbitraryPointSource:
     """
 
     A source placed at a single point (grid cell) in the grid.
     This source is special: it's both a source and a detector.
+
+    Spec:
+
+    We want the FFT function to operate over any detector.
+
+    What are the output units? Where do you want the conversion to happen?
+
+    There are many different *geometries* of "equivalent sources".
+    The detector/source paradigm used in /fdtd seems to not be
+
+    The critical
 
 
     """
@@ -597,56 +604,3 @@ class SoftArbitraryPointSource:
         z = f"{self.z}"
         s += f"        @ x={x}, y={y}, z={z}\n"
         return s
-
-
-
-
-
-
-
-    #
-    #
-    # def get_current(self, pcb):
-    #     #really needs to be fixed!
-    #
-    #     #[Luebbers 1996 1992]
-    #
-    #     z_slice = slice(pcb.component_plane_z-1,pcb.component_plane_z)
-    #
-    #     current = (((pcb.grid.H[self.N_x,self.N_y-1,z_slice,X]/sqrt(mu_0))-
-    #                 (pcb.grid.H[self.N_x,self.N_y,z_slice,X]/sqrt(mu_0)))*pcb.cell_size)
-    #     current += (((pcb.grid.H[self.N_x,self.N_y,z_slice,Y]/sqrt(mu_0))-
-    #                 (pcb.grid.H[self.N_x-1,self.N_y,z_slice,Y]/sqrt(mu_0)))*pcb.cell_size)
-    #
-    #     current = float(current.cpu())
-    #     # current /= (pcb.cell_size)
-    #
-    #     #field normalized according to Flaport's thesis, chapter 4.1.6
-    #
-    #     # account for Yee cell inaccuracies [Fang 1994].
-    #     z_slice_2 = slice(pcb.component_plane_z-2,pcb.component_plane_z-1)
-    #
-    #     current_2 = (((pcb.grid.H[self.N_x,self.N_y-1,z_slice_2,X]/sqrt(mu_0))-
-    #                 (pcb.grid.H[self.N_x,self.N_y,z_slice_2,X]/sqrt(mu_0)))*pcb.cell_size)
-    #     current_2 += (((pcb.grid.H[self.N_x,self.N_y,z_slice_2,Y]/sqrt(mu_0))-
-    #                 (pcb.grid.H[self.N_x-1,self.N_y,z_slice_2,Y]/sqrt(mu_0)))*pcb.cell_size)
-    #     # current
-    #     current_2 = float(current_2.cpu())
-    #     # current_2 /= (pcb.cell_size)
-    #
-    #
-    #     current = ((current+current_2) / 2.0)
-    #
-    #     return current
-    #
-    # def set_voltage(self, pcb, voltage):
-    #     z_slice = slice(pcb.component_plane_z-1,pcb.component_plane_z)
-    #
-    #     pcb.grid.E[self.N_x,self.N_y,z_slice,Z] = sqrt(epsilon_0) * (voltage / (pcb.cell_size))
-    #
-    #
-    # def get_voltage(self, pcb):
-    #     z_slice = slice(pcb.component_plane_z-1,pcb.component_plane_z)
-    #
-    #     return (pcb.grid.E[self.N_x,self.N_y,z_slice,Z]/sqrt(epsilon_0))*(pcb.cell_size)
-    #
