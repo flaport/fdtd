@@ -136,6 +136,8 @@ class NumpyBackend(Backend):
     numpy = staticmethod(numpy.asarray)
     """ convert the array to numpy array """
 
+    # fft_ = numpy.fft.fft
+
 
 # Torch Backend
 if TORCH_AVAILABLE:
@@ -224,6 +226,7 @@ if TORCH_AVAILABLE:
             else:
                 return numpy.asarray(arr)
 
+        fft = staticmethod(torch.fft)
 
 # Torch Cuda Backend
 if TORCH_CUDA_AVAILABLE:

@@ -5,9 +5,9 @@
 #
 # '''
 # Optional reduced unit conversion functions for user use.
-# Might perhaps be worth putting a note in the readme about default units?
+# Might perhaps be worth putting a note in the readme about default units / suggested unit systems?
 # don't know how severe noise is with fp32, whether it's worth the extra hassle for most people
-# Might be better suited to a user-side 
+# Might be better suited to a user-side
 #
 # Units taken from the thesis
 # "Novel architectures for brain-inspired photonic computers",
@@ -22,11 +22,10 @@
 # '''
 #
 #
-# def reduced_Ebar_to_E(input):
+# def reduced_barE_to_E(input):
 #     '''
 #     Where Ebar is the simulation unit and E is the world unit
 #     '''
 #
 #     return
-#
-# def reduced_units_E_to_world_E():
+# def reduced_barH_to_H(input):

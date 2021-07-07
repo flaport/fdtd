@@ -275,8 +275,8 @@ class BlockDetector:
 
 
 
-## PointCurrentDetector
-class PointCurrentDetector:
+## CurrentDetector
+class CurrentDetector:
     """ A current detector. """
 
     """
@@ -316,7 +316,7 @@ class PointCurrentDetector:
         """
         self.grid = None
         self.orientation = None
-        self.I = None
+        self.I = []
         self.name = name
 
     def _register_grid(
@@ -401,11 +401,12 @@ class PointCurrentDetector:
     def detect_E(self):
         """ detect the electric field at a certain location in the grid """
 
-
-    def detect_H(self):
+    def single_point_current(self, px, py, pz):
         '''
 
         Cross product.
+
+        Only Z-polarized for now.
 
         ^
         |
@@ -415,28 +416,42 @@ class PointCurrentDetector:
 
         #[Luebbers 1996 1992]
         # /sqrt(mu_0)s removed!
+        # account for Yee cell half-step inaccuracies [Fang 1994].
 
-        #split into sep. func and iterate over the grid
-        current_vector_1 = (((pcb.grid.H[self.N_x,self.N_y-1,z,d_.X])-
-                    (pcb.grid.H[self.N_x,self.N_y,z,d_.X]))*pcb.cell_size)
-        current_vector_2 = (((pcb.grid.H[self.N_x,self.N_y,z,d_.Y])-
-                    (pcb.grid.H[self.N_x-1,self.N_y,z,d_.Y]))*pcb.cell_size)
+        #option for unit factor here? Units will get very complicated otherwise
+
+        current_vector_1 = (((self.grid.H[px,py-1,pz,d_.X])-
+                    (self.grid.H[px,py,pz,d_.X]))*self.grid.grid_spacing)
+        current_vector_2 = (((self.grid.H[px,py,pz,d_.Y])-
+                    (self.grid.H[px-1,py,pz,d_.Y]))*self.grid.grid_spacing)
 
         current_1 = current_vector_1 + current_vector_2
         # current_1 = float(current.cpu())
 
         # z_slice_2 = slice(pcb.component_plane_z-2,pcb.component_plane_z-1)
 
-        # account for Yee cell half-step inaccuracies [Fang 1994].
-        current_2 = (((pcb.grid.H[self.N_x,self.N_y-1,z-1,d_.X]/sqrt(mu_0))-
-                    (pcb.grid.H[self.N_x,self.N_y,z-1,d_.X]/sqrt(mu_0)))*pcb.cell_size)
-        current_2 += (((pcb.grid.H[self.N_x,self.N_y,z-1,d_.Y]/sqrt(mu_0))-
-                    (pcb.grid.H[self.N_x-1,self.N_y,z-1,d_.Y]/sqrt(mu_0)))*pcb.cell_size)
+        current_2 = (((self.grid.H[px,py-1,pz-1,d_.X])-
+                    (self.grid.H[px,py,pz-1,d_.X]))*self.grid.grid_spacing)
+        current_2 += (((self.grid.H[px,py,pz-1,d_.Y])-
+                    (self.grid.H[px-1,py,pz-1,d_.Y]))*self.grid.grid_spacing)
         # current
-        current_2 = float(current_2.cpu())
-
+        # current_2 = float(current_2.cpu())
 
         I = ((current_1+current_2) / 2.0)
+
+        return I
+
+    def detect_H(self):
+
+        # this is very slow.
+
+        I = []
+        for i, row in enumerate(self.x):
+            I.append([])
+            for j, col in enumerate(self.y):
+                I[i].append([])
+                for pillar in self.z:
+                    I[i][j].append(self.single_point_current(i, j, pillar))
 
         self.I.append(I)
 
