@@ -44,6 +44,8 @@ pip install -e fdtd[dev]
 All improvements or additions (for example new objects, sources or detectors) are
 welcome. Please make a pull-request 😊.
 
+
+
 ## Documentation
 
 read the documentation here: [https://fdtd.readthedocs.org](https://fdtd.readthedocs.org)
@@ -894,6 +896,11 @@ The same has to be applied for the magnetic field.
 
 These update equations for the PML were based on
 [Schneider, Chap. 11](https://www.eecs.wsu.edu/~schneidj/ufdtd).
+
+## Linter
+
+
+You can run the linter with `pylint fdtd`.
 
 ## License
 

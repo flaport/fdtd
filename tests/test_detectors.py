@@ -5,3 +5,5 @@ import fdtd
 import pytest
 
 ## Tests
+
+# CurrentDetector

@@ -2,7 +2,6 @@
 
 
 def get_current(self, pcb):
-    #really needs to be fixed!
 
     #[Luebbers 1996 1992]
 
@@ -53,12 +52,8 @@ def get_voltage(self, pcb):
 
 
     source_voltage = normalized_gaussian_derivative_pulse(pcb,0.1e-9)
-    # source_voltage = gaussian_derivative_pulse(pcb, 4e-12, 32)/(26.804e9)
 
-    # source_voltage = (pcb.time*f)/((pcb.time*f)+1) # smooth ramp
 
-    # source_voltage = sin(pcb.time * 2.0 * pi * f)
-    # print(source_voltage)
 
     z_slice = slice(pcb.component_plane_z-1,pcb.component_plane_z)
 

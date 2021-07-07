@@ -505,102 +505,110 @@ class PlaneSource:
 
 
 
-
-class SoftArbitraryPointSource:
-    """
-
-    A source placed at a single point (grid cell) in the grid.
-    This source is special: it's both a source and a detector.
-
-    Spec:
-
-    We want the FFT function to operate over any detector.
-
-    What are the output units? Where do you want the conversion to happen?
-
-    There are many different *geometries* of "equivalent sources".
-    The detector/source paradigm used in /fdtd seems to not be
-
-    The critical
-
-
-    """
-
-    def __init__(
-        self,
-        waveform: ,
-        name: str = None,
-        impedance: float = 0.0
-    ):
-        """Create a LineSource with a gaussian profile
-
-        Args:
-            period: The period of the source. The period can be specified
-                as integer [timesteps] or as float [seconds]
-            power: The power of the source
-            phase_shift: The phase offset of the source.
-            name: name of the source.
-            pulse: Set True to use a Hanning window pulse instead of continuous wavefunction.
-            cycle: cycles for Hanning window pulse.
-            hanning_dt: timestep used for Hanning window pulse width (optional).
-
-        """
-        self.grid = None
-        self.name = name
-
-
-    def _register_grid(self, grid: Grid, x: Number, y: Number, z: Number):
-        """Register a grid for the source.
-
-        Args:
-            grid: the grid to place the source into.
-            x: The x-location of the source in the grid
-            y: The y-location of the source in the grid
-            z: The z-location of the source in the grid
-
-        Note:
-            As its name suggests, this source is a POINT source.
-            Hence it should be placed at a single coordinate tuple
-            int the grid.
-        """
-        self.grid = grid
-        self.grid.sources.append(self)
-        if self.name is not None:
-            if not hasattr(grid, self.name):
-                setattr(grid, self.name, self)
-            else:
-                raise ValueError(
-                    f"The grid already has an attribute with name {self.name}"
-                )
-
-        try:
-            (x,), (y,), (z,) = x, y, z
-        except (TypeError, ValueError):
-            raise ValueError("a point source should be placed on a single grid cell.")
-        self.x, self.y, self.z = grid._handle_tuple((x, y, z))
-
-
-    def update_E(self):
-        """ Add the source to the electric field """
-
-
-
-        self.grid.E[self.x, self.y, self.z, 2] += src
-
-    def update_H(self):
-        """ Add the source to the magnetic field """
-
-    def __repr__(self):
-        return (
-            f"{self.__class__.__name__}(period={self.period}, "
-            f"power={self.power}, phase_shift={self.phase_shift}, "
-            f"name={repr(self.name)})"
-        )
-
-    def __str__(self):
-        s = "    " + repr(self) + "\n"
-        x = f"{self.x}"
-        y = f"{self.y}"
-        z = f"{self.z}"
-        s += f"        @ x={x}, y={y}, z={z}\n"
-        return s
+#
+# class SoftArbitraryPointSource:
+#     """
+#
+#     A source placed at a single point (grid cell) in the grid.
+#     This source is special: it's both a source and a detector.
+#
+#     We want the FFT function to operate over any detector.
+#
+#     There are many different *geometries* of "equivalent sources".
+#     The detector/source paradigm used in /fdtd might perhaps not correspond to this in an ideal
+#     fashion.
+#
+#     It's not intuitively clear to me what a "soft" source would imply in the optical case, or what
+#     impedance even means.
+#
+#     /fdtd/ seems to have found primary use in optical circles,
+#     so the default Z should probably be 0.
+#
+#     "Whilst established for microwaves and electrical circuits,
+#     this concept has only very recently been observed in the optical domain,
+#     yet is not well defined or understood."[1]
+#
+#     [1]: Optical impedance of metallic nano-structures, M. Mazilu and K. Dholakia
+#     https://doi.org/10.1364/OE.14.007709
+#
+#     [2]: http://www.gwoptics.org/learn/02_Plane_waves/01_Fabry_Perot_cavity/02_Impedance_matched.php
+#
+#
+#     """
+#
+#     def __init__(
+#         self,
+#         waveform: ,
+#         name: str = None,
+#         impedance: float = 0.0
+#     ):
+#         """Create a LineSource with a gaussian profile
+#
+#         Args:
+#             period: The period of the source. The period can be specified
+#                 as integer [timesteps] or as float [seconds]
+#             power: The power of the source
+#             phase_shift: The phase offset of the source.
+#             name: name of the source.
+#             pulse: Set True to use a Hanning window pulse instead of continuous wavefunction.
+#             cycle: cycles for Hanning window pulse.
+#             hanning_dt: timestep used for Hanning window pulse width (optional).
+#
+#         """
+#         self.grid = None
+#         self.name = name
+#
+#
+#     def _register_grid(self, grid: Grid, x: Number, y: Number, z: Number):
+#         """Register a grid for the source.
+#
+#         Args:
+#             grid: the grid to place the source into.
+#             x: The x-location of the source in the grid
+#             y: The y-location of the source in the grid
+#             z: The z-location of the source in the grid
+#
+#         Note:
+#             As its name suggests, this source is a POINT source.
+#             Hence it should be placed at a single coordinate tuple
+#             int the grid.
+#         """
+#         self.grid = grid
+#         self.grid.sources.append(self)
+#         if self.name is not None:
+#             if not hasattr(grid, self.name):
+#                 setattr(grid, self.name, self)
+#             else:
+#                 raise ValueError(
+#                     f"The grid already has an attribute with name {self.name}"
+#                 )
+#
+#         try:
+#             (x,), (y,), (z,) = x, y, z
+#         except (TypeError, ValueError):
+#             raise ValueError("a point source should be placed on a single grid cell.")
+#         self.x, self.y, self.z = grid._handle_tuple((x, y, z))
+#
+#
+#     def update_E(self):
+#
+#         self.grid.E[self.x, self.y, self.z, 2] += src
+#
+#     def update_H(self):
+#
+#
+#
+#     def __repr__(self):
+#         return (
+#             f"{self.__class__.__name__}(period={self.period}, "
+#             f"power={self.power}, phase_shift={self.phase_shift}, "
+#             f"name={repr(self.name)})"
+#         )
+#
+#     def __str__(self):
+#         s = "    " + repr(self) + "\n"
+#         x = f"{self.x}"
+#         y = f"{self.y}"
+#         z = f"{self.z}"
+#         s += f"        @ x={x}, y={y}, z={z}\n"
+#         return s
