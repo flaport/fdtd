@@ -32,19 +32,15 @@ def pml():
     return pml
 
 
-#Perform tests over entire
+# Perform tests over all backends
+# when function name has "all_bends" in it.
 def backend_parametrizer(metafunc):
 
     # called once per each test function
-    # params = {
-    #     "test_current_detector": backends,
-    # }
+
     if("all_bends" in metafunc.function.__name__):
         funcarglist = backend_names
-    else:
-        raise KeyError()
-
-    argnames = sorted(funcarglist[0])
-    metafunc.parametrize(
-        argnames, [[funcargs[name] for name in argnames] for funcargs in funcarglist]
-    )
+        argnames = sorted(funcarglist[0])
+        metafunc.parametrize(
+            argnames, [[funcargs[name] for name in argnames] for funcargs in funcarglist]
+        )
