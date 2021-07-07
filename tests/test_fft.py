@@ -16,4 +16,4 @@ from fixtures import grid, pml, periodic_boundary
 # test in three axes - spin the grid to make sure everything's consistent
 
 
-# use QUCS to generate something with S-params
+# use QUCS to generate something 3 port with S-params

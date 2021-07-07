@@ -899,8 +899,7 @@ These update equations for the PML were based on
 
 ## Linter
 
-
-You can run the linter with `pylint fdtd`.
+You can run a linter in the root using `pylint fdtd`.
 
 ## License
 

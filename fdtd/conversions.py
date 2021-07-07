@@ -4,8 +4,10 @@
 # from .backend import backend as bd
 #
 # '''
-# Optional unit conversion functions for user use.
+# Optional reduced unit conversion functions for user use.
 # Might perhaps be worth putting a note in the readme about default units?
+# don't know how severe noise is with fp32, whether it's worth the extra hassle for most people
+# Might be better suited to a user-side 
 #
 # Units taken from the thesis
 # "Novel architectures for brain-inspired photonic computers",

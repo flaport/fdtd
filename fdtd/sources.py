@@ -511,15 +511,19 @@ class PlaneSource:
 #
 #     A source placed at a single point (grid cell) in the grid.
 #     This source is special: it's both a source and a detector.
-#
+#For electrical measurements I've only needed a single-index source,
+#so I don't know how the volume/line sources above work.
 #     We want the FFT function to operate over any detector.
+#   Maybe all sources should take an arbitary waveform argument?
+#
+# Each index in the *waveform* array represents 1 value at a timestep.
 #
 #     There are many different *geometries* of "equivalent sources".
 #     The detector/source paradigm used in /fdtd might perhaps not correspond to this in an ideal
 #     fashion.
 #
 #     It's not intuitively clear to me what a "soft" source would imply in the optical case, or what
-#     impedance even means.
+#     impedance even means for a laser.
 #
 #     /fdtd/ seems to have found primary use in optical circles,
 #     so the default Z should probably be 0.
@@ -541,20 +545,22 @@ class PlaneSource:
 #         waveform: ,
 #         name: str = None,
 #         impedance: float = 0.0
-#     ):
-#         """Create a LineSource with a gaussian profile
-#
-#         Args:
-#             period: The period of the source. The period can be specified
-#                 as integer [timesteps] or as float [seconds]
-#             power: The power of the source
-#             phase_shift: The phase offset of the source.
-#             name: name of the source.
-#             pulse: Set True to use a Hanning window pulse instead of continuous wavefunction.
-#             cycle: cycles for Hanning window pulse.
-#             hanning_dt: timestep used for Hanning window pulse width (optional).
-#
-#         """
+    # ):
+        # """Create
+        #
+        #
+        #
+        # Args:
+        #     period: The period of the source. The period can be specified
+        #         as integer [timesteps] or as float [seconds]
+        #     power: The power of the source
+        #     phase_shift: The phase offset of the source.
+        #     name: name of the source.
+        #     pulse: Set True to use a Hanning window pulse instead of continuous wavefunction.
+        #     cycle: cycles for Hanning window pulse.
+        #     hanning_dt: timestep used for Hanning window pulse width (optional).
+        #
+        # """
 #         self.grid = None
 #         self.name = name
 #

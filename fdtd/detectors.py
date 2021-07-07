@@ -281,7 +281,7 @@ class PointCurrentDetector:
 
     """
 
-    This only operates over a single point because that's how
+    This currently only operates over a single point because that's how
     it was written in my historical code. A refactor into Block &c probably required.
 
     Alternatives:
@@ -292,7 +292,10 @@ class PointCurrentDetector:
     2. No current detector class at all. SoftArbitraryPointSource
     makes two H-detectors.
 
+    Don't know if this op over a volume is valid. Should be.
+
     TODO: Detector geometry as an argument?
+    
     Lots of interesting detector geometries that might be worth implementing,
     ("integrated current loop"), this could be a flag here.
 

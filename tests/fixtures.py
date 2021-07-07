@@ -6,6 +6,7 @@ import pytest
 
 ## Fixtures
 
+backend_names = [dict(bnd="numpy"), dict(bnd="torch")]
 
 @pytest.fixture
 def grid():
@@ -29,3 +30,21 @@ def periodic_boundary():
 def pml():
     pml = fdtd.PML(name="PML")
     return pml
+
+
+#Perform tests over entire
+def backend_parametrizer(metafunc):
+
+    # called once per each test function
+    # params = {
+    #     "test_current_detector": backends,
+    # }
+    if("all_bends" in metafunc.function.__name__):
+        funcarglist = backend_names
+    else:
+        raise KeyError()
+
+    argnames = sorted(funcarglist[0])
+    metafunc.parametrize(
+        argnames, [[funcargs[name] for name in argnames] for funcargs in funcarglist]
+    )
