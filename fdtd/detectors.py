@@ -14,7 +14,7 @@ from .typing import ListOrSlice, Tuple, List
 # relative
 from .grid import Grid
 from .backend import backend as bd
-
+from .grid import d_
 ## Detector
 class LineDetector:
     """ A detector along a line in the FDTD grid """
@@ -295,9 +295,14 @@ class PointCurrentDetector:
     Don't know if this op over a volume is valid. Should be.
 
     TODO: Detector geometry as an argument?
-    
+
     Lots of interesting detector geometries that might be worth implementing,
     ("integrated current loop"), this could be a flag here.
+
+    Existing sources are all z-polarized; detectors output all the polarizations.
+    Unlike other Detectors, this does not yet output a polarized current.
+
+    Source polarization is probably an important feature.
 
     """
 
@@ -308,11 +313,10 @@ class PointCurrentDetector:
         Args:
             name: name of the Detector
 
-
         """
         self.grid = None
-        self.E = []
-        self.H = []
+        self.orientation = None
+        self.I = None
         self.name = name
 
     def _register_grid(
@@ -325,6 +329,7 @@ class PointCurrentDetector:
             x: the x-location of the detector in the grid
             y: the y-location of the detector in the grid
             z: the z-location of the detector in the grid
+            orientation: a unit vector (a length 1) describing the orientation?
 
         Note:
             As its name suggests, this detector is a BLOCK detector.
@@ -395,30 +400,47 @@ class PointCurrentDetector:
 
     def detect_E(self):
         """ detect the electric field at a certain location in the grid """
-        # TODO: there is a performance bottleneck here (indexing with lists)
-        E = []
-        for i, row in enumerate(self.x):
-            E.append([])
-            for j, col in enumerate(self.y):
-                E[i].append([])
-                for pillar in self.z:
-                    E[i][j].append(self.grid.E[row, col, [pillar]][0])
-        #E = self.grid.E[self.x, self.y, self.z]
-        self.E.append(E)
+
 
     def detect_H(self):
-        """ detect the magnetic field at a certain location in the grid """
-        # TODO: there is a performance bottleneck here (indexing with lists)
-        H = []
-        for i, row in enumerate(self.x):
-            H.append([])
-            for j, col in enumerate(self.y):
-                H[i].append([])
-                for pillar in self.z:
-                    H[i][j].append(self.grid.H[row, col, [pillar]][0])
-        #H = self.grid.H[self.x, self.y, self.z]
-        self.H.append(H)
+        '''
 
+        Cross product.
+
+        ^
+        |
+        |
+        X---->
+        '''
+
+        #[Luebbers 1996 1992]
+        # /sqrt(mu_0)s removed!
+
+        #split into sep. func and iterate over the grid
+        current_vector_1 = (((pcb.grid.H[self.N_x,self.N_y-1,z,d_.X])-
+                    (pcb.grid.H[self.N_x,self.N_y,z,d_.X]))*pcb.cell_size)
+        current_vector_2 = (((pcb.grid.H[self.N_x,self.N_y,z,d_.Y])-
+                    (pcb.grid.H[self.N_x-1,self.N_y,z,d_.Y]))*pcb.cell_size)
+
+        current_1 = current_vector_1 + current_vector_2
+        # current_1 = float(current.cpu())
+
+        # z_slice_2 = slice(pcb.component_plane_z-2,pcb.component_plane_z-1)
+
+        # account for Yee cell half-step inaccuracies [Fang 1994].
+        current_2 = (((pcb.grid.H[self.N_x,self.N_y-1,z-1,d_.X]/sqrt(mu_0))-
+                    (pcb.grid.H[self.N_x,self.N_y,z-1,d_.X]/sqrt(mu_0)))*pcb.cell_size)
+        current_2 += (((pcb.grid.H[self.N_x,self.N_y,z-1,d_.Y]/sqrt(mu_0))-
+                    (pcb.grid.H[self.N_x-1,self.N_y,z-1,d_.Y]/sqrt(mu_0)))*pcb.cell_size)
+        # current
+        current_2 = float(current_2.cpu())
+
+
+        I = ((current_1+current_2) / 2.0)
+
+        self.I.append(I)
+
+    # can these functions be templated somehow?
     def __repr__(self):
         return f"{self.__class__.__name__}(name={repr(self.name)})"
 
@@ -432,10 +454,4 @@ class PointCurrentDetector:
 
     def detector_values(self):
         """ outputs what detector detects """
-        return {'E': self.E, 'H': self.H}
-
-
-
-'''
-if they're using a
-'''
+        return {'I': self.I}

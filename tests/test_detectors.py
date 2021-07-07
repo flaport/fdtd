@@ -15,13 +15,12 @@ from fixtures import grid, pml, periodic_boundary, backend_parametrizer
 pytest_generate_tests = backend_parametrizer # perform tests over all backends
 
 # @pytest.mark.skipif(skip_test_backend, reason="PyTorch is not installed.")
-def test_current_detector_all_bends(grid, periodic_boundary, bnd):
-    fdtd.set_backend(bnd)
-    # for backend in backends:
-    #     fdtd.set_backend(backends)
+def test_current_detector_all_bends(grid, periodic_boundary, backends):
+    fdtd.set_backend(backends)
+
 
     # curl_H(H) == pytest.approx(curl)
-    
+
 def test_current_detector(grid, periodic_boundary):
     pass
     # for backend in backends:
