@@ -23,15 +23,16 @@ pytest_generate_tests = backend_parametrizer # perform tests over all backends
 def test_current_detector_all_bends(grid, pml, backends):
     fdtd.set_backend(backends)
 
-
-    grid[x_:x_+1,y_:y_+1,z_:z_+1] = fdtd.AbsorbingObject(permittivity=1.0, conductivity=1.0)
     grid[x_,y_,z_] = fdtd.PointSource()
-    grid[x_:x_+1,y_:y_+1,z_:z_+1] = fdtd.CurrentDetector(name="Dave")
-    grid[x_:x_+1,y_:y_+1,z_:z_+1] = fdtd.BlockDetector()
+    grid[x_,y_,z_] = fdtd.CurrentDetector(name="Dave")
+    grid[x_:x_,y_:y_,z_:z_] = fdtd.BlockDetector()
+    grid[x_,y_,z_] = fdtd.AbsorbingObject(permittivity=1.0, conductivity=1.0)
+    # FIXME: AbsorbingObject must be added last for some reason,
 
     grid.run(total_time=100)
-
+    #
     current_time_history = grid.detectors[0].I
     electric_field_time_history = grid.detectors[1].E[:][d_.Z]
-    # print(max(current_time_history))
+    # print(grid.E[x_,y_,z_,d_.Z])
+    print(current_time_history[-1])
     print(electric_field_time_history)

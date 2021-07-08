@@ -8,10 +8,10 @@ def hanning(f, t, n):
 
 '''
 
+Presumably because unlike a unit step or gated sine,
+they're smooth, introducing minimal numerical noise, while retaining broadband frequency components.
 
-Presumably because there are smooth, containing minimal numerical noise, but also
-
-I don't know what advantages the gaussian derivative provides.
+I don't know what advantages the gaussian derivative provides over the gaussian.
 
 These gaussian pulses are normalized to have a peak value of 1.0.
 

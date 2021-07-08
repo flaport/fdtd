@@ -15,7 +15,7 @@ Available Objects:
 from .typing import Tensorlike, ListOrSlice
 
 # relative
-from .grid import Grid, VACUUM_PERMITTIVITY
+from .grid import Grid, VACUUM_PERMITTIVITY, d_
 from .backend import backend as bd
 
 

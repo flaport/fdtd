@@ -284,13 +284,17 @@ class CurrentDetector:
     This currently only operates over a single point because that's how
     it was written in my historical code. A refactor into Block &c probably required.
 
+    total current (not current density).
+
     Alternatives:
 
     1. Current detection could be a standard detector output,
-    if every h-field probe pointed two ways (self.I ?)
+    if every h-field probe pointed two ways.
 
     2. No current detector class at all. SoftArbitraryPointSource
     makes two H-detectors.
+
+    3. Who even needs current? Practically nobody. Leave it as-is.
 
     Don't know if this op over a volume is valid. Should be.
 
@@ -412,6 +416,8 @@ class CurrentDetector:
         |
         |
         X---->
+
+        TODO: material permeability?
         '''
 
         #[Luebbers 1996 1992]

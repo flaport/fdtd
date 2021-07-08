@@ -897,6 +897,24 @@ The same has to be applied for the magnetic field.
 These update equations for the PML were based on
 [Schneider, Chap. 11](https://www.eecs.wsu.edu/~schneidj/ufdtd).
 
+## Units
+
+<flaport, if you have the time, I'd appreciate it if you could confirm
+that I've understood this correctly>.
+<I'm adding this because I got pretty confused regarding the units;
+if you think it's self-evident, feel free to remove.>
+
+As an FDTD library, this library is somewhat dimensionally agnostic.
+No conversion factors <dubious-discuss> are applied within the library api;
+this is left to the user. The code used to calculate the Courant limit?
+
+However, as noted previously, scaling root(mu0) is recommended.
+
+It is generally good numerical practice to scale all values to 1.0 to
+get the maximum precision from floating-point types.
+
+
+
 ## Linter
 
 You can run a linter in the root using `pylint fdtd`.
