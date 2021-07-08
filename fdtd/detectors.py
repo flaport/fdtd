@@ -418,6 +418,9 @@ class CurrentDetector:
         X---->
 
         TODO: material permeability?
+
+        could potentially take some detector geometries from other open-source libraries,
+        license permitting
         '''
 
         #[Luebbers 1996 1992]
@@ -451,14 +454,17 @@ class CurrentDetector:
 
         # this is very slow.
 
-        I = []
-        for i, row in enumerate(self.x):
-            I.append([])
-            for j, col in enumerate(self.y):
-                I[i].append([])
-                for pillar in self.z:
-                    I[i][j].append(self.single_point_current(i, j, pillar))
+        #fixme
+        # I = []
+        # for i, row in enumerate(self.x):
+        #     I.append([])
+        #     for j, col in enumerate(self.y):
+        #         I[i].append([])
+        #         for k, pillar in enumerate(self.z):
+        #             I[i][j].append([])
+        #             I[i][j][k] = self.single_point_current(i, j, k)
 
+        #can detector outputs be numpy-like arrays by default?
         self.I.append(I)
 
     # can these functions be templated somehow?

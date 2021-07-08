@@ -34,7 +34,10 @@ VACUUM_PERMITTIVITY: float = 1.0 / (
 )  # vacuum permittivity
 
 class d_:
-    X = 0 # convienience functions for directions
+    '''
+    Just a convienience function for indexing polarizations of arrays.
+    '''
+    X = 0
     Y = 1
     Z = 2
 
