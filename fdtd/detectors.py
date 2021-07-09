@@ -417,7 +417,7 @@ class CurrentDetector:
         |
         X---->
 
-        TODO: material permeability?
+        TODO: FIXME: IMPORTANT material permeability? find test cases!
 
         could potentially take some detector geometries from other open-source libraries,
         license permitting

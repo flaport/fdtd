@@ -9,7 +9,7 @@ import pytest
 import fdtd
 
 # fixtures
-from fixtures import grid, pml, periodic_boundary
+from fixtures import grid, pml, periodic_boundary, DomainBorderPML
 
 ## Tests
 
@@ -39,3 +39,13 @@ def test_pml_in_grid_boundary_list(grid, pml):
 def test_pml_placed_in_middle_of_grid(grid, pml):
     with pytest.raises(IndexError):
         grid[2:4, :, :] = pml
+
+def test_pml_in_grid_boundary_list(grid, pml):
+    grid[0:3, :, :] = pml
+    assert pml in grid.boundaries
+
+def test_DomainPML_acceptable(grid, pml):
+    # DomainBorderPML(grid, 5)
+
+    with pytest.raises(IndexError):
+        DomainBorderPML(grid, 6)

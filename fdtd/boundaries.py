@@ -614,19 +614,23 @@ class _PMLZhigh(PML):
 
 
 # UNTESTED
-# def DomainBorderPML(grid, border_cells=5):
-#     '''
-#     Many problem setups require a layer of PML all the way around the problem.
-#     This is a convienience function to add such a layer.
-#     Does it matter that PML is overlapping?
-#     Might be a more straightforward numpy slicing solution...
-#     maybe with
-#     raw = np.pad(raw, [(pcb.pml_cells, pcb.pml_cells), (pcb.pml_cells, pcb.pml_cells),
-#        (pcb.pml_cells, pcb.pml_cells)], mode='constant')
-#     '''
-#     grid[0:border_cells, :, :] = fdtd.PML(name="pml_xlow")
-#     grid[-border_cells:, :, :] = fdtd.PML(name="pml_xhigh")
-#     grid[:, 0:border_cells, :] = fdtd.PML(name="pml_ylow")
-#     grid[:, -border_cells:, :] = fdtd.PML(name="pml_yhigh")
-#     grid[:, : ,0:border_cells] = fdtd.PML(name="pml_zlow")
-#     grid[:, : ,-border_cells:] = fdtd.PML(name="pml_zhigh")
+def DomainBorderPML(grid, border_cells=5):
+    '''
+    Many problem setups require a layer of PML all the way around the problem.
+    Doesn't return anything - not like other boundaries functions, maybe wrong?
+    This is a convienience function to add such a layer to an existing grid.
+    Does it matter that PML is overlapping?
+    There might be a more straightforward numpy slicing solution...
+    maybe with
+    raw = np.pad(raw, [(pcb.pml_cells, pcb.pml_cells), (pcb.pml_cells, pcb.pml_cells),
+       (pcb.pml_cells, pcb.pml_cells)], mode='constant')
+    '''
+    if(grid.Nx < border_cells*2 or grid.Ny < border_cells*2 or grid.Nz < border_cells*2):
+        raise IndexError("PML border_cells larger than domain!")
+
+    grid[0:border_cells, :, :] = fdtd.PML(name="pml_xlow")
+    grid[-border_cells:, :, :] = fdtd.PML(name="pml_xhigh")
+    grid[:, 0:border_cells, :] = fdtd.PML(name="pml_ylow")
+    grid[:, -border_cells:, :] = fdtd.PML(name="pml_yhigh")
+    grid[:, : ,0:border_cells] = fdtd.PML(name="pml_zlow")
+    grid[:, : ,-border_cells:] = fdtd.PML(name="pml_zhigh")

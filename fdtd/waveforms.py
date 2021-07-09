@@ -8,6 +8,8 @@ def hanning(f, t, n):
 
 '''
 
+Recipes for Z measurements usually specify gaussian or gaussian derivative input pulses.
+
 Presumably because unlike a unit step or gated sine,
 they're smooth, introducing minimal numerical noise, while retaining broadband frequency components.
 
@@ -27,7 +29,7 @@ fwhm_constant = 2.0*sqrt(2.0 * log(2))
 
 def normalized_gaussian_pulse(x,fwhm,center=0.0):
     '''
-    Center = used to move pulse time
+    Center - just for convienience, used to move pulse time around
     '''
     #apparently FWHM of t is properly called "full duration half maximum",
     #but I've never heard that used
