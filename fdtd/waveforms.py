@@ -25,12 +25,15 @@ http://www.sci.utah.edu/~gerig/CS7960-S2010/handouts/04%20Gaussian%20derivatives
 
 fwhm_constant = 2.0*sqrt(2.0 * log(2))
 
-def normalized_gaussian_pulse(x,fwhm):
+def normalized_gaussian_pulse(x,fwhm,center=0.0):
+    '''
+    Center = used to move pulse time
+    '''
     #apparently FWHM of t is properly called "full duration half maximum",
     #but I've never heard that used
     sigma = fwhm/fwhm_constant
-    return exp(-((x**2.0)/(2.0*(sigma**2.0))))
+    return exp(-(((x-center)**2.0)/(2.0*(sigma**2.0))))
 
-def normalized_gaussian_derivative_pulse(x,fwhm):
+def normalized_gaussian_derivative_pulse(x,fwhm,center=0.0):
     sigma = fwhm/fwhm_constant
-    return (exp((1.0/2.0) - (x**2.0)/(2.0*sigma**2.0))*x)/sigma
+    return (exp((1.0/2.0) - ((x-center)**2.0)/(2.0*sigma**2.0))*(x-center))/sigma

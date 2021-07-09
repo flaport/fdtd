@@ -27,6 +27,14 @@ z_ = 4
 
 pytest_generate_tests = backend_parametrizer # perform tests over all backends
 
+
+def test_object_grid_overlap(grid, pml):
+    grid[x_-1:x_+1,y_-1:y_+1,z_-1:z_+1] = fdtd.AbsorbingObject(permittivity=1.0,
+    conductivity=conductivity)
+    # grid[x_,y_,z_] = fdtd.PointSource(period=500)
+
+
+
 # @pytest.mark.skipif(skip_test_backend, reason="PyTorch is not installed.")
 def test_current_detector_all_bends(grid, pml, backends):
     fdtd.set_backend(backends)
@@ -35,13 +43,17 @@ def test_current_detector_all_bends(grid, pml, backends):
     # The test case with the patch antenna also relies on
     # the electric field detector & PEC, seems like a smaller test could be in order
 
-    #However, because of the overlapping
+    #However, because of the overlapping object issue, seems like this'll be harder.
 
-    conductivity = 1e9
+    conductivity = 100
     # absorb = bd.ones((grid.Nx,grid.Ny,grid.Nz))
     # absorb[x_,y_,z_] = 0
-    grid[x_-1:x_+1,y_-1:y_+1,z_-1:z_+1] = fdtd.AbsorbingObject(permittivity=1.0,
+    grid[x_-1:x_+1,y_-1:y_+1,z_-1:z_+1] = fdtd.AbsorbingObject(permittivity=100.0,
     conductivity=conductivity)
+
+    #AbsorbingObject doesn't create a magnetic field?
+    #How could that ever cause a current density?
+
     # grid[x_,y_,z_] = fdtd.PointSource(period=500)
     cd = fdtd.CurrentDetector(name="Dave")
     grid[x_,y_,z_] = cd
@@ -53,7 +65,8 @@ def test_current_detector_all_bends(grid, pml, backends):
     # grid.run(total_time=n)
     for _ in range(n):
         grid.update_E()
-        grid.E[x_,y_,z_, d_.Z] = normalized_gaussian_pulse(grid.time_passed,100*grid.time_step)
+        grid.E[x_,y_,z_, d_.Z] = normalized_gaussian_pulse(grid.time_passed,100*grid.time_step,
+                                                        center=500*grid.time_step)
         grid.update_H()
         grid.time_steps_passed += 1
 
@@ -67,8 +80,8 @@ def test_current_detector_all_bends(grid, pml, backends):
     resistivity = 1.0/conductivity
     resistance = (resistivity * grid.grid_spacing) / (grid.grid_spacing*grid.grid_spacing)
     expected_current = voltage / resistance
-    print(expected_current)
-    print(current_time_history)
-    plt.plot(current_time_history)
-    plt.show()
+    # print(expected_current)
+    # print(current_time_history)
+    # plt.plot(current_time_history)
+    # plt.show()
     # plt.plot(electric_field_time_history)
