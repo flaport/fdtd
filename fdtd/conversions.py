@@ -1,11 +1,12 @@
-from math import pi, sin, cos
+from math import pi, sin, cos, sqrt
 from .typing import Tuple, Number, ListOrSlice, List
-from .grid import Grid
+from .grid import Grid, VACUUM_PERMEABILITY, VACUUM_PERMITTIVITY
+
 from .backend import backend as bd
 
 '''
 Optional reduced unit conversion functions for user use.
-
+Mainly to make it explicit where conversions happen.
 
 Might perhaps be worth putting a note in the readme about default units / suggested unit systems?
 Also, if /fdtd/ gets the ability to dump to VTK, one would hate to
@@ -27,21 +28,16 @@ of simulation units equals 1 per definition".
 
 '''
 
-#
-# def tildeE_to_E(input):
-#     '''
-#     Where barE is the reduced simulation unit and E is the world unit
-#     '''
-#
-#     return
-#
-# def E_to_sim_E(input):
-#     '''
-#     Where barE is the reduced simulation unit and E is the world unit
-#     '''
-#
-#     return
-#
-#
-# def tildeH_to_H(input):
-#     return
+
+def simE_to_worldE(input):
+    return input / sqrt(VACUUM_PERMITTIVITY)
+
+def worldE_to_simE(input):
+    return sqrt(VACUUM_PERMITTIVITY) * input
+
+
+def simH_to_worldH(input):
+    return input / sqrt(VACUUM_PERMEABILITY)
+
+def worldH_to_simH(input):
+    return sqrt(VACUUM_PERMEABILITY) * input

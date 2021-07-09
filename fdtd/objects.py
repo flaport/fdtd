@@ -190,7 +190,7 @@ class AbsorbingObject(Object):
         )
 
     def update_E(self, curl_H):
-        """ custom update equations for inside the anisotropic object
+        """ custom update equations for inside the absorbing object
 
         Args:
             curl_H: the curl of magnetic field in the grid.
@@ -206,7 +206,7 @@ class AbsorbingObject(Object):
         )
 
     def update_H(self, curl_E):
-        """ custom update equations for inside the anisotropic object
+        """ custom update equations for inside the absorbing object
 
         Args:
             curl_E: the curl of electric field in the grid.

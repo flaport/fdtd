@@ -9,8 +9,13 @@
 ## Imports
 import fdtd
 from fdtd.backend import backend as bd
+from fdtd.waveforms import normalized_gaussian_pulse
+from fdtd.conversions import *
+
 import pytest
 from fixtures import grid, pml, periodic_boundary, backend_parametrizer
+import matplotlib.pyplot as plt
+
 from fdtd.grid import d_
 ## Tests
 
@@ -18,6 +23,7 @@ x_ = 4
 y_ = 4
 z_ = 4
 
+#theory-driven development? there must be a more efficient way to test this kind of code...
 
 pytest_generate_tests = backend_parametrizer # perform tests over all backends
 
@@ -25,28 +31,44 @@ pytest_generate_tests = backend_parametrizer # perform tests over all backends
 def test_current_detector_all_bends(grid, pml, backends):
     fdtd.set_backend(backends)
 
-    grid[x_,y_,z_] = fdtd.PointSource()
+    # we want our test cases to be orthogonal:
+    # The test case with the patch antenna also relies on
+    # the electric field detector & PEC, seems like a smaller test could be in order
+
+    #However, because of the overlapping
+
+    conductivity = 1e9
+    # absorb = bd.ones((grid.Nx,grid.Ny,grid.Nz))
+    # absorb[x_,y_,z_] = 0
+    grid[x_-1:x_+1,y_-1:y_+1,z_-1:z_+1] = fdtd.AbsorbingObject(permittivity=1.0,
+    conductivity=conductivity)
+    # grid[x_,y_,z_] = fdtd.PointSource(period=500)
     cd = fdtd.CurrentDetector(name="Dave")
     grid[x_,y_,z_] = cd
     grid[x_:x_,y_:y_,z_:z_] = fdtd.BlockDetector()
-    conductivity = 1.0
-    grid[x_,y_,z_] = fdtd.AbsorbingObject(permittivity=1.0, conductivity=conductivity)
     # FIXME: AbsorbingObject must be added last for some reason,
 
 
-    n = 100
-    grid.run(total_time=n)
+    n = 1000
+    # grid.run(total_time=n)
+    for _ in range(n):
+        grid.update_E()
+        grid.E[x_,y_,z_, d_.Z] = normalized_gaussian_pulse(grid.time_passed,100*grid.time_step)
+        grid.update_H()
+        grid.time_steps_passed += 1
+
     #
-    current_time_history = grid.detectors[0].I
+    current_time_history = bd.array(grid.detectors[0].I).reshape(n)
     electric_field_time_history = bd.array(grid.detectors[1].E).reshape(n,3)[:,d_.Z]
-    # print(grid.E[x_,y_,z_,d_.Z])
-    print(cd.single_point_current(x_,y_,z_))
-    print(max(electric_field_time_history))
+    print(grid.E[x_,y_,z_,d_.Z])
 
     print(current_time_history)
-
-    voltage = max(electric_field_time_history)*grid.grid_spacing
+    voltage = electric_field_time_history*grid.grid_spacing
     resistivity = 1.0/conductivity
     resistance = (resistivity * grid.grid_spacing) / (grid.grid_spacing*grid.grid_spacing)
     expected_current = voltage / resistance
     print(expected_current)
+    print(current_time_history)
+    plt.plot(current_time_history)
+    plt.show()
+    # plt.plot(electric_field_time_history)

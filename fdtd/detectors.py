@@ -454,16 +454,17 @@ class CurrentDetector:
 
         # this is very slow.
 
-        #fixme
-        # I = []
-        # for i, row in enumerate(self.x):
-        #     I.append([])
-        #     for j, col in enumerate(self.y):
-        #         I[i].append([])
-        #         for k, pillar in enumerate(self.z):
-        #             I[i][j].append([])
-        #             I[i][j][k] = self.single_point_current(i, j, k)
-
+        #FIXME
+        I = []
+        # I = np.array(())
+        for i, row in enumerate(self.x):
+            I.append([])
+            for j, col in enumerate(self.y):
+                I[i].append([])
+                for k, pillar in enumerate(self.z):
+                    I[i][j].append([])
+                    I[i][j][k] = self.single_point_current(row, col, pillar)
+        # self.single_point_current(i, j, k)
         #can detector outputs be numpy-like arrays by default?
         self.I.append(I)
 

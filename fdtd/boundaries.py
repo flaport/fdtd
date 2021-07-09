@@ -611,3 +611,22 @@ class _PMLZhigh(PML):
         sigma = self._sigma(bd.arange(1.0, self.thickness, 1.0))
         self.sigmaH = bd.zeros((self.grid.Nx, self.grid.Ny, self.thickness, 3))
         self.sigmaH[:, :, :-1, 2] = sigma[None, None, :]
+
+
+# UNTESTED
+# def DomainBorderPML(grid, border_cells=5):
+#     '''
+#     Many problem setups require a layer of PML all the way around the problem.
+#     This is a convienience function to add such a layer.
+#     Does it matter that PML is overlapping?
+#     Might be a more straightforward numpy slicing solution...
+#     maybe with
+#     raw = np.pad(raw, [(pcb.pml_cells, pcb.pml_cells), (pcb.pml_cells, pcb.pml_cells),
+#        (pcb.pml_cells, pcb.pml_cells)], mode='constant')
+#     '''
+#     grid[0:border_cells, :, :] = fdtd.PML(name="pml_xlow")
+#     grid[-border_cells:, :, :] = fdtd.PML(name="pml_xhigh")
+#     grid[:, 0:border_cells, :] = fdtd.PML(name="pml_ylow")
+#     grid[:, -border_cells:, :] = fdtd.PML(name="pml_yhigh")
+#     grid[:, : ,0:border_cells] = fdtd.PML(name="pml_zlow")
+#     grid[:, : ,-border_cells:] = fdtd.PML(name="pml_zhigh")
