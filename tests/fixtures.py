@@ -37,7 +37,7 @@ def pml():
 # Perform tests over all backends when pytest called with --all_backends
 # and function name has "all_bends" in it.
 # Function must have (, backends) in args and
-# rename to all_bns for consistency?
+# rename to all_bds for consistency?
 def backend_parametrizer(metafunc):
     # called once per each test function
     # see https://docs.pytest.org/en/6.2.x/example/parametrize.html

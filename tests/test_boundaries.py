@@ -10,6 +10,7 @@ import fdtd
 
 # fixtures
 from fixtures import grid, pml, periodic_boundary
+from fdtd.backend import backend as bd
 
 from fdtd.boundaries import DomainBorderPML
 ## Tests
@@ -53,14 +54,27 @@ def test_DomainPML_success(grid, pml):
     DomainBorderPML(grid, 3)
 
 
-def test_DomainPML_bonehead_indexing(grid, pml):
-    #make sure I did the indexing right!
-    grid[0:pml_cells, :, :] = fdtd.PML(name="pml_xlow")
-    grid[-pml_cells:, :, :] = fdtd.PML(name="pml_xhigh")
-    grid[:, 0:pml_cells, :] = fdtd.PML(name="pml_ylow")
-    grid[:, -pml_cells:, :] = fdtd.PML(name="pml_yhigh")
-    grid[:, : ,0:pml_cells] = fdtd.PML(name="pml_zlow")
-    grid[:, : ,-pml_cells:] = fdtd.PML(name="pml_zhigh")
+def test_DomainPML_bonehead_indexing():
+    #make sure I did the indexing properly!
+    #no overlaps.
+    test_grid = bd.zeros((9,9,9))
+    border_cells = 4
 
+    #top and bottom
+    test_grid[:, : ,0:border_cells] += 1
+    test_grid[:, : ,-border_cells:] += 1
+
+    #left and right
+    test_grid[0:border_cells, :, border_cells:-border_cells] += 1
+    test_grid[-border_cells:, :, border_cells:-border_cells] += 1
+
+    #front and back
+    test_grid[border_cells:-border_cells, 0:border_cells, border_cells:-border_cells] += 1
+    test_grid[border_cells:-border_cells, -border_cells:, border_cells:-border_cells] += 1
+
+    comparison_grid = bd.ones((9,9,9))
+    comparison_grid[4,4,4] = 0
+
+    assert (test_grid == comparison_grid).all()
 
 # test non-unique names

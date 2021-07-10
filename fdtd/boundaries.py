@@ -629,6 +629,19 @@ def DomainBorderPML(grid, border_cells=5):
     if(grid.Nx < border_cells*2 or grid.Ny < border_cells*2 or grid.Nz < border_cells*2):
         raise IndexError("PML border_cells larger than domain!")
 
+    #top and bottom
+    grid[:, : ,0:border_cells] = PML()
+    grid[:, : ,-border_cells:] = PML()
+
+    #left and right
+    grid[0:border_cells, :, border_cells:-border_cells] = PML()
+    grid[-border_cells:, :, border_cells:-border_cells] = PML()
+
+    #front and back
+    grid[border_cells:-border_cells, 0:border_cells, border_cells:-border_cells] = PML()
+    grid[border_cells:-border_cells, -border_cells:, border_cells:-border_cells] = PML()
+
+
     # grid[-border_cells:, :, :] = fdtd.PML(name="pml_xhigh")
     # grid[:, 0:border_cells, :] = fdtd.PML(name="pml_ylow")
     # grid[:, -border_cells:, :] = fdtd.PML(name="pml_yhigh")
@@ -638,13 +651,13 @@ def DomainBorderPML(grid, border_cells=5):
 
     # top and bottom already get corners
 
-    grid[0:pml_cells, :, :] = fdtd.PML(name="pml_xlow")
-    grid[-pml_cells:, :, :] = fdtd.PML(name="pml_xhigh")
-    grid[:, 0:pml_cells, :] = fdtd.PML(name="pml_ylow")
-    grid[:, -pml_cells:, :] = fdtd.PML(name="pml_yhigh")
-    grid[:, : ,0:pml_cells] = fdtd.PML(name="pml_zlow")
-    grid[:, : ,-pml_cells:] = fdtd.PML(name="pml_zhigh")
+    # grid[0:pml_cells, :, :] = fdtd.PML(name="pml_xlow")
+    # grid[-pml_cells:, :, :] = fdtd.PML(name="pml_xhigh")
+    # grid[:, 0:pml_cells, :] = fdtd.PML(name="pml_ylow")
+    # grid[:, -pml_cells:, :] = fdtd.PML(name="pml_yhigh")
+    # grid[:, : ,0:pml_cells] = fdtd.PML(name="pml_zlow")
+    # grid[:, : ,-pml_cells:] = fdtd.PML(name="pml_zhigh")
 
-    print(bn.shape(fdtd.PML(name="pml_zhigh").phi_E))
+    # print(bn.shape(fdtd.PML(name="pml_zhigh").phi_E))
 
     #grid knows where boundaries are
