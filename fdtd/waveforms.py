@@ -28,9 +28,11 @@ http://www.sci.utah.edu/~gerig/CS7960-S2010/handouts/04%20Gaussian%20derivatives
 fwhm_constant = 2.0*sqrt(2.0 * log(2))
 
 def normalized_gaussian_pulse(x,fwhm,center=0.0):
-    '''
-    Center - just for convienience, used to move pulse time around
-    '''
+    # '''
+    # x - input value, usually time
+    # fwhm - pulse Full Width Half Maximum
+    # Center - just for convenience, used to move pulse time around
+    # '''
     #apparently FWHM of t is properly called "full duration half maximum",
     #but I've never heard that used
     sigma = fwhm/fwhm_constant

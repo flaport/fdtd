@@ -628,6 +628,9 @@ def DomainBorderPML(grid, border_cells=5):
     if(grid.Nx < border_cells*2 or grid.Ny < border_cells*2 or grid.Nz < border_cells*2):
         raise IndexError("PML border_cells larger than domain!")
 
+    #overly-complicated slicing doesn't overlap,
+    #haven't checked if that's important
+
     #top and bottom
     grid[:, : ,0:border_cells] = PML()
     grid[:, : ,-border_cells:] = PML()

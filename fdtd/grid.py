@@ -35,7 +35,7 @@ VACUUM_PERMITTIVITY: float = 1.0 / (
 
 class d_:
     '''
-    Just a convienience function for indexing polarizations of arrays.
+    Just a convenience function for indexing polarizations of arrays.
     '''
     X = 0
     Y = 1

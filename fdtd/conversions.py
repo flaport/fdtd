@@ -22,7 +22,7 @@ https://www.photonics.intec.ugent.be/download/phd_259.pdf
 
 Chapters 4.1.2 and 4.1.6.
 
-"In SI units, the relative magnitude difference between the fields is related
+> "In SI units, the relative magnitude difference between the fields is related
 by the electromagnetic impedance of free space, which for the current choice
 of simulation units equals 1 per definition".
 
