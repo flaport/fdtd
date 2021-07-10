@@ -33,6 +33,13 @@ VACUUM_PERMITTIVITY: float = 1.0 / (
     VACUUM_PERMEABILITY * SPEED_LIGHT ** 2
 )  # vacuum permittivity
 
+class d_:
+    '''
+    Just a convenience function for indexing polarizations of arrays.
+    '''
+    X = 0
+    Y = 1
+    Z = 2
 
 ## Functions
 def curl_E(E: Tensorlike) -> Tensorlike:
