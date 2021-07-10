@@ -284,32 +284,25 @@ class CurrentDetector:
     This currently only operates over a single point because that's how
     it was written in my historical code. A refactor into Block &c probably required.
 
-    total current (not current density).
-
-    Alternatives:
-
-    1. Current detection could be a standard detector output,
-    if every h-field probe pointed two ways.
-
-    2. No current detector class at all. SoftArbitraryPointSource
-    makes two H-detectors.
-
-    3. Who even needs current? Practically nobody. Leave it as-is.
-
-    Don't know if this op over a volume is valid. Should be.
-
-    TODO: Detector geometry as an argument?
-
-    Lots of interesting detector geometries that might be worth implementing,
-    ("integrated current loop"), this could be a flag here.
-
-    Existing sources are all z-polarized; detectors output all the polarizations.
-    Unlike other Detectors, this does not yet output a polarized current.
-
-    Source polarization is probably an important feature.
 
     """
-
+    # Alternative APIs:
+    #
+    # 1. Current detection could be a standard detector output,
+    # if every h-field probe pointed two ways.
+    # 2. No current detector class at all. SoftArbitraryPointSource
+    # makes two H-detectors. (can't test separated then).
+    # 3. Who even needs current in optical domain? Practically nobody. Leave it as-is.
+    # Don't know if this op over a volume is valid. Should be.
+    # TODO: Detector geometry as an argument?
+    # Lots of interesting I detector geometries that might be worth implementing,
+    # ("integrated current loop"), this could be a flag here.
+    #
+    # Existing sources are all z-polarized; detectors output all the polarizations.
+    # Unlike other Detectors, this does not yet output a polarized current.
+    #
+    # *Source* polarization is probably an important feature for 3D electrical work
+    # not sure how important it is for optical stuff
 
     def __init__(self, name=None):
         """ Create a block detector
@@ -408,8 +401,6 @@ class CurrentDetector:
     def single_point_current(self, px, py, pz):
         '''
 
-        Cross product.
-
         Only Z-polarized for now.
 
         ^
@@ -417,15 +408,31 @@ class CurrentDetector:
         |
         X---->
 
-        TODO: FIXME: IMPORTANT material permeability? find test cases!
+        TODO: FIXME: IMPORTANT:
+        material magnetic permeability? find test cases!
 
-        could potentially take some detector geometries from other open-source libraries,
-        license permitting
+
+
+
+        [1] Jiayuan Fang, Danwei Xue.
+        Precautions in the calculation of impedance in FDTD computations.
+        Proceedings of IEEE Antennas and Propagation Society International Symposium
+        and URSI National Radio Science Meeting, vol. 3, 1994, p. 1814–7 vol.3.
+        https://doi.org/10.1109/APS.1994.408185.
+
+
+        [1] Luebbers RJ, Langdon HS. A simple feed model that reduces time steps needed for FDTD antenna and microstrip calculations. IEEE Trans Antennas Propagat 1996;44:1000–5. https://doi.org/10.1109/8.504308.
+
         '''
 
         #[Luebbers 1996 1992]
         # /sqrt(mu_0)s removed!
-        # account for Yee cell half-step inaccuracies [Fang 1994].
+
+
+        # Two cells are averaged to account for
+         # Yee cell half-step inaccuracies [Fang 1994].
+
+
 
         #option for unit factor here? Units will get very complicated otherwise
 
@@ -454,9 +461,8 @@ class CurrentDetector:
 
         # this is very slow.
 
-        #FIXME
+        #FIXME: can detector outputs be bn.array() by default?
         I = []
-        # I = np.array(())
         for i, row in enumerate(self.x):
             I.append([])
             for j, col in enumerate(self.y):
@@ -464,7 +470,6 @@ class CurrentDetector:
                 for k, pillar in enumerate(self.z):
                     I[i][j].append([])
                     I[i][j][k] = self.single_point_current(row, col, pillar)
-        # self.single_point_current(i, j, k)
         #can detector outputs be numpy-like arrays by default?
         self.I.append(I)
 

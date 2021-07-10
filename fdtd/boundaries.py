@@ -15,7 +15,6 @@ from .typing import Tensorlike, ListOrSlice, IntOrSlice
 from .grid import Grid
 from .backend import backend as bd
 
-
 ## Boundary Conditions [base class]
 class Boundary:
     """ an FDTD Boundary [base class] """
@@ -50,6 +49,8 @@ class Boundary:
         self.x = self._handle_slice(x)
         self.y = self._handle_slice(y)
         self.z = self._handle_slice(z)
+
+        #Put into unique_name_check function?
         if self.name is not None:
             if not hasattr(grid, self.name):
                 setattr(grid, self.name, self)
@@ -616,21 +617,34 @@ class _PMLZhigh(PML):
 # UNTESTED
 def DomainBorderPML(grid, border_cells=5):
     '''
-    Many problem setups require a layer of PML all the way around the problem.
-    Doesn't return anything - not like other boundaries functions, maybe wrong?
-    This is a convienience function to add such a layer to an existing grid.
-    Does it matter that PML is overlapping?
-    There might be a more straightforward numpy slicing solution...
-    maybe with
-    raw = np.pad(raw, [(pcb.pml_cells, pcb.pml_cells), (pcb.pml_cells, pcb.pml_cells),
-       (pcb.pml_cells, pcb.pml_cells)], mode='constant')
+    Some problem setups require a layer of PML all the way around the problem.
+    This is a convenience function to add such a layer to an existing grid.
     '''
+    # Doesn't return anything, unlike other .boundaries functions - is that breaking the API?
+    # There might be a more straightforward numpy slicing solution...
+    # maybe with
+    # raw = np.pad(raw, [(pcb.pml_cells, pcb.pml_cells), (pcb.pml_cells, pcb.pml_cells),
+    #    (pcb.pml_cells, pcb.pml_cells)], mode='constant') and then indexing the grid by that?
+
     if(grid.Nx < border_cells*2 or grid.Ny < border_cells*2 or grid.Nz < border_cells*2):
         raise IndexError("PML border_cells larger than domain!")
 
-    grid[0:border_cells, :, :] = fdtd.PML(name="pml_xlow")
-    grid[-border_cells:, :, :] = fdtd.PML(name="pml_xhigh")
-    grid[:, 0:border_cells, :] = fdtd.PML(name="pml_ylow")
-    grid[:, -border_cells:, :] = fdtd.PML(name="pml_yhigh")
-    grid[:, : ,0:border_cells] = fdtd.PML(name="pml_zlow")
-    grid[:, : ,-border_cells:] = fdtd.PML(name="pml_zhigh")
+    # grid[-border_cells:, :, :] = fdtd.PML(name="pml_xhigh")
+    # grid[:, 0:border_cells, :] = fdtd.PML(name="pml_ylow")
+    # grid[:, -border_cells:, :] = fdtd.PML(name="pml_yhigh")
+    # grid[:, : ,0:border_cells] = fdtd.PML(name="pml_zlow")
+    # grid[:, : ,-border_cells:] = fdtd.PML(name="pml_zhigh")
+
+
+    # top and bottom already get corners
+
+    grid[0:pml_cells, :, :] = fdtd.PML(name="pml_xlow")
+    grid[-pml_cells:, :, :] = fdtd.PML(name="pml_xhigh")
+    grid[:, 0:pml_cells, :] = fdtd.PML(name="pml_ylow")
+    grid[:, -pml_cells:, :] = fdtd.PML(name="pml_yhigh")
+    grid[:, : ,0:pml_cells] = fdtd.PML(name="pml_zlow")
+    grid[:, : ,-pml_cells:] = fdtd.PML(name="pml_zhigh")
+
+    print(bn.shape(fdtd.PML(name="pml_zhigh").phi_E))
+
+    #grid knows where boundaries are

@@ -29,8 +29,8 @@ The ``cuda`` backends are only available for computers with a GPU.
 # Numpy Backend
 import numpy  # numpy has to be present
 
-# used by test runner.
-# default must be first.
+# used only by test runner.
+# default must be idx 0.
 backend_names = [dict(backends="numpy"),
                  dict(backends="torch.float32"),
                  dict(backends="torch.float64"),

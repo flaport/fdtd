@@ -6,6 +6,7 @@ import pytest
 from fdtd.backend import backend_names
 
 
+
 ## Fixtures
 
 
@@ -35,8 +36,8 @@ def pml():
 
 # Perform tests over all backends when pytest called with --all_backends
 # and function name has "all_bends" in it.
-# must be set to overwrite pytest_generate_tests.
-# Function must have (, backends) in args
+# Function must have (, backends) in args and
+# rename to all_bns for consistency?
 def backend_parametrizer(metafunc):
     # called once per each test function
     # see https://docs.pytest.org/en/6.2.x/example/parametrize.html

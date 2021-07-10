@@ -9,8 +9,9 @@ import pytest
 import fdtd
 
 # fixtures
-from fixtures import grid, pml, periodic_boundary, DomainBorderPML
+from fixtures import grid, pml, periodic_boundary
 
+from fdtd.boundaries import DomainBorderPML
 ## Tests
 
 
@@ -44,8 +45,22 @@ def test_pml_in_grid_boundary_list(grid, pml):
     grid[0:3, :, :] = pml
     assert pml in grid.boundaries
 
-def test_DomainPML_acceptable(grid, pml):
-    # DomainBorderPML(grid, 5)
-
+def test_DomainPML_exception(grid, pml):
     with pytest.raises(IndexError):
-        DomainBorderPML(grid, 6)
+        DomainBorderPML(grid, grid.Nx//2+1)
+
+def test_DomainPML_success(grid, pml):
+    DomainBorderPML(grid, 3)
+
+
+def test_DomainPML_bonehead_indexing(grid, pml):
+    #make sure I did the indexing right!
+    grid[0:pml_cells, :, :] = fdtd.PML(name="pml_xlow")
+    grid[-pml_cells:, :, :] = fdtd.PML(name="pml_xhigh")
+    grid[:, 0:pml_cells, :] = fdtd.PML(name="pml_ylow")
+    grid[:, -pml_cells:, :] = fdtd.PML(name="pml_yhigh")
+    grid[:, : ,0:pml_cells] = fdtd.PML(name="pml_zlow")
+    grid[:, : ,-pml_cells:] = fdtd.PML(name="pml_zhigh")
+
+
+# test non-unique names
