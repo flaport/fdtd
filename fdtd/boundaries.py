@@ -614,7 +614,6 @@ class _PMLZhigh(PML):
         self.sigmaH[:, :, :-1, 2] = sigma[None, None, :]
 
 
-# UNTESTED
 def DomainBorderPML(grid, border_cells=5):
     '''
     Some problem setups require a layer of PML all the way around the problem.
@@ -640,24 +639,3 @@ def DomainBorderPML(grid, border_cells=5):
     #front and back
     grid[border_cells:-border_cells, 0:border_cells, border_cells:-border_cells] = PML()
     grid[border_cells:-border_cells, -border_cells:, border_cells:-border_cells] = PML()
-
-
-    # grid[-border_cells:, :, :] = fdtd.PML(name="pml_xhigh")
-    # grid[:, 0:border_cells, :] = fdtd.PML(name="pml_ylow")
-    # grid[:, -border_cells:, :] = fdtd.PML(name="pml_yhigh")
-    # grid[:, : ,0:border_cells] = fdtd.PML(name="pml_zlow")
-    # grid[:, : ,-border_cells:] = fdtd.PML(name="pml_zhigh")
-
-
-    # top and bottom already get corners
-
-    # grid[0:pml_cells, :, :] = fdtd.PML(name="pml_xlow")
-    # grid[-pml_cells:, :, :] = fdtd.PML(name="pml_xhigh")
-    # grid[:, 0:pml_cells, :] = fdtd.PML(name="pml_ylow")
-    # grid[:, -pml_cells:, :] = fdtd.PML(name="pml_yhigh")
-    # grid[:, : ,0:pml_cells] = fdtd.PML(name="pml_zlow")
-    # grid[:, : ,-pml_cells:] = fdtd.PML(name="pml_zhigh")
-
-    # print(bn.shape(fdtd.PML(name="pml_zhigh").phi_E))
-
-    #grid knows where boundaries are

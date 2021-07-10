@@ -10,7 +10,7 @@ def hanning(f, t, n):
 
 Recipes for Z measurements usually specify gaussian or gaussian derivative input pulses.
 
-Presumably because unlike a unit step or gated sine,
+Presumably because unlike a unit step or simply gated sine,
 they're smooth, introducing minimal numerical noise, while retaining broadband frequency components.
 
 I don't know what advantages the gaussian derivative provides over the gaussian.

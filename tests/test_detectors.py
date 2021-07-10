@@ -25,10 +25,6 @@ z_ = 4
 
 #theory-driven development? there must be a more efficient way to test this kind of code...
 
-pytest_generate_tests = backend_parametrizer # perform tests over all backends
-
-
-
 # if/when detectors get polarizations,
 # test in three axes - spin the grid to make sure everything's consistent
 
@@ -45,7 +41,8 @@ def test_DC_absorbing_current_detector_all_bends(grid, pml, backends):
 
     #However, because of the overlapping object issue, seems like this'll be harder.
 
-    # This doesn't seem to work properly, not sure why.
+    # This doesn't seem to work properly, not sure why-
+    # see issue #11, will look into it.
 
     conductivity = 1e9
     # absorb = bd.ones((grid.Nx,grid.Ny,grid.Nz))
@@ -61,7 +58,6 @@ def test_DC_absorbing_current_detector_all_bends(grid, pml, backends):
     grid[x_,y_,z_] = cd
     grid[x_:x_,y_:y_,z_:z_] = fdtd.BlockDetector()
     # FIXME: AbsorbingObject must be added last for some reason,
-
 
     n = 1000
     # grid.run(total_time=n)

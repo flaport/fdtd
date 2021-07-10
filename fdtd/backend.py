@@ -133,10 +133,16 @@ class NumpyBackend(Backend):
     arange = staticmethod(numpy.arange)
     """ create a range of values """
 
+    fft = staticmethod(numpy.fft.fft)
+
+    # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    # beware to future people:
+    # I am Captain Obvious reminding you that
+    # because this line *redefines numpy*,
+    # you have to add your new staticmethods /above/ this line to avoid mystification.
+    # <3 <3 <3 <3
     numpy = staticmethod(numpy.asarray)
     """ convert the array to numpy array """
-
-    # fft_ = numpy.fft.fft
 
 
 # Torch Backend
@@ -218,6 +224,10 @@ if TORCH_AVAILABLE:
 
         arange = staticmethod(torch.arange)
         """ create a range of values """
+
+        # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        #The same warning applies here.
+        # <3 <3 <3 <3
 
         def numpy(self, arr):
             """ convert the array to numpy array """

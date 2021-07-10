@@ -38,6 +38,7 @@ def pml():
 # and function name has "all_bends" in it.
 # Function must have (, backends) in args and
 # rename to all_bds for consistency?
+# but "all_bends" is, frankly, hilarious
 def backend_parametrizer(metafunc):
     # called once per each test function
     # see https://docs.pytest.org/en/6.2.x/example/parametrize.html

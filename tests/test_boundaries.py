@@ -53,7 +53,6 @@ def test_DomainPML_exception(grid, pml):
 def test_DomainPML_success(grid, pml):
     DomainBorderPML(grid, 3)
 
-
 def test_DomainPML_bonehead_indexing():
     #make sure I did the indexing properly!
     #no overlaps.

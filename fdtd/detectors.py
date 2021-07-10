@@ -413,6 +413,10 @@ class CurrentDetector:
 
 
 
+        Implements the first [Fang 1994] cells are averaged to account for
+        Yee cell half-step inaccuracies .
+
+
 
         [1] Jiayuan Fang, Danwei Xue.
         Precautions in the calculation of impedance in FDTD computations.
@@ -421,16 +425,15 @@ class CurrentDetector:
         https://doi.org/10.1109/APS.1994.408185.
 
 
-        [1] Luebbers RJ, Langdon HS. A simple feed model that reduces time steps needed for FDTD antenna and microstrip calculations. IEEE Trans Antennas Propagat 1996;44:1000–5. https://doi.org/10.1109/8.504308.
+        [1] Luebbers RJ, Langdon HS.
+        A simple feed model that reduces time steps needed for
+        FDTD antenna and microstrip calculations.
+        IEEE Trans Antennas Propagat 1996;44:1000–5. https://doi.org/10.1109/8.504308.
 
         '''
 
         #[Luebbers 1996 1992]
         # /sqrt(mu_0)s removed!
-
-
-        # Two cells are averaged to account for
-         # Yee cell half-step inaccuracies [Fang 1994].
 
 
 
@@ -461,7 +464,7 @@ class CurrentDetector:
 
         # this is very slow.
 
-        #FIXME: can detector outputs be bn.array() by default?
+        #should detector outputs be bd.array() by default?
         I = []
         for i, row in enumerate(self.x):
             I.append([])
@@ -470,7 +473,7 @@ class CurrentDetector:
                 for k, pillar in enumerate(self.z):
                     I[i][j].append([])
                     I[i][j][k] = self.single_point_current(row, col, pillar)
-        #can detector outputs be numpy-like arrays by default?
+
         self.I.append(I)
 
     # can these functions be templated somehow?
