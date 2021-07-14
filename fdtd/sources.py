@@ -504,120 +504,120 @@ class PlaneSource:
         return s
 
 
-
-class SoftArbitraryPointSource:
-    """
-
-    A source placed at a single point (grid cell) in the grid.
-    This source is special: it's both a source and a detector.
-
-    Unlike the other sources, the input is a voltage, not an electric field.
-
-For electrical measurements I've only needed a single-index source,
-so I don't know how the volume/line sources above work.
-    We want the FFT function to operate over any detector.
-  Maybe all sources should take an arbitary waveform argument?
-
-Each index in the *waveform* array represents 1 value at a timestep.
-
-    There are many different *geometries* of "equivalent sources".
-    The detector/source paradigm used in /fdtd might perhaps not correspond to this in an ideal
-    fashion.
-
-    It's not intuitively clear to me what a "soft" source would imply in the optical case, or what
-    impedance even means for a laser.
-
-    /fdtd/ seems to have found primary use in optical circles,
-    so the default Z should probably be 0.
-
-    "Whilst established for microwaves and electrical circuits,
-    this concept has only very recently been observed in the optical domain,
-    yet is not well defined or understood."[1]
-
-    [1]: Optical impedance of metallic nano-structures, M. Mazilu and K. Dholakia
-    https://doi.org/10.1364/OE.14.007709
-
-    [2]: http://www.gwoptics.org/learn/02_Plane_waves/01_Fabry_Perot_cavity/02_Impedance_matched.php
-
-
-    """
-
-    def __init__(
-        self,
-        waveform_array: ,
-        name: str = None,
-        impedance: float = 0.0
-    ):
-        """Create
-
-
-
-        Args:
-            waveform_array
-        """
-        self.grid = None
-        self.name = name
-
-
-    def _register_grid(self, grid: Grid, x: Number, y: Number, z: Number):
-        """Register a grid for the source.
-
-        Args:
-            grid: the grid to place the source into.
-            x: The x-location of the source in the grid
-            y: The y-location of the source in the grid
-            z: The z-location of the source in the grid
-
-        Note:
-            As its name suggests, this source is a POINT source.
-            Hence it should be placed at a single coordinate tuple
-            int the grid.
-        """
-        self.grid = grid
-        self.grid.sources.append(self)
-        if self.name is not None:
-            if not hasattr(grid, self.name):
-                setattr(grid, self.name, self)
-            else:
-                raise ValueError(
-                    f"The grid already has an attribute with name {self.name}"
-                )
-
-        try:
-            (x,), (y,), (z,) = x, y, z
-        except (TypeError, ValueError):
-            raise ValueError("a point source should be placed on a single grid cell.")
-        self.x, self.y, self.z = grid._handle_tuple((x, y, z))
-
-
-    def update_E(self):
-        if(self.grid.time_steps_passed < waveform_array.size):
-            #check for off-by-one error here
-            input_value = waveform_array[self.grid.time_steps_passed]
-        else:
-            input_value = 0.0 # one could taper the last value off smoothly instead
-
-        source_resistive_voltage = (50.0 * current) #
-
-        pcb.component_ports[0].set_voltage(pcb, input_value + source_resistive_voltage)
-
-        self.grid.E[self.x, self.y, self.z, 2] += val
-
-    def update_H(self):
-        pass
-
-
-    def __repr__(self):
-        return (
-            f"{self.__class__.__name__}(period={self.period}, "
-            f"power={self.power}, phase_shift={self.phase_shift}, "
-            f"name={repr(self.name)})"
-        )
-
-    def __str__(self):
-        s = "    " + repr(self) + "\n"
-        x = f"{self.x}"
-        y = f"{self.y}"
-        z = f"{self.z}"
-        s += f"        @ x={x}, y={y}, z={z}\n"
-        return s
+#
+# class SoftArbitraryPointSource:
+#     """
+#
+#     A source placed at a single point (grid cell) in the grid.
+#     This source is special: it's both a source and a detector.
+#
+#     Unlike the other sources, the input is a voltage, not an electric field.
+#
+# For electrical measurements I've only needed a single-index source,
+# so I don't know how the volume/line sources above work.
+#     We want the FFT function to operate over any detector.
+#   Maybe all sources should take an arbitary waveform argument?
+#
+# Each index in the *waveform* array represents 1 value at a timestep.
+#
+#     There are many different *geometries* of "equivalent sources".
+#     The detector/source paradigm used in /fdtd might perhaps not correspond to this in an ideal
+#     fashion.
+#
+#     It's not intuitively clear to me what a "soft" source would imply in the optical case, or what
+#     impedance even means for a laser.
+#
+#     /fdtd/ seems to have found primary use in optical circles,
+#     so the default Z should probably be 0.
+#
+#     "Whilst established for microwaves and electrical circuits,
+#     this concept has only very recently been observed in the optical domain,
+#     yet is not well defined or understood."[1]
+#
+#     [1]: Optical impedance of metallic nano-structures, M. Mazilu and K. Dholakia
+#     https://doi.org/10.1364/OE.14.007709
+#
+#     [2]: http://www.gwoptics.org/learn/02_Plane_waves/01_Fabry_Perot_cavity/02_Impedance_matched.php
+#
+#
+#     """
+#
+#     def __init__(
+#         self,
+#         waveform_array: ,
+#         name: str = None,
+#         impedance: float = 0.0
+#     ):
+#         """Create
+#
+#
+#
+#         Args:
+#             waveform_array
+#         """
+#         self.grid = None
+#         self.name = name
+#
+#
+#     def _register_grid(self, grid: Grid, x: Number, y: Number, z: Number):
+#         """Register a grid for the source.
+#
+#         Args:
+#             grid: the grid to place the source into.
+#             x: The x-location of the source in the grid
+#             y: The y-location of the source in the grid
+#             z: The z-location of the source in the grid
+#
+#         Note:
+#             As its name suggests, this source is a POINT source.
+#             Hence it should be placed at a single coordinate tuple
+#             int the grid.
+#         """
+#         self.grid = grid
+#         self.grid.sources.append(self)
+#         if self.name is not None:
+#             if not hasattr(grid, self.name):
+#                 setattr(grid, self.name, self)
+#             else:
+#                 raise ValueError(
+#                     f"The grid already has an attribute with name {self.name}"
+#                 )
+#
+#         try:
+#             (x,), (y,), (z,) = x, y, z
+#         except (TypeError, ValueError):
+#             raise ValueError("a point source should be placed on a single grid cell.")
+#         self.x, self.y, self.z = grid._handle_tuple((x, y, z))
+#
+#
+#     def update_E(self):
+#         if(self.grid.time_steps_passed < waveform_array.size):
+#             #check for off-by-one error here
+#             input_value = waveform_array[self.grid.time_steps_passed]
+#         else:
+#             input_value = 0.0 # one could taper the last value off smoothly instead
+#
+#         source_resistive_voltage = (50.0 * current) #
+#
+#         pcb.component_ports[0].set_voltage(pcb, input_value + source_resistive_voltage)
+#
+#         self.grid.E[self.x, self.y, self.z, 2] += val
+#
+#     def update_H(self):
+#         pass
+#
+#
+#     def __repr__(self):
+#         return (
+#             f"{self.__class__.__name__}(period={self.period}, "
+#             f"power={self.power}, phase_shift={self.phase_shift}, "
+#             f"name={repr(self.name)})"
+#         )
+#
+#     def __str__(self):
+#         s = "    " + repr(self) + "\n"
+#         x = f"{self.x}"
+#         y = f"{self.y}"
+#         z = f"{self.z}"
+#         s += f"        @ x={x}, y={y}, z={z}\n"
+#         return s

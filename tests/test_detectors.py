@@ -1,10 +1,5 @@
 """ Test the FDTD detectors """
 
-# To run tests in a conda env, use python -m pytest in the root
-# to specify a test,  -k "test_current_detector"
-# To view output, -rA
-# to run with all backends, --all_backends.
-# with --all_backends, --maxfail=1 is recommended to avoid blowing up the scrollback!
 
 ## Imports
 import fdtd

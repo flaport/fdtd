@@ -133,14 +133,19 @@ class NumpyBackend(Backend):
     arange = staticmethod(numpy.arange)
     """ create a range of values """
 
+    pad = staticmethod(numpy.pad)
+
+    fftfreq = staticmethod(numpy.fft.fftfreq)
     fft = staticmethod(numpy.fft.fft)
 
     # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     # beware to future people:
-    # I am Captain Obvious reminding you that
     # because this line *redefines numpy*,
     # you have to add your new staticmethods /above/ this line to avoid mystification.
     # <3 <3 <3 <3
+    #
+    # could this (and below) perhaps be changed to "to_numpy()"
+    # or maybe "check_numpy" ?
     numpy = staticmethod(numpy.asarray)
     """ convert the array to numpy array """
 
@@ -225,6 +230,12 @@ if TORCH_AVAILABLE:
         arange = staticmethod(torch.arange)
         """ create a range of values """
 
+        pad = staticmethod(torch.nn.functional.pad)
+
+        fftfreq = staticmethod(numpy.fft.fftfreq)
+        fft = staticmethod(torch.fft)
+
+
         # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
         #The same warning applies here.
         # <3 <3 <3 <3
@@ -236,7 +247,6 @@ if TORCH_AVAILABLE:
             else:
                 return numpy.asarray(arr)
 
-        fft = staticmethod(torch.fft)
 
 # Torch Cuda Backend
 if TORCH_CUDA_AVAILABLE:

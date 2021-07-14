@@ -281,11 +281,11 @@ class CurrentDetector:
 
     """
 
-    This currently only operates over a single point because that's how
-    it was written in my historical code. A refactor into Block &c probably required.
 
 
     """
+    # This currently only operates over a single point because that's how
+    # it was written in my historical code. A refactor into Block &c probably required.
     # Alternative APIs:
     #
     # 1. Current detection could be a standard detector output,
@@ -401,7 +401,7 @@ class CurrentDetector:
     def single_point_current(self, px, py, pz):
         '''
 
-        Only Z-polarized for now.
+        Only Z-polarized for now. Can probably do a cross product
 
         ^
         |
@@ -412,23 +412,21 @@ class CurrentDetector:
         material magnetic permeability? find test cases!
 
 
-
         Implements the first [Fang 1994] cells are averaged to account for
         Yee cell half-step inaccuracies .
 
-
-
-        [1] Jiayuan Fang, Danwei Xue.
+        Jiayuan Fang, Danwei Xue.
         Precautions in the calculation of impedance in FDTD computations.
         Proceedings of IEEE Antennas and Propagation Society International Symposium
         and URSI National Radio Science Meeting, vol. 3, 1994, p. 1814–7 vol.3.
         https://doi.org/10.1109/APS.1994.408185.
 
 
-        [1] Luebbers RJ, Langdon HS.
+        Luebbers RJ, Langdon HS.
         A simple feed model that reduces time steps needed for
         FDTD antenna and microstrip calculations.
-        IEEE Trans Antennas Propagat 1996;44:1000–5. https://doi.org/10.1109/8.504308.
+        IEEE Trans Antennas Propagat 1996;44:1000–5.
+        https://doi.org/10.1109/8.504308.
 
         '''
 
@@ -447,14 +445,12 @@ class CurrentDetector:
         current_1 = current_vector_1 + current_vector_2
         # current_1 = float(current.cpu())
 
-        # z_slice_2 = slice(pcb.component_plane_z-2,pcb.component_plane_z-1)
-
-        current_2 = (((self.grid.H[px,py-1,pz-1,d_.X])-
+        current_vector_1 = (((self.grid.H[px,py-1,pz-1,d_.X])-
                     (self.grid.H[px,py,pz-1,d_.X]))*self.grid.grid_spacing)
-        current_2 += (((self.grid.H[px,py,pz-1,d_.Y])-
+        current_vector_2 += (((self.grid.H[px,py,pz-1,d_.Y])-
                     (self.grid.H[px-1,py,pz-1,d_.Y]))*self.grid.grid_spacing)
-        # current
         # current_2 = float(current_2.cpu())
+        current_2 = current_vector_1 + current_vector_2
 
         I = ((current_1+current_2) / 2.0)
 
@@ -462,9 +458,9 @@ class CurrentDetector:
 
     def detect_H(self):
 
-        # this is very slow.
-
         #should detector outputs be bd.array() by default?
+        #for that matter, should they always be converted to numpy?
+
         I = []
         for i, row in enumerate(self.x):
             I.append([])
