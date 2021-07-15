@@ -270,6 +270,8 @@ if TORCH_CUDA_AVAILABLE:
                 return arr.clone().to(device="cuda", dtype=dtype)
             return torch.tensor(arr, device="cuda", dtype=dtype)
 
+        # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        #The same warning applies here.
         def numpy(self, arr):
             """ convert the array to numpy array """
             if torch.is_tensor(arr):

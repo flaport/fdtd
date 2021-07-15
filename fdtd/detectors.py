@@ -487,3 +487,7 @@ class CurrentDetector:
     def detector_values(self):
         """ outputs what detector detects """
         return {'I': self.I}
+
+# def reshape
+#
+#     bd.array(grid.detectors[1].E).reshape(n,3)[:,d_.Z]

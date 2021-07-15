@@ -1,11 +1,17 @@
 
-# The following cases should be supported:
-# - A single arbitrary numpy array from anywhere
-# - A single detector
-# - The ratio between two detectors?
-#
+# def pretty_freqs():
+#     ["KHz", "MHz", "GHz", "THz"]
+#     {:.2f}"\
+#                 .format(fft_bin_resolution)
 
-class FrequencyDomain:
+# In the electrical domain,
+
+# https://inst.eecs.berkeley.edu/~ee232/sp17/discussions/Discussion%207%20-%20Photonic%20circuit%20simulation.pptx
+
+
+
+class FrequencyRoutines:
+    # originally called FrequencyDomain, renamed because 'fd' is already a namespace
     # give it an id or name of a detector or SoftArbitraryPointSource
     # or an arbitrary numpy list,
     # converts it into the frequency domain.
@@ -20,10 +26,13 @@ class FrequencyDomain:
 
 
     # def S_parameters():
-    #     # https://inst.eecs.berkeley.edu/~ee232/sp17/discussions/Discussion%207%20-%20Photonic%20circuit%20simulation.pptx
+    # #
 
-    def pad_appropriately(fft_num_bins=None,fft_bin_resolution=None,end_time=grid.time_passed):
+    def padding_and_timing(self, input_data, freq_window_tuple=None, fft_num_bins_in_window=None,
+                                            fft_bin_freq_resolution=None, dt):
         '''
+        input_data must be a 1d array with the time history of one detector. the length of input_data
+        is expected to be the same as time_steps_passed.
 
         - fft_num_bins
         - FFT bin resolution (optional) Hz.
@@ -32,35 +41,69 @@ class FrequencyDomain:
         # https://www.bitweenie.com/listings/fft-zero-padding/
         # there are two different frequency resolutions at play.
         # The first one, a physical resolution,
-        # is
 
+        input_length = input_data.shape()[0]
 
-        if(fft_num_bins == None):
-            fft_bin_resolution
+        begin_freq, end_freq = begin_end_freq_tuple
+        end_time = input_length * dt
+        #
+        # if(not fft_num_bins or fft_bin_resolution):
+        #     print("One of fft_num_bins or fft_bin_resolution must be specified")
 
-        fft_num_bins
+        if(fft_num_bins == None and not fft_bin_resolution == None):
+            fft_num_bins_in_window = ((begin_freq-end_freq)/fft_bin_resolution)
+
+        elif(not (fft_num_bins_in_window or fft_bin_resolution)):
+            # the window is the default, whole array
+            fft_num_bins_in_window = np.len(input_data)
+
         waveform_frequency_resolution = 1.0 / end_time
-        fft_bin_resolution = (1.0 / grid.time_step) / ()
-        print("Waveform data has an intrinsic resolution of {:.2f}"\
+        fft_bin_resolution = (1.0 / dt) / (fft_num_bins_in_window)
+        print("Waveform data has an intrinsic resolution of: {:.2f} Hz"\
                     .format(waveform_frequency_resolution))
-        print("Waveform data has an intrinsic resolution of {:.2f}"\
-                    .format(waveform_frequency_resolution))
+        print("FFT bin: {:.2f} Hz"\
+                    .format(fft_bin_resolution))
+
+        required_length = ceil(fft_num_bins_in_window / ((end_freq-begin_freq) * dt))
+
         # There are some
         # the key is that indeed no extra information is being added;
         # sinc interplolation
         # https://dsp.stackexchange.com/questions/31783/mathematical-justification-for-zero-padding
-
 
         # https://dsp.stackexchange.com/questions/741/why-should-i-zero-pad-a-signal-before-taking-the-fourier-transform
         # https://dsp.stackexchange.com/questions/24410/zero-padding-of-fft/24426#24426
 
         # This seems like magic - how could this be?
         # there are other ways to get a higher bin resolution
+        existing_times = bd.linspace(0,grid.time_passed, n=grid.time_steps_passed)
+        padded_times = bd.linspace(0,grid.time_passed, n=required_padding)
+
+        times = bd.concatenate(bd.linspace(0,grid.time_passed, n=grid.time_steps_passed)
+
+        spectrum_freqs = bd.fftfreq(len(voltages), d=pcb.grid.time_step)
+
+        begin_freq_idx = bd.abs(spectrum_freqs - begin_freq).argmin()
+        end_freq_idx = bd.abs(spectrum_freqs - end_freq).argmin()
+
+
+
+        return
+        #test that end_time is time_passed
+
+    #UNTESTED
+    # def S_parameters(waveform, node):
+    #     null_waveform = bd.zeros_like(waveform)
+    #     for idx, n in node_objects:
+    #         n.waveform = null_waveform
+    #         # grid.run()
+    #         # monitor
+    #         grid.reset()
 
     def complex_impedance():
         pass
 
-    def plot_impedance(begin_end_freq_tuple=None):
+    def plot_impedance():
         '''
         Frequencies are in Hz.
         '''
@@ -76,15 +119,12 @@ class FrequencyDomain:
         # assumes a uniform timestep. It might be useful to add a .times vector to the grid
         # if the timestep is made variable at some point.
         # on the other hand, doing a non-uniform FFT is probably non-trivial at this point anyway
-        times_padded = np.linspace(grid.time_passed)
 
         voltage_spectrum = bd.fft(voltages)
         current_spectrum = bd.fft(currents)
 
-        spectrum_freqs = bd.fftfreq(len(voltages), d=pcb.grid.time_step)
 
-        begin_freq = np.abs(spectrum_freqs - begin_freq).argmin()
-        end_freq = np.abs(spectrum_freqs - end_freq).argmin()
+
 
         plt.plot(times_padded, voltages)
 

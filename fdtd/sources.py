@@ -597,11 +597,13 @@ class PlaneSource:
 #         else:
 #             input_value = 0.0 # one could taper the last value off smoothly instead
 #
+#       if(impedance > 0):
 #         source_resistive_voltage = (50.0 * current) #
 #
 #         pcb.component_ports[0].set_voltage(pcb, input_value + source_resistive_voltage)
+#       else:
 #
-#         self.grid.E[self.x, self.y, self.z, 2] += val
+#       self.grid.E[self.x, self.y, self.z, 2] += val
 #
 #     def update_H(self):
 #         pass
