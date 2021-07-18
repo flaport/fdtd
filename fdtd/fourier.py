@@ -8,6 +8,8 @@
 
 # https://inst.eecs.berkeley.edu/~ee232/sp17/discussions/Discussion%207%20-%20Photonic%20circuit%20simulation.pptx
 
+# in the optical domain, the impedance would just be that of free space?
+
 
 
 class FrequencyRoutines:
@@ -21,18 +23,22 @@ class FrequencyRoutines:
 
 
 
-    def __init__(grid, input_name=None, input_id=None):
+    def __init__(self, grid, input_name=None, input_id=None):
         self.grid = grid
 
 
     # def S_parameters():
     # #
 
-    def padding_and_timing(self, input_data, freq_window_tuple=None, fft_num_bins_in_window=None,
-                                            fft_bin_freq_resolution=None, dt):
+    def compute_padding_and_timing(self, input_data, dt, freq_window_tuple=None, fft_num_bins_in_window=None,
+                                            fft_bin_freq_resolution=None):
         '''
         input_data must be a 1d array with the time history of one detector. the length of input_data
         is expected to be the same as time_steps_passed.
+
+        Does not apply the padding to input_data,
+        since multiple vectors will probably need the same padding and it
+        seems to make more sense to do that somewhere else.
 
         - fft_num_bins
         - FFT bin resolution (optional) Hz.
@@ -42,19 +48,25 @@ class FrequencyRoutines:
         # there are two different frequency resolutions at play.
         # The first one, a physical resolution,
 
-        input_length = input_data.shape()[0]
+        input_length = input_data.shape[0]
 
-        begin_freq, end_freq = begin_end_freq_tuple
+        if(freq_window_tuple == None):
+            begin_freq = 0
+            # from numpy fftfreq docs
+            end_freq = (input_length/2.0) / (dt*input_length) # off by one?
+        else:
+            begin_freq, end_freq = freq_window_tuple
+
         end_time = input_length * dt
         #
         # if(not fft_num_bins or fft_bin_resolution):
         #     print("One of fft_num_bins or fft_bin_resolution must be specified")
 
-        if(fft_num_bins == None and not fft_bin_resolution == None):
-            fft_num_bins_in_window = ((begin_freq-end_freq)/fft_bin_resolution)
+        if(fft_num_bins_in_window == None and not fft_bin_freq_resolution == None):
+            fft_num_bins_in_window = ((begin_freq-end_freq)/fft_bin_freq_resolution)
 
-        elif(not (fft_num_bins_in_window or fft_bin_resolution)):
-            # the window is the default, whole array
+        elif(not (fft_num_bins_in_window or fft_bin_freq_resolution)):
+            # the window is the default, whole array (even if it's trimmed later)
             fft_num_bins_in_window = np.len(input_data)
 
         waveform_frequency_resolution = 1.0 / end_time
@@ -64,7 +76,7 @@ class FrequencyRoutines:
         print("FFT bin: {:.2f} Hz"\
                     .format(fft_bin_resolution))
 
-        required_length = ceil(fft_num_bins_in_window / ((end_freq-begin_freq) * dt))
+        required_padding = ceil(fft_num_bins_in_window / ((end_freq-begin_freq) * dt)) - input_length
 
         # There are some
         # the key is that indeed no extra information is being added;
@@ -76,20 +88,35 @@ class FrequencyRoutines:
 
         # This seems like magic - how could this be?
         # there are other ways to get a higher bin resolution
-        existing_times = bd.linspace(0,grid.time_passed, n=grid.time_steps_passed)
-        padded_times = bd.linspace(0,grid.time_passed, n=required_padding)
-
-        times = bd.concatenate(bd.linspace(0,grid.time_passed, n=grid.time_steps_passed)
-
-        spectrum_freqs = bd.fftfreq(len(voltages), d=pcb.grid.time_step)
-
-        begin_freq_idx = bd.abs(spectrum_freqs - begin_freq).argmin()
-        end_freq_idx = bd.abs(spectrum_freqs - end_freq).argmin()
 
 
+        # assumes a uniform timestep. It might be useful to add a .times vector to the grid
+        # if the timestep is made variable at some point.
+        # on the other hand, doing a non-uniform FFT is probably non-trivial at this point anyway
+        times = bd.linspace(0,end_time + (required_padding*dt),
+                                                n=(input_length+required_padding))
 
-        return
-        #test that end_time is time_passed
+        return times, required_padding, end_time
+
+
+
+    def compute_frequencies(length_with_padding, freq_window_tuple=None, dt):
+        '''
+        Outputs the
+        The indexes are for the real-frequency part of the span.
+        '''
+
+        spectrum_freqs = bd.fftfreq(length_with_padding, d=dt)
+
+        if(freq_window_tuple == None):
+            begin_freq_idx = 0
+            end_freq_idx = ((length_with_padding/2)-1)
+        #closest frequencies
+        else:
+            begin_freq_idx = bd.abs(spectrum_freqs - begin_freq).argmin()
+            end_freq_idx = bd.abs(spectrum_freqs - end_freq).argmin()
+
+        return spectrum_freqs, begin_freq_idx, end_freq_idx
 
     #UNTESTED
     # def S_parameters(waveform, node):
@@ -99,6 +126,15 @@ class FrequencyRoutines:
     #         # grid.run()
     #         # monitor
     #         grid.reset()
+    #
+    # Kurokawa "power wave" coefficients:
+    #a_1 =  #incident
+    #b_1 =  #reflected
+    # from
+    # https://en.wikipedia.org/wiki/Scattering_parameters
+
+    def export_touchstone_s2p():
+        pass
 
     def complex_impedance():
         pass
@@ -116,9 +152,6 @@ class FrequencyRoutines:
         voltages = bd.pad(voltages, (0, required_length), 'edge')
         currents = bd.pad(currents, (0, required_length), 'edge')
 
-        # assumes a uniform timestep. It might be useful to add a .times vector to the grid
-        # if the timestep is made variable at some point.
-        # on the other hand, doing a non-uniform FFT is probably non-trivial at this point anyway
 
         voltage_spectrum = bd.fft(voltages)
         current_spectrum = bd.fft(currents)
