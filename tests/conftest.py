@@ -1,6 +1,8 @@
 import pytest
 from fdtd.backend import backend_names
 
+# Pylint with 'pylint fdtd' in the .git root
+
 # To run tests in a conda env, use `python -m pytest` in the .git root
 # to specify a test, use -k "test_current_detector"
 # To view output, -rA
@@ -12,6 +14,13 @@ from fdtd.backend import backend_names
 
 def pytest_addoption(parser):
     parser.addoption("--all_backends", action="store_true", help="run all backends")
+    parser.addoption(
+        "--run_slow", action="store_true", default=False, help="run slow tests"
+    )
+
+
+def pytest_configure(config):
+    config.addinivalue_line("markers", "slow: mark test as slow to run")
 
 
 
@@ -37,4 +46,15 @@ def backend_parametrizer(metafunc):
                 argnames, [[funcargs[name] for name in argnames] for funcargs in funcarglist]
             )
 
+
 pytest_generate_tests = backend_parametrizer
+
+
+def pytest_collection_modifyitems(config, items):
+    if config.getoption("--run_slow"):
+        # --runslow given in cli: do not skip slow tests
+        return
+    skip_slow = pytest.mark.skip(reason="need --run_slow option to run")
+    for item in items:
+        if "slow" in item.keywords:
+            item.add_marker(skip_slow)

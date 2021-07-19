@@ -2,7 +2,7 @@ from math import pi, sin, cos, sqrt
 from .typing import Tuple, Number, ListOrSlice, List
 from .grid import Grid, VACUUM_PERMEABILITY, VACUUM_PERMITTIVITY
 
-from .backend import backend as bd
+# from .backend import backend as bd
 
 '''
 Optional reduced unit conversion functions for user use.
@@ -18,13 +18,11 @@ Chapters 4.1.2 and 4.1.6.
 by the electromagnetic impedance of free space, which for the current choice
 of simulation units equals 1 per definition".
 
-FIXME: add DC's notes on scaling
+FIXME: DC: find and add md notes on scaling
 
 '''
 
-# Might perhaps be worth putting a note in the readme about default units / suggested unit systems?
-# (done, see next PR)
-# Also, if /fdtd/ gets the ability to dump to VTK, one would hate to
+# if /fdtd/ gets the ability to dump to VTK, one would hate to
 # have to scale everything for physical results in paraview. Will put a scaling option there.
 # Is it reasonable to have a global flag for scaling? probably not
 #

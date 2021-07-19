@@ -205,6 +205,8 @@ if TORCH_AVAILABLE:
         @staticmethod
         def is_array(arr):
             """ check if an object is an array """
+            # is this a reasonable implemenation?
+            return (isinstance(arr, numpy.ndarray) or torch.is_tensor(arr, torch.ndarray))
 
         def array(self, arr, dtype=None):
             """ create an array from an array-like sequence """

@@ -87,7 +87,8 @@ def create_patch_antenna(simulation_steps, normalized_probe_position):
     #
 
 
-# use pytest -s here
+# use pytest -s here to see live output
+@pytest.mark.slow
 def test_antenna_impedance():
     fdtd.set_backend("torch.cuda")
     # a very slow test - should perhaps be off by default

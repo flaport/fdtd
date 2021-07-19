@@ -16,17 +16,30 @@ from .backend import backend as bd
 
 class FrequencyRoutines:
     # originally called FrequencyDomain, renamed because 'fd' is already a namespace
-    # give it an id or name of a detector or SoftArbitraryPointSource
-    # or an arbitrary numpy list,
+
+    #inputs:
+    # One of, or a list of:
+    # - a single plain array or numpy array of values (like the waveform_array input to SoftArb)
+    # only works with FFT(), not impedance.
+    # The length does not need to correspond to the simulation length (e.g. it can be shorter);
+    # The timestep is assumed to be the same, however.
+    #
+    # - a single plain detector, of any type,
+    #
+
+    # - a single SoftArbitraryPointSource object,
+    # or
+    # - the tuple (detector, current_detector) or [(detector, current_detector),...]
+    # (the impedance is then assumed to be that of free-space).
+
     # converts it into the frequency domain.
     # frequency in Hz, not angular frequency
-    # checks the class type
-    # pad to get frequency bins
 
 
 
-    def __init__(self, grid, input_name=None, input_id=None):
+    def __init__(self, grid, objs):
         self.grid = grid
+        self.objs = objs
 
 
     # def S_parameters():
@@ -40,7 +53,7 @@ class FrequencyRoutines:
 
         Does not apply the padding to input_data,
         since multiple vectors will probably need the same padding and it
-        seems to make more sense to do that somewhere else.
+        seems to make more sense to do that in the caller.
 
         - fft_num_bins
         - FFT bin resolution (optional) Hz.
@@ -112,9 +125,10 @@ class FrequencyRoutines:
 
         if(freq_window_tuple == None):
             begin_freq_idx = 0
-            end_freq_idx = ((length_with_padding/2)-1)
-        #closest frequencies
+            # end_freq_idx = ((length_with_padding/2)-1)
+            end_freq_idx = -1
         else:
+            #closest frequencies
             begin_freq_idx = bd.abs(spectrum_freqs - begin_freq).argmin()
             end_freq_idx = bd.abs(spectrum_freqs - end_freq).argmin()
 
@@ -122,6 +136,7 @@ class FrequencyRoutines:
 
     #UNTESTED
     # def S_parameters(waveform, node):
+    # outputs the S params for each frequency
     #     null_waveform = bd.zeros_like(waveform)
     #     for idx, n in node_objects:
     #         n.waveform = null_waveform
@@ -134,11 +149,63 @@ class FrequencyRoutines:
     #b_1 =  #reflected
     # from
     # https://en.wikipedia.org/wiki/Scattering_parameters
+    # inverse matrix?
 
     def export_touchstone_s2p():
         pass
 
     def complex_impedance():
+
+
+        voltages = bd.pad(voltages, (0, required_length), 'edge')
+        currents = bd.pad(currents, (0, required_length), 'edge')
+
+        voltage_spectrum = bd.fft(voltages)
+        current_spectrum = bd.fft(currents)
+
+        spectrum_freqs, begin_freq_idx, end_freq_idx =
+                                compute_frequencies(length_with_padding, dt, freq_window_tuple=None)
+
+        spectrum_freqs[begin_freq:end_freq]
+
+        pass
+
+    def FFT(self, freq_window_tuple=None, fft_num_bins_in_window=None,
+                                            fft_bin_freq_resolution=None):
+        '''
+        If is type BlockDetector or other similar output,
+        for now the fft of only one index is returned.
+        '''
+        #scaling factor here?
+
+        if(bd.is_array(self.obj)):
+            input_data = self.obj
+        else if(isinstance(self.obj,(LineDetector, BlockDetector)):
+            #FIXME:
+            input_data = self.obj.E[:][0][0][0]
+        else if(isinstance(self.obj,(SoftArbitraryPointSource)):
+            input_data = self.obj.source_voltage[:][0][0][0]
+        else if(isinstance(self.obj,CurrentDetector):
+            input_data = self.obj.I[:][0][0][0]
+        else:
+            raise ValueError("Sorry, FFT can't yet interpret the argument given.")
+
+        times, required_padding, _ = self.compute_padding_and_timing(input_data,
+                                                self.grid.time_step,
+                                                freq_window_tuple=freq_window_tuple,
+                                                fft_num_bins_in_window=fft_num_bins_in_window,
+                                                fft_bin_freq_resolution=fft_bin_freq_resolution)
+
+        input_data = bd.pad(input_data, (0, required_padding), 'edge')
+
+        voltage_spectrum = bd.fft(voltages)
+        current_spectrum = bd.fft(currents)
+
+        spectrum_freqs, begin_freq_idx, end_freq_idx =
+                                compute_frequencies(length_with_padding, dt, freq_window_tuple=None)
+
+        spectrum_freqs[begin_freq:end_freq]
+
         pass
 
     def plot_impedance():
@@ -146,25 +213,10 @@ class FrequencyRoutines:
         Frequencies are in Hz.
         '''
 
-        begin_freq, end_freq = begin_end_freq_tuple
-        desired_binning_Npoints = 300 #100 points below F_max
-        required_length = int(desired_binning_Npoints / ((begin_freq-end_freq) * grid.time_step))
-        print(required_length)
-
-        voltages = bd.pad(voltages, (0, required_length), 'edge')
-        currents = bd.pad(currents, (0, required_length), 'edge')
-
-
-        voltage_spectrum = bd.fft(voltages)
-        current_spectrum = bd.fft(currents)
-
-
-
-
         plt.plot(times_padded, voltages)
 
         plt.plot(times_padded, currents)
-        plt.plot(spectrum_freqs[begin_freq:end_freq], abs(voltage_spectrum[begin_freq:end_freq]), label="volt")
+        plt.plot(, abs(voltage_spectrum[begin_freq:end_freq]), label="volt")
         plt.plot(spectrum_freqs[begin_freq:end_freq], abs(current_spectrum[begin_freq:end_freq]), label="curr")
 
         # power_spectrum = -1.0*((voltage_spectrum[begin_freq:end_freq]*np.conj(current_spectrum[begin_freq:end_freq])).real)
