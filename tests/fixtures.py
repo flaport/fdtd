@@ -3,7 +3,6 @@
 ## Imports
 import fdtd
 import pytest
-from fdtd.backend import backend_names
 
 
 
@@ -34,24 +33,36 @@ def pml():
     return pml
 
 
-# Perform tests over all backends when pytest called with --all_backends
-# and function name has "all_bends" in it.
-# Function must have (, backends) in args and
-# rename to all_bds for consistency?
-# but "all_bends" is, frankly, hilarious
-def backend_parametrizer(metafunc):
-    # called once per each test function
-    # see https://docs.pytest.org/en/6.2.x/example/parametrize.html
-    if("all_bends" in metafunc.function.__name__):
-        if(metafunc.config.getoption("all_backends")):
-            funcarglist = backend_names
-            argnames = sorted(funcarglist[0])
-            metafunc.parametrize(
-                argnames, [[funcargs[name] for name in argnames] for funcargs in funcarglist]
-            )
-        else:
-            funcarglist = [backend_names[0]]
-            argnames = sorted(funcarglist[0])
-            metafunc.parametrize(
-                argnames, [[funcargs[name] for name in argnames] for funcargs in funcarglist]
-            )
+
+
+
+@pytest.fixture
+def create_patch_antenna(grid, patch_width, patch_length):
+
+    
+
+    MICROSTRIP_FEED_WIDTH = 3e-3
+    MICROSTRIP_FEED_LENGTH = 5e-3
+
+    z_slice = slice(pcb.component_plane_z,(pcb.component_plane_z+1))
+
+    #wipe copper
+    pcb.copper_mask[:, :, z_slice] = 0
+    pcb.copper_mask[:,:,pcb.ground_plane_z_top:pcb.component_plane_z] = 0 # vias
+
+    #rectangle
+    p_N_x = int(patch_width / pcb.cell_size)
+    p_N_y = int(patch_length / pcb.cell_size)
+    pcb.copper_mask[pcb.xy_margin:pcb.xy_margin+p_N_x, pcb.xy_margin:pcb.xy_margin+p_N_y, z_slice] = 1
+
+    # #feedport
+    # fp_N_x = int(MICROSTRIP_FEED_WIDTH/pcb.cell_size)
+    # fp_N_y = int(MICROSTRIP_FEED_LENGTH/pcb.cell_size)
+    # pcb.copper_mask[pcb.xy_margin+(p_N_x//2 - (fp_N_x//2)):pcb.xy_margin+(p_N_x//2 + (fp_N_x//2)),  \
+    #                                     pcb.xy_margin+p_N_y:pcb.xy_margin+p_N_y+fp_N_y, z_slice] = 1
+
+
+    probe_position = (p_N_y-1)
+
+    pcb.component_ports = [] # wipe ports
+    pcb.component_ports.append(fd.Port(pcb, 0, ((p_N_x//2)-1)*pcb.cell_size, probe_position*pcb.cell_size))

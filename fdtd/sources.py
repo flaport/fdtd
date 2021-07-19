@@ -13,7 +13,7 @@ from math import pi, sin, cos
 
 # typing
 from .typing import Tuple, Number, ListOrSlice, List
-
+from numpy import ndarray
 # relatvie
 from .grid import Grid
 from .backend import backend as bd
@@ -355,10 +355,10 @@ class PlaneSource:
             z: The z-location of the source in the grid
 
         Note:
-            As its name suggests, this source is a LINE source.
+        As its name suggests, this source is a LINE source.
             Hence the source spans the diagonal of the cube
             defined by the slices in the grid.
-        """
+            """
         self.grid = grid
         self.grid.sources.append(self)
         if self.name is not None:
@@ -545,7 +545,7 @@ Each index in the *waveform* array represents 1 value at a timestep.
 
     def __init__(
         self,
-        waveform_array: numpy.array,
+        waveform_array: ndarray,
         name: str = None,
         impedance: float = 0.0
     ):
@@ -595,7 +595,7 @@ Each index in the *waveform* array represents 1 value at a timestep.
 
         if self.name is not None:
             detector_name += '_I'
-        else
+        else:
             detector_name = None
 
         self.current_detector = CurrentDetector(name=detector_name)

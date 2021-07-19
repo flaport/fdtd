@@ -10,6 +10,8 @@
 
 # in the optical domain, the impedance would just be that of free space?
 
+from math import ceil
+from .backend import backend as bd
 
 
 class FrequencyRoutines:
@@ -67,7 +69,7 @@ class FrequencyRoutines:
 
         elif(not (fft_num_bins_in_window or fft_bin_freq_resolution)):
             # the window is the default, whole array (even if it's trimmed later)
-            fft_num_bins_in_window = np.len(input_data)
+            fft_num_bins_in_window = input_data.shape[0]
 
         waveform_frequency_resolution = 1.0 / end_time
         fft_bin_resolution = (1.0 / dt) / (fft_num_bins_in_window)
@@ -94,13 +96,13 @@ class FrequencyRoutines:
         # if the timestep is made variable at some point.
         # on the other hand, doing a non-uniform FFT is probably non-trivial at this point anyway
         times = bd.linspace(0,end_time + (required_padding*dt),
-                                                n=(input_length+required_padding))
+                                                (input_length+required_padding))
 
         return times, required_padding, end_time
 
 
 
-    def compute_frequencies(length_with_padding, freq_window_tuple=None, dt):
+    def compute_frequencies(length_with_padding, dt, freq_window_tuple=None):
         '''
         Outputs the
         The indexes are for the real-frequency part of the span.

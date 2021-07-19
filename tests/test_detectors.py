@@ -8,7 +8,7 @@ from fdtd.waveforms import normalized_gaussian_pulse
 from fdtd.conversions import *
 
 import pytest
-from fixtures import grid, pml, periodic_boundary, backend_parametrizer
+from fixtures import grid, pml, periodic_boundary
 import matplotlib.pyplot as plt
 
 from fdtd.grid import d_
