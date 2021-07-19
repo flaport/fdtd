@@ -12,7 +12,7 @@
 
 from math import ceil
 from .backend import backend as bd
-
+from .detectors import LineDetector, BlockDetector, CurrentDetector
 
 class FrequencyRoutines:
     # originally called FrequencyDomain, renamed because 'fd' is already a namespace
@@ -42,10 +42,8 @@ class FrequencyRoutines:
         self.objs = objs
 
 
-    # def S_parameters():
-    # #
 
-    def compute_padding_and_timing(self, input_data, dt, freq_window_tuple=None, fft_num_bins_in_window=None,
+    def compute_padding(self, input_data, dt, freq_window_tuple=None, fft_num_bins_in_window=None,
                                             fft_bin_freq_resolution=None):
         '''
         input_data must be a 1d array with the time history of one detector. the length of input_data
@@ -105,14 +103,14 @@ class FrequencyRoutines:
         # there are other ways to get a higher bin resolution
 
 
+
+        return required_padding, end_time
+
         # assumes a uniform timestep. It might be useful to add a .times vector to the grid
         # if the timestep is made variable at some point.
         # on the other hand, doing a non-uniform FFT is probably non-trivial at this point anyway
-        times = bd.linspace(0,end_time + (required_padding*dt),
-                                                (input_length+required_padding))
-
-        return times, required_padding, end_time
-
+        # times = bd.linspace(0,end_time + (required_padding*dt),
+        #                                         (input_length+required_padding))
 
 
     def compute_frequencies(length_with_padding, dt, freq_window_tuple=None):
@@ -163,7 +161,7 @@ class FrequencyRoutines:
         voltage_spectrum = bd.fft(voltages)
         current_spectrum = bd.fft(currents)
 
-        spectrum_freqs, begin_freq_idx, end_freq_idx =
+        spectrum_freqs, begin_freq_idx, end_freq_idx = \
                                 compute_frequencies(length_with_padding, dt, freq_window_tuple=None)
 
         spectrum_freqs[begin_freq:end_freq]
@@ -178,19 +176,22 @@ class FrequencyRoutines:
         '''
         #scaling factor here?
 
-        if(bd.is_array(self.obj)):
-            input_data = self.obj
-        else if(isinstance(self.obj,(LineDetector, BlockDetector)):
+        if(self.grid.time_steps_passed == 0):
+            return [], []
+        #I now see how Multiple Dispatch might be effective at speeding things up
+        if(bd.is_array(self.objs)):
+            input_data = self.objs
+        elif(isinstance(self.objs,(LineDetector, BlockDetector))):
             #FIXME:
-            input_data = self.obj.E[:][0][0][0]
-        else if(isinstance(self.obj,(SoftArbitraryPointSource)):
-            input_data = self.obj.source_voltage[:][0][0][0]
-        else if(isinstance(self.obj,CurrentDetector):
-            input_data = self.obj.I[:][0][0][0]
+            input_data = self.objs.E[:][0][0][0]
+        elif(isinstance(self.objs,SoftArbitraryPointSource)):
+            input_data = self.objs.source_voltage[:][0][0][0]
+        elif(isinstance(self.objs,CurrentDetector)):
+            input_data = self.objs.I[:][0][0][0]
         else:
             raise ValueError("Sorry, FFT can't yet interpret the argument given.")
 
-        times, required_padding, _ = self.compute_padding_and_timing(input_data,
+        required_padding, _ = self.compute_padding(input_data,
                                                 self.grid.time_step,
                                                 freq_window_tuple=freq_window_tuple,
                                                 fft_num_bins_in_window=fft_num_bins_in_window,
@@ -198,15 +199,13 @@ class FrequencyRoutines:
 
         input_data = bd.pad(input_data, (0, required_padding), 'edge')
 
-        voltage_spectrum = bd.fft(voltages)
-        current_spectrum = bd.fft(currents)
+        spectrum = bd.fft(input_data)
 
-        spectrum_freqs, begin_freq_idx, end_freq_idx =
+        spectrum_freqs, begin_freq_idx, end_freq_idx = \
                                 compute_frequencies(length_with_padding, dt, freq_window_tuple=None)
 
-        spectrum_freqs[begin_freq:end_freq]
+        return spectrum_freqs[begin_freq_idx:end_freq_idx], spectrum[begin_freq_idx:end_freq_idx]
 
-        pass
 
     def plot_impedance():
         '''
@@ -216,7 +215,7 @@ class FrequencyRoutines:
         plt.plot(times_padded, voltages)
 
         plt.plot(times_padded, currents)
-        plt.plot(, abs(voltage_spectrum[begin_freq:end_freq]), label="volt")
+        # plt.plot(, abs(voltage_spectrum[begin_freq:end_freq]), label="volt")
         plt.plot(spectrum_freqs[begin_freq:end_freq], abs(current_spectrum[begin_freq:end_freq]), label="curr")
 
         # power_spectrum = -1.0*((voltage_spectrum[begin_freq:end_freq]*np.conj(current_spectrum[begin_freq:end_freq])).real)

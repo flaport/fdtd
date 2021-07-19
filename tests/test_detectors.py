@@ -23,7 +23,8 @@ z_ = 4
 # if/when detectors get polarizations,
 # test in three axes - spin the grid to make sure everything's consistent
 
-
+# each detector starts out with all the parameters empty ([])
+# this causes edge cases when no time steps have passed, and should get explicit test cases
 
 
 # @pytest.mark.skipif(skip_test_backend, reason="PyTorch is not installed.")
