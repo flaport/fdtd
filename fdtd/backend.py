@@ -138,6 +138,7 @@ class NumpyBackend(Backend):
     fftfreq = staticmethod(numpy.fft.fftfreq)
     fft = staticmethod(numpy.fft.fft)
 
+    exp = staticmethod(numpy.exp)
     # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     # beware to future people:
     # because this line *redefines numpy*,
@@ -235,7 +236,7 @@ if TORCH_AVAILABLE:
         fftfreq = staticmethod(numpy.fft.fftfreq)
         fft = staticmethod(torch.fft)
 
-
+        exp = staticmethod(torch.exp)
         # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
         #The same warning applies here.
         # <3 <3 <3 <3

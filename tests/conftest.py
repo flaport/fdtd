@@ -6,7 +6,8 @@ from fdtd.backend import backend_names
 # To view output, -rA
 # to run with all backends, --all_backends.
 # with --all_backends, --maxfail=1 is recommended to avoid blowing up the scrollback!
-
+# to view the output of long tests live,
+# use -s or --capture=no
 
 
 def pytest_addoption(parser):

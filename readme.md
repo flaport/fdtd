@@ -899,19 +899,37 @@ These update equations for the PML were based on
 
 ## Units
 
-<flaport, if you have the time, I'd appreciate it if you could confirm
-that I've understood this correctly>.
-<I'm adding this because I got pretty confused regarding the units;
-if you think it's self-evident, feel free to remove.>
+<!---
+flaport, if you have the time, I'd appreciate it if you could confirm
+that I've understood this correctly.
+I'm adding this because I got pretty confused regarding the units;
+if you think it's self-evident, feel free to remove.
 
-As a bare FDTD library, this is dimensionally agnostic. No conversion factors are applied within the library api; this is left to the user. The code used to calculate the Courant limit?
+In particular, is the H := √µ0*H scaling really applied nowhere in the library?
+Can this be assumed?
+--->
 
-However, as noted above, it is generally good numerical practice to scale all values to
+As a bare FDTD library, this is dimensionally agnostic for any unit system you may choose.
+No conversion factors are ever applied within the library api; this is left to the user.
+The code used to calculate the Courant limit may be a sticking point, and
+
+However, as noted above (`H := √µ0*H`), it is generally good numerical practice to scale all values to
 get the maximum precision from floating-point types.
 
-scaling root(mu0) is recommended.
+In particular, a scaling scheme A set of conversion functions
 
+"Novel architectures for brain-inspired photonic computers",
+https://www.photonics.intec.ugent.be/download/phd_259.pdf
 
+Chapters 4.1.2 and 4.1.6.
+
+<!---
+On the other hand, use of this scaling scheme really makes most of the new functions less useful,
+because the results don't have physical dimensions by default and have to be scaled by weird
+coefficients by the user (scale impedance?!?)
+
+grid.H_scaling_factor = sqrt(mu0) ?
+--->
 
 
 

@@ -18,6 +18,8 @@ Chapters 4.1.2 and 4.1.6.
 by the electromagnetic impedance of free space, which for the current choice
 of simulation units equals 1 per definition".
 
+FIXME: add DC's notes on scaling
+
 '''
 
 # Might perhaps be worth putting a note in the readme about default units / suggested unit systems?

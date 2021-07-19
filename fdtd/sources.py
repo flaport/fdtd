@@ -18,6 +18,7 @@ from numpy import ndarray
 from .grid import Grid
 from .backend import backend as bd
 from .waveforms import *
+from .detectors import CurrentDetector
 
 ## PointSource class
 class PointSource:
@@ -559,6 +560,8 @@ Each index in the *waveform* array represents 1 value at a timestep.
         self.grid = None
         self.name = name
         self.current_detector = None
+        self.waveform_array = waveform_array
+        self.impedance = impedance
         self.input_voltage = [] # voltage hard-imposed by the source
         self.source_voltage = [] #
         # "field" rather than "voltage" might be more meaningful
@@ -606,21 +609,26 @@ Each index in the *waveform* array represents 1 value at a timestep.
         # It is important that this step happen between the E-field update and the
         # H-field update.
 
-        if(self.grid.time_steps_passed < waveform_array.size):
+        if(self.grid.time_steps_passed < self.waveform_array.size):
             #check for off-by-one error here
-            input_voltage = waveform_array[self.grid.time_steps_passed]
+            input_voltage = self.waveform_array[self.grid.time_steps_passed]
         else:
             input_voltage = 0.0 # one could taper the last value off smoothly instead
 
-        current = self.current_detector.I[-1][0,0,0]
+        if(self.grid.time_steps_passed > 0):
+            current = self.current_detector.I[-1][0][0][0]
+        else:
+            current = 0.0
 
-        if(impedance > 0):
-             source_resistive_voltage = (impedance * current)
+        if(self.impedance > 0):
+             source_resistive_voltage = (self.impedance * current)
              output_voltage = input_voltage + source_resistive_voltage
         else:
             output_voltage = input_voltage
 
-        self.grid.E[self.x, self.y, self.z, 2] += output_voltage / grid.grid_spacing
+        #right now, this does not compensate for the cell's permittivity!
+
+        self.grid.E[self.x, self.y, self.z, 2] += output_voltage / self.grid.grid_spacing
 
         self.input_voltage.append(input_voltage)
         self.source_voltage.append(output_voltage)
