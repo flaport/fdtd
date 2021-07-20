@@ -515,12 +515,12 @@ class SoftArbitraryPointSource:
     Unlike the other sources, the input is a voltage, not an electric field.
     (really? why? should we convert back and forth?)
 
-For electrical measurements I've only needed a single-index source,
-so I don't know how the volume/line sources above work.
+    For electrical measurements I've only needed a single-index source,
+    so I don't know how the volume/line sources above work.
     We want the FFT function to operate over any detector.
-  Maybe all sources should take an arbitary waveform argument?
+    Maybe all sources should take an arbitary waveform argument?
 
-Each index in the *waveform* array represents 1 value at a timestep.
+    Each index in the *waveform* array represents 1 value at a timestep.
 
     There are many different *geometries* of "equivalent sources".
     The detector/source paradigm used in /fdtd might perhaps not correspond to this in an ideal
@@ -609,7 +609,7 @@ Each index in the *waveform* array represents 1 value at a timestep.
         # It is important that this step happen between the E-field update and the
         # H-field update.
 
-        if(self.grid.time_steps_passed < self.waveform_array.size):
+        if(self.grid.time_steps_passed < self.waveform_array.shape[0]):
             #check for off-by-one error here
             input_voltage = self.waveform_array[self.grid.time_steps_passed]
         else:

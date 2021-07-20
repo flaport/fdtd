@@ -8,8 +8,10 @@ from fdtd.boundaries import DomainBorderPML
 from fdtd.objects import Object, AbsorbingObject
 from fdtd.waveforms import normalized_gaussian_pulse
 from fdtd.sources import SoftArbitraryPointSource
+from fdtd.fourier import FrequencyRoutines
 from fdtd.backend import backend as bd
 import numpy as np
+import matplotlib.pyplot as plt
 
 
 def create_patch_antenna(simulation_steps, normalized_probe_position):
@@ -69,8 +71,10 @@ def create_patch_antenna(simulation_steps, normalized_probe_position):
     times = np.arange(0,simulation_steps) * grid.time_step
 
     waveform_array = normalized_gaussian_pulse(times, pulse_fwhm, center=pulse_center_time)
-    grid[probe_Nx,probe_Ny,border_cells+1] = SoftArbitraryPointSource(
-                                                    waveform_array=waveform_array, impedance=50.0)
+    plt.plot(source.current_detector.I[:][0][0][0])
+    plt.show()
+    source = SoftArbitraryPointSource(waveform_array=waveform_array, impedance=50.0)
+    grid[probe_Nx,probe_Ny,border_cells+1] = source
 
     grid[probe_Nx:probe_Nx+1, probe_Ny:probe_Ny+1,
                         border_cells+2:top_copper_plane+1] = copper_object # probe feed via
@@ -83,7 +87,7 @@ def create_patch_antenna(simulation_steps, normalized_probe_position):
     grid[sl, probe_Ny+1:-border_cells, bottom_copper_plane+1:top_copper_plane] = substrate
     # don't overlap with the source port!
 
-    return grid
+    return grid, source
     #
 
 
@@ -97,9 +101,13 @@ def test_antenna_impedance():
 
     simulation_steps = 1000
     for idx, d in enumerate(distance_from_edge):
-        grid = create_patch_antenna(simulation_steps, d)
+        grid, source = create_patch_antenna(simulation_steps, d)
         grid.run(simulation_steps)
-
+        plt.plot(source.input_voltage)
+        plt.plot(source.current_detector.I[:][0][0][0])
+        plt.show()
+        # fr = FrequencyRoutines(grid, source)
+        # fr.impedance()
 # use QUCS to generate something 3 port with known S-params
 
 #ask floris if there're any test cases for optical

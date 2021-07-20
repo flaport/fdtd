@@ -8,7 +8,7 @@ from fixtures import grid, pml, periodic_boundary
 from fdtd.fourier import FrequencyRoutines
 from fdtd.backend import backend as bd
 from fdtd.detectors import LineDetector, BlockDetector, CurrentDetector
-
+from fdtd.sources import SoftArbitraryPointSource
 
 
 ## Tests
@@ -34,9 +34,16 @@ def test_padding(grid):
     # assert end_time == pytest.approx(2.3, rel=0.1)
 
 
-def test_FFT_single_detector_empty_grid(grid):
+def test_FFT_single_detector_empty_time(grid):
     detector = BlockDetector()
     grid[4,4,4] = detector
+    fr = FrequencyRoutines(grid, detector)
+    fr.FFT()
+
+def test_FFT_single_detector(grid):
+    detector = BlockDetector()
+    grid[4,4,4] = detector
+    grid.run(1)
     fr = FrequencyRoutines(grid, detector)
     fr.FFT()
 

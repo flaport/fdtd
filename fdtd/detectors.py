@@ -284,22 +284,20 @@ class CurrentDetector:
 
 
     """
-    # This currently only operates over a single point because that's how
-    # it was written in my historical code. A refactor into Block &c probably required.
+
     # Alternative APIs:
     #
     # 1. Current detection could be a standard detector output,
     # if every h-field probe pointed two ways.
     # 2. No current detector class at all. SoftArbitraryPointSource
     # makes two H-detectors. (can't test separated then).
-    # 3. Who even needs current in optical domain? Practically nobody. Leave it as-is.
     # Don't know if this op over a volume is valid. Should be.
     # TODO: Detector geometry as an argument?
     # Lots of interesting I detector geometries that might be worth implementing,
     # ("integrated current loop"), this could be a flag here.
     #
     # Existing sources are all z-polarized; detectors output all the polarizations.
-    # Unlike other Detectors, this does not yet output a polarized current.
+    # Unlike other Detectors, this does not yet output a polarized current!
     #
     # *Source* polarization is probably an important feature for 3D electrical work
     # not sure how important it is for optical stuff
@@ -401,7 +399,7 @@ class CurrentDetector:
     def single_point_current(self, px, py, pz):
         '''
 
-        Only Z-polarized for now. Can probably do a cross product
+        Only Z-polarized for now. Can probably do a cross product to get arbitrary polarizations
 
         ^
         |
@@ -412,8 +410,10 @@ class CurrentDetector:
         material magnetic permeability? find test cases!
 
 
-        Implements the first [Fang 1994] cells are averaged to account for
-        Yee cell half-step inaccuracies .
+
+        Implements the first correction from [Fang 1994] (two
+        cells are spatially averaged to account for Yee cell half-step inaccuracies),
+        but not the second one (minor loss of accuracy).
 
         Jiayuan Fang, Danwei Xue.
         Precautions in the calculation of impedance in FDTD computations.
