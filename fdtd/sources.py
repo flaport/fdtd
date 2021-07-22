@@ -565,7 +565,7 @@ class SoftArbitraryPointSource:
         self.input_voltage = [] # voltage hard-imposed by the source
         self.source_voltage = [] #
         # "field" rather than "voltage" might be more meaningful
-
+        # FIXME: these voltage time histories have a different dimensionality
     def _register_grid(self, grid: Grid, x: Number, y: Number, z: Number):
         """Register a grid for the source.
 
@@ -630,8 +630,8 @@ class SoftArbitraryPointSource:
 
         self.grid.E[self.x, self.y, self.z, 2] += output_voltage / self.grid.grid_spacing
 
-        self.input_voltage.append(input_voltage)
-        self.source_voltage.append(output_voltage)
+        self.input_voltage.append([[[input_voltage]]])
+        self.source_voltage.append([[[output_voltage]]])
 
     def update_H(self):
         pass

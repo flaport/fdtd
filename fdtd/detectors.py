@@ -137,6 +137,9 @@ class LineDetector:
         """ outputs what detector detects """
         return {'E': self.E, 'H': self.H}
 
+# is the "detector" paradigm necessary? Can we just flag a segment of the base mesh to be
+# stored per timestep?
+
 ## BlockDetector
 class BlockDetector:
     """ A detector along a block in the FDTD grid """

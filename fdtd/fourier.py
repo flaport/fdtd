@@ -140,6 +140,7 @@ class FrequencyRoutines:
 
     # UNTESTED
     def S_parameters(waveform, node):
+        raise NotImplementedError
         # outputs the S params for each frequency
 
         # [1]Kurokawa K.
@@ -147,7 +148,7 @@ class FrequencyRoutines:
         # IEEE Transactions on Microwave Theory and Techniques 1965
         # ;13:194–202. https://doi.org/10.1109/TMTT.1965.1125964.
 
-        # Kurokawa "power wave" coefficients:
+        # Need to construct the matrix from Kurokawa "power wave" coefficients:
         # a_1 =  #incident
         # b_1 =  #reflected
         # Wikipedia has a great section:
@@ -162,13 +163,6 @@ class FrequencyRoutines:
         #                                 and isinstance(self.objs[1],CurrentDetector)):
         # else:
         #     raise ValueError("Sorry, FFT can't yet interpret the argument given.")
-
-
-        null_waveform = bd.zeros_like(waveform)
-        for idx, n in node_objects:
-            n.waveform = null_waveform
-            # grid.run()
-            # monitor
 
     def export_touchstone_s2p():
         raise NotImplementedError
@@ -229,31 +223,41 @@ class FrequencyRoutines:
             return [], []
 
         if(isinstance(self.objs, SoftArbitraryPointSource)):
-            input_data = (bd.array(self.objs.source_voltage),
-                            bd.array(self.objs.current_detector.I))
+            voltage_array = bd.array(self.objs.source_voltage)
+            current_array = bd.array(self.objs.current_detector.I) #FIXME: this definitely isn't right
+
         elif(isinstance(self.objs,tuple) and isinstance(self.objs[0],(BlockDetector,LineDetector))
                                         and isinstance(self.objs[1],CurrentDetector)):
             #FIXME:
-            input_data = (bd.array(self.objs[0].E), bd.array(self.objs[1].I))
+            voltage_array = bd.array(self.objs[0].E)[:][0,0,0]
+            current_array = bd.array(self.objs[1].I)
         else:
             raise ValueError("Sorry, FFT can't yet interpret the argument given.")
 
-        required_padding, _ = self.compute_padding(input_data[0],
+        required_padding, _ = self.compute_padding(voltage_array,
                                                 self.grid.time_step,
                                                 freq_window_tuple=freq_window_tuple,
                                                 fft_num_bins_in_window=fft_num_bins_in_window,
                                                 fft_bin_freq_resolution=fft_bin_freq_resolution)
 
-        input_data[0] = bd.pad(input_data[0], (0, required_padding), 'edge')
-        input_data[1] = bd.pad(input_data[1], (0, required_padding), 'edge')
+        voltage_array = bd.reshape(voltage_array, self.grid.time_steps_passed) # flatten
+        current_array = bd.reshape(current_array, self.grid.time_steps_passed)
 
-        spectrum = bd.fft(input_data)
+        voltage_array = bd.pad(voltage_array, (0, required_padding), 'edge')
+        current_array = bd.pad(current_array, (0, required_padding), 'edge')
+
+        voltage_spectrum = bd.fft(voltage_array)
+        current_spectrum = bd.fft(current_array)
+
+        impedance_spectrum = bd.divide(voltage_spectrum, current_spectrum, out=
+                                    bd.zeros_like(voltage_spectrum), where=current_spectrum!=0)
+
 
         spectrum_freqs, begin_freq_idx, end_freq_idx = self.compute_frequencies(
-                                        input_data.shape[0], self.grid.time_step,
+                                        voltage_array.shape[0], self.grid.time_step,
                                          freq_window_tuple=freq_window_tuple)
 
-        return spectrum_freqs[begin_freq_idx:end_freq_idx], spectrum[begin_freq_idx:end_freq_idx]
+        return spectrum_freqs[begin_freq_idx:end_freq_idx], impedance_spectrum[begin_freq_idx:end_freq_idx]
 
 
         #

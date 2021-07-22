@@ -9,7 +9,7 @@ from fdtd.fourier import FrequencyRoutines
 from fdtd.backend import backend as bd
 from fdtd.detectors import LineDetector, BlockDetector, CurrentDetector
 from fdtd.sources import SoftArbitraryPointSource
-
+import numpy as np
 
 ## Tests
 
@@ -43,8 +43,20 @@ def test_FFT_single_detector_empty_time(grid):
 def test_FFT_single_detector(grid):
     detector = BlockDetector()
     grid[4,4,4] = detector
-    grid.run(1)
+    grid.run(100)
+    # detector.E[:][0][0][0] = np.sin().tolist()
+    # tolist required for accurate test of existing multiple-dimension
     fr = FrequencyRoutines(grid, detector)
-    fr.FFT()
+    spectrum_freqs, spectrum = fr.FFT()
+
+
+def test_SAPS_impedance(grid):
+    detector = SoftArbitraryPointSource(np.zeros(1),impedance = 50.0)
+    grid[4,4,4] = detector
+    grid.run(100)
+    fr = FrequencyRoutines(grid, detector)
+    fr.impedance()
+
+
 
 # use QUCS to generate something 3 port with known S-params

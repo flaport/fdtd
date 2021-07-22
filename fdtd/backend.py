@@ -127,6 +127,9 @@ class NumpyBackend(Backend):
     zeros = staticmethod(numpy.zeros)
     """ create an array filled with zeros """
 
+    zeros_like = staticmethod(numpy.zeros_like)
+    """ create an array filled with zeros """
+
     linspace = staticmethod(numpy.linspace)
     """ create a linearly spaced array between two points """
 
@@ -139,6 +142,9 @@ class NumpyBackend(Backend):
     fft = staticmethod(numpy.fft.fft)
 
     exp = staticmethod(numpy.exp)
+
+    divide = staticmethod(numpy.divide)
+
     # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     # beware to future people:
     # because this line *redefines numpy*,
@@ -237,6 +243,8 @@ if TORCH_AVAILABLE:
 
         fftfreq = staticmethod(numpy.fft.fftfreq)
         fft = staticmethod(torch.fft)
+
+        divide = staticmethod(torch.div)
 
         exp = staticmethod(torch.exp)
         # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -345,5 +353,7 @@ def set_backend(name: str):
         torch.set_default_dtype(torch.float32)
         backend.__class__ = TorchCudaBackend
         backend.float = torch.float32
+    # Support fp16 types? Noise will be hell, but crazy-fast -
+    # on a V100 you can get 8x higher raw FLOPS AFAIK
     else:
         raise RuntimeError(f'unknown backend "{name}"')

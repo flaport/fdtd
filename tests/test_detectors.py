@@ -6,6 +6,8 @@ import fdtd
 from fdtd.backend import backend as bd
 from fdtd.waveforms import normalized_gaussian_pulse
 from fdtd.conversions import *
+from fdtd.sources import SoftArbitraryPointSource
+from fdtd.detectors import CurrentDetector, BlockDetector
 
 import pytest
 from fixtures import grid, pml, periodic_boundary
@@ -79,3 +81,21 @@ def test_DC_absorbing_current_detector_all_bends(grid, pml, backends):
     # plt.plot(current_time_history)
     # plt.show()
     # plt.plot(electric_field_time_history)
+
+
+def test_CurrentDetector_shape(grid):
+    edetector = BlockDetector()
+    cdetector = CurrentDetector()
+    grid[4,4,4] = cdetector
+    grid[4,4,5] = edetector
+    grid.run(10)
+    # at the moment, edetector has an extra dimension for polarization
+    # which isn't included in cdetector.
+    assert bd.array(cdetector.I).shape[0:2] == bd.array(edetector.E).shape[0:2]
+    assert bd.array(cdetector.I).shape[0] == 10
+
+def test_SAPS_detector_register(grid):
+    detector = SoftArbitraryPointSource(bd.zeros(1),impedance = 50.0)
+    grid[4,4,4] = detector
+    grid.run(100)
+    assert isinstance(grid.detectors[0], CurrentDetector)
