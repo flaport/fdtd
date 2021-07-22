@@ -18,11 +18,7 @@ from .typing import Tuple, Number, ListOrSlice, List
 from .grid import Grid
 from .backend import backend as bd
 
-
-# For Hanning window pulses
-def hanning(f, t, n):
-    return (1 / 2) * (1 - cos(f * t / n)) * (sin(f * t))
-
+from .waveforms import hanning
 
 ## PointSource class
 class PointSource:

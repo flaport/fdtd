@@ -29,6 +29,15 @@ The ``cuda`` backends are only available for computers with a GPU.
 # Numpy Backend
 import numpy  # numpy has to be present
 
+# used only by test runner.
+# default must be idx 0.
+backend_names = [dict(backends="numpy"),
+                 dict(backends="torch.float32"),
+                 dict(backends="torch.float64"),
+                 dict(backends="torch.cuda.float32"),
+                 dict(backends="torch.cuda.float64")]
+
+
 # Torch Backends (and flags)
 try:
     import torch
@@ -124,6 +133,14 @@ class NumpyBackend(Backend):
     arange = staticmethod(numpy.arange)
     """ create a range of values """
 
+    fft = staticmethod(numpy.fft.fft)
+
+    # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    # beware to future people:
+    # I am Captain Obvious reminding you that
+    # because this line *redefines numpy*,
+    # you have to add your new staticmethods /above/ this line to avoid mystification.
+    # <3 <3 <3 <3
     numpy = staticmethod(numpy.asarray)
     """ convert the array to numpy array """
 
@@ -208,6 +225,10 @@ if TORCH_AVAILABLE:
         arange = staticmethod(torch.arange)
         """ create a range of values """
 
+        # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        #The same warning applies here.
+        # <3 <3 <3 <3
+
         def numpy(self, arr):
             """ convert the array to numpy array """
             if torch.is_tensor(arr):
@@ -215,6 +236,7 @@ if TORCH_AVAILABLE:
             else:
                 return numpy.asarray(arr)
 
+        fft = staticmethod(torch.fft)
 
 # Torch Cuda Backend
 if TORCH_CUDA_AVAILABLE:
