@@ -299,7 +299,7 @@ class CurrentDetector:
     # Lots of interesting I detector geometries that might be worth implementing,
     # ("integrated current loop"), this could be a flag here.
     #
-    # Existing sources are all z-polarized; detectors output all the polarizations.
+    # Existing sources are all z-polarized; E-detectors output all the polarizations.
     # Unlike other Detectors, this does not yet output a polarized current!
     #
     # *Source* polarization is probably an important feature for 3D electrical work
