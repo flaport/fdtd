@@ -1,7 +1,7 @@
 """ Python 3D FDTD Simulator """
 
 __author__ = "Floris laporte"
-__version__ = "0.0.3"
+__version__ = "0.1.0"
 
 from .grid import Grid
 from .sources import PointSource, LineSource, PlaneSource

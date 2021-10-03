@@ -31,7 +31,7 @@ extras = {
     ],
 }
 author = "Floris laporte"
-version = "0.0.3"
+version = "0.1.0"
 
 setuptools.setup(
     name="fdtd",
