@@ -3,7 +3,11 @@ sphinx:
   configuration: docs/conf.py
 formats: all
 python:
-   version: 3.7
-   install:
-      - requirements: requirements_dev.txt
-      - requirements: requirements.txt
+  version: "3.8"
+  install:
+    - method: pip
+      path: .
+      extra_requirements:
+        - dev
+        - test
+        - docs
