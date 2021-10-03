@@ -1,5 +1,5 @@
 from math import pi, sin, cos, sqrt
-from .typing import Tuple, Number, ListOrSlice, List
+from .typing_ import Tuple, Number, ListOrSlice, List
 from .grid import Grid, VACUUM_PERMEABILITY, VACUUM_PERMITTIVITY
 
 # from .backend import backend as bd
