@@ -9,7 +9,7 @@ Available Boundaries:
 ## Imports
 
 # typing
-from .typing import Tensorlike, ListOrSlice, IntOrSlice
+from .typing_ import Tensorlike, ListOrSlice, IntOrSlice
 
 # relative
 from .grid import Grid
@@ -618,6 +618,7 @@ def DomainBorderPML(grid, border_cells=5):
     '''
     Some problem setups require a layer of PML all the way around the problem.
     This is a convenience function to add such a layer to an existing grid.
+    Caution: Alters grid in-place.
     '''
     # Doesn't return anything, unlike other .boundaries functions - is that breaking the API?
     # There might be a more straightforward numpy slicing solution...

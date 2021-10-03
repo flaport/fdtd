@@ -127,20 +127,32 @@ class NumpyBackend(Backend):
     zeros = staticmethod(numpy.zeros)
     """ create an array filled with zeros """
 
+    zeros_like = staticmethod(numpy.zeros_like)
+    """ create an array filled with zeros """
+
     linspace = staticmethod(numpy.linspace)
     """ create a linearly spaced array between two points """
 
     arange = staticmethod(numpy.arange)
     """ create a range of values """
 
+    pad = staticmethod(numpy.pad)
+
+    fftfreq = staticmethod(numpy.fft.fftfreq)
     fft = staticmethod(numpy.fft.fft)
+
+    exp = staticmethod(numpy.exp)
+
+    divide = staticmethod(numpy.divide)
 
     # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     # beware to future people:
-    # I am Captain Obvious reminding you that
     # because this line *redefines numpy*,
     # you have to add your new staticmethods /above/ this line to avoid mystification.
     # <3 <3 <3 <3
+    #
+    # could this (and below) perhaps be changed to "to_numpy()"
+    # or maybe "check_numpy" ?
     numpy = staticmethod(numpy.asarray)
     """ convert the array to numpy array """
 
@@ -199,6 +211,8 @@ if TORCH_AVAILABLE:
         @staticmethod
         def is_array(arr):
             """ check if an object is an array """
+            # is this a reasonable implemenation?
+            return (isinstance(arr, numpy.ndarray) or torch.is_tensor(arr))
 
         def array(self, arr, dtype=None):
             """ create an array from an array-like sequence """
@@ -225,6 +239,14 @@ if TORCH_AVAILABLE:
         arange = staticmethod(torch.arange)
         """ create a range of values """
 
+        pad = staticmethod(torch.nn.functional.pad)
+
+        fftfreq = staticmethod(numpy.fft.fftfreq)
+        fft = staticmethod(torch.fft)
+
+        divide = staticmethod(torch.div)
+
+        exp = staticmethod(torch.exp)
         # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
         #The same warning applies here.
         # <3 <3 <3 <3
@@ -260,6 +282,8 @@ if TORCH_CUDA_AVAILABLE:
                 return arr.clone().to(device="cuda", dtype=dtype)
             return torch.tensor(arr, device="cuda", dtype=dtype)
 
+        # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        #The same warning applies here.
         def numpy(self, arr):
             """ convert the array to numpy array """
             if torch.is_tensor(arr):
@@ -330,5 +354,7 @@ def set_backend(name: str):
         torch.set_default_dtype(torch.float32)
         backend.__class__ = TorchCudaBackend
         backend.float = torch.float32
+    # Support fp16 types? Noise will be hell, but crazy-fast -
+    # on a V100 you can get 8x higher raw FLOPS AFAIK
     else:
         raise RuntimeError(f'unknown backend "{name}"')

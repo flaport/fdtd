@@ -1,8 +1,8 @@
 from math import pi, sin, cos, sqrt
-from .typing import Tuple, Number, ListOrSlice, List
+from .typing_ import Tuple, Number, ListOrSlice, List
 from .grid import Grid, VACUUM_PERMEABILITY, VACUUM_PERMITTIVITY
 
-from .backend import backend as bd
+# from .backend import backend as bd
 
 '''
 Optional reduced unit conversion functions for user use.
@@ -17,6 +17,8 @@ Chapters 4.1.2 and 4.1.6.
 > "In SI units, the relative magnitude difference between the fields is related
 by the electromagnetic impedance of free space, which for the current choice
 of simulation units equals 1 per definition".
+
+FIXME: DC: find and add md notes on scaling
 
 '''
 

@@ -2,6 +2,9 @@
 
 from math import pi, sin, cos, sqrt, log, exp
 
+import numpy as np
+from .backend import backend as bd
+
 # For Hanning window pulses
 def hanning(f, t, n):
     return (1 / 2) * (1 - cos(f * t / n)) * (sin(f * t))
@@ -35,8 +38,15 @@ def normalized_gaussian_pulse(x,fwhm,center=0.0):
     # '''
     #apparently FWHM of t is properly called "full duration half maximum",
     #but I've never heard that used
+
+    #TODO: flag on input type and use backend?
+
     sigma = fwhm/fwhm_constant
-    return exp(-(((x-center)**2.0)/(2.0*(sigma**2.0))))
+    return np.exp(-(((x-center)**2.0)/(2.0*(sigma**2.0))))
+
+def normalized_gaussian_derivative_pulse(x,fwhm,center=0.0):
+    sigma = fwhm/fwhm_constant
+    return (np.exp((1.0/2.0) - ((x-center)**2.0)/(2.0*sigma**2.0))*(x-center))/sigma
 
 def normalized_gaussian_derivative_pulse(x,fwhm,center=0.0):
     sigma = fwhm/fwhm_constant

@@ -44,6 +44,8 @@ pip install -e fdtd[dev]
 All improvements or additions (for example new objects, sources or detectors) are
 welcome. Please make a pull-request 😊.
 
+
+
 ## Documentation
 
 read the documentation here: [https://fdtd.readthedocs.org](https://fdtd.readthedocs.org)
@@ -894,6 +896,41 @@ The same has to be applied for the magnetic field.
 
 These update equations for the PML were based on
 [Schneider, Chap. 11](https://www.eecs.wsu.edu/~schneidj/ufdtd).
+
+## Units
+
+<!---
+flaport, if you have the time, I'd appreciate it if you could confirm
+that I've understood this correctly.
+I'm adding this because I got pretty confused regarding the units;
+if you think it's self-evident, feel free to remove.
+
+In particular, is the H := √µ0*H scaling really applied nowhere in the library?
+Can this be assumed?
+--->
+
+As a bare FDTD library, this is dimensionally agnostic for any unit system you may choose.
+No conversion factors are applied within the library API; this is left to the user.
+(The code used to calculate the Courant limit may be a sticking point depending on the time scale involved).
+
+However, as noted above (`H := √µ0*H`), it is generally good numerical practice to scale all values to
+get the maximum precision from floating-point types.
+
+In particular, a scaling scheme detailed in ["Novel architectures for brain-inspired photonic computers"](https://www.photonics.intec.ugent.be/download/phd_259.pdf), Chapters 4.1.2 and 4.1.6, is highly recommended.
+
+A set of conversion functions to and from reduced units are available for users in conversions.py.
+
+<!---
+On the other hand, use of this scaling scheme really makes most of the new functions less useful,
+because the results don't have physical dimensions by default and have to be scaled by weird
+coefficients by the user (scale impedance?!?)
+
+grid.H_scaling_factor = sqrt(mu0) ?
+--->
+
+## Linter
+
+You can run a linter in the root using `pylint fdtd`.
 
 ## License
 
