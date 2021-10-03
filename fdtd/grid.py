@@ -20,7 +20,7 @@ from tqdm import tqdm
 from numpy import savez
 
 # typing
-from .typing import Tuple, Number, Tensorlike
+from .typing_ import Tuple, Number, Tensorlike
 
 # relative
 from .backend import backend as bd

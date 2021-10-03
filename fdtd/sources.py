@@ -12,7 +12,7 @@ Available sources:
 from math import pi, sin, cos
 
 # typing
-from .typing import Tuple, Number, ListOrSlice, List
+from .typing_ import Tuple, Number, ListOrSlice, List
 
 # relatvie
 from .grid import Grid

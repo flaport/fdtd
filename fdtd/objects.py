@@ -12,7 +12,7 @@ Available Objects:
 ## Imports
 
 # typing
-from .typing import Tensorlike, ListOrSlice
+from .typing_ import Tensorlike, ListOrSlice
 
 # relative
 from .grid import Grid, VACUUM_PERMITTIVITY

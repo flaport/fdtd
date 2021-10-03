@@ -9,7 +9,7 @@ Available Detectors:
 ## Imports
 
 # typing
-from .typing import ListOrSlice, Tuple, List
+from .typing_ import ListOrSlice, Tuple, List
 
 # relative
 from .grid import Grid
