@@ -258,6 +258,7 @@ if TORCH_AVAILABLE:
             else:
                 return numpy.asarray(arr)
 
+        fft = staticmethod(torch.fft)
 
 # Torch Cuda Backend
 if TORCH_CUDA_AVAILABLE:

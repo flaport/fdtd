@@ -23,6 +23,11 @@ FIXME: DC: find and add md notes on scaling
 '''
 
 # if /fdtd/ gets the ability to dump to VTK, one would hate to
+'''
+
+# Might perhaps be worth putting a note in the readme about default units / suggested unit systems?
+# (done, see next PR)
+# Also, if /fdtd/ gets the ability to dump to VTK, one would hate to
 # have to scale everything for physical results in paraview. Will put a scaling option there.
 # Is it reasonable to have a global flag for scaling? probably not
 #

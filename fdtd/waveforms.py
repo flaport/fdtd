@@ -47,3 +47,7 @@ def normalized_gaussian_pulse(x,fwhm,center=0.0):
 def normalized_gaussian_derivative_pulse(x,fwhm,center=0.0):
     sigma = fwhm/fwhm_constant
     return (np.exp((1.0/2.0) - ((x-center)**2.0)/(2.0*sigma**2.0))*(x-center))/sigma
+
+def normalized_gaussian_derivative_pulse(x,fwhm,center=0.0):
+    sigma = fwhm/fwhm_constant
+    return (exp((1.0/2.0) - ((x-center)**2.0)/(2.0*sigma**2.0))*(x-center))/sigma
