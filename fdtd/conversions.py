@@ -22,9 +22,6 @@ FIXME: DC: find and add md notes on scaling
 
 '''
 
-# if /fdtd/ gets the ability to dump to VTK, one would hate to
-'''
-
 # Might perhaps be worth putting a note in the readme about default units / suggested unit systems?
 # (done, see next PR)
 # Also, if /fdtd/ gets the ability to dump to VTK, one would hate to

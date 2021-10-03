@@ -2,7 +2,6 @@ import pytest
 from fdtd.backend import backend_names
 
 # Pylint with 'pylint fdtd' in the .git root
-
 # To run tests in a conda env, use `python -m pytest` in the .git root
 # to specify a test, use -k "test_current_detector"
 # To view output, -rA
@@ -11,18 +10,8 @@ from fdtd.backend import backend_names
 # to view the output of long tests live,
 # use -s or --capture=no
 
-
-def pytest_addoption(parser):
-    parser.addoption("--all_backends", action="store_true", help="run all backends")
-    parser.addoption(
-        "--run_slow", action="store_true", default=False, help="run slow tests"
-    )
-
-
 def pytest_configure(config):
     config.addinivalue_line("markers", "slow: mark test as slow to run")
-
-
 
 # Perform tests over all backends when pytest called with --all_backends
 # and function name has "all_bends" in it.
@@ -61,6 +50,9 @@ def pytest_collection_modifyitems(config, items):
 
 def pytest_addoption(parser):
     parser.addoption("--all_backends", action="store_true", help="run all backends")
+    parser.addoption(
+        "--run_slow", action="store_true", default=False, help="run slow tests"
+    )
 
 from fixtures import backend_parametrizer
 
