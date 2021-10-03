@@ -9,11 +9,12 @@ Available sources:
 ## Imports
 
 # other
-from math import pi, sin, cos
+from math import pi, sin
 
 # typing
-from .typing import Tuple, Number, ListOrSlice, List
+from .typing_ import Tuple, Number, ListOrSlice, List
 from numpy import ndarray
+
 # relatvie
 from .grid import Grid
 from .backend import backend as bd
@@ -22,7 +23,7 @@ from .detectors import CurrentDetector
 
 ## PointSource class
 class PointSource:
-    """ A source placed at a single point (grid cell) in the grid """
+    """A source placed at a single point (grid cell) in the grid"""
 
     def __init__(
         self,
@@ -92,7 +93,7 @@ class PointSource:
         ) ** 0.5
 
     def update_E(self):
-        """ Add the source to the electric field """
+        """Add the source to the electric field"""
         q = self.grid.time_steps_passed
         # if pulse
         if self.pulse:
@@ -110,7 +111,7 @@ class PointSource:
         self.grid.E[self.x, self.y, self.z, 2] += src
 
     def update_H(self):
-        """ Add the source to the magnetic field """
+        """Add the source to the magnetic field"""
 
     def __repr__(self):
         return (
@@ -130,7 +131,7 @@ class PointSource:
 
 ## LineSource class
 class LineSource:
-    """ A source along a line in the FDTD grid """
+    """A source along a line in the FDTD grid"""
 
     def __init__(
         self,
@@ -279,7 +280,7 @@ class LineSource:
         return x, y, z
 
     def update_E(self):
-        """ Add the source to the electric field """
+        """Add the source to the electric field"""
         q = self.grid.time_steps_passed
         # if pulse
         if self.pulse:
@@ -300,7 +301,7 @@ class LineSource:
             self.grid.E[x, y, z, 2] += value
 
     def update_H(self):
-        """ Add the source to the magnetic field """
+        """Add the source to the magnetic field"""
 
     def __repr__(self):
         return (
@@ -320,7 +321,7 @@ class LineSource:
 
 ## PlaneSource class
 class PlaneSource:
-    """ A source along a plane in the FDTD grid """
+    """A source along a plane in the FDTD grid"""
 
     def __init__(
         self,
@@ -359,7 +360,7 @@ class PlaneSource:
         As its name suggests, this source is a LINE source.
             Hence the source spans the diagonal of the cube
             defined by the slices in the grid.
-            """
+        """
         self.grid = grid
         self.grid.sources.append(self)
         if self.name is not None:
@@ -481,13 +482,13 @@ class PlaneSource:
         return x, y, z
 
     def update_E(self):
-        """ Add the source to the electric field """
+        """Add the source to the electric field"""
         q = self.grid.time_steps_passed
         vect = self.profile * sin(2 * pi * q / self.period + self.phase_shift)
         self.grid.E[self.x, self.y, self.z, 2] = vect
 
     def update_H(self):
-        """ Add the source to the magnetic field """
+        """Add the source to the magnetic field"""
 
     def __repr__(self):
         return (
@@ -503,7 +504,6 @@ class PlaneSource:
         z = f"[{self.z.start}, ... , {self.z.stop}]"
         s += f"        @ x={x}, y={y}, z={z}\n"
         return s
-
 
 
 class SoftArbitraryPointSource:
@@ -545,10 +545,7 @@ class SoftArbitraryPointSource:
     """
 
     def __init__(
-        self,
-        waveform_array: ndarray,
-        name: str = None,
-        impedance: float = 0.0
+        self, waveform_array: ndarray, name: str = None, impedance: float = 0.0
     ):
         """Create
 
@@ -562,10 +559,11 @@ class SoftArbitraryPointSource:
         self.current_detector = None
         self.waveform_array = waveform_array
         self.impedance = impedance
-        self.input_voltage = [] # voltage hard-imposed by the source
-        self.source_voltage = [] #
+        self.input_voltage = []  # voltage hard-imposed by the source
+        self.source_voltage = []  #
         # "field" rather than "voltage" might be more meaningful
         # FIXME: these voltage time histories have a different dimensionality
+
     def _register_grid(self, grid: Grid, x: Number, y: Number, z: Number):
         """Register a grid for the source.
 
@@ -597,45 +595,46 @@ class SoftArbitraryPointSource:
         self.x, self.y, self.z = grid._handle_tuple((x, y, z))
 
         if self.name is not None:
-            detector_name += '_I'
+            detector_name += "_I"
         else:
             detector_name = None
 
         self.current_detector = CurrentDetector(name=detector_name)
-        grid[x,y,z] = self.current_detector
+        grid[x, y, z] = self.current_detector
 
     def update_E(self):
 
         # It is important that this step happen between the E-field update and the
         # H-field update.
 
-        if(self.grid.time_steps_passed < self.waveform_array.shape[0]):
-            #check for off-by-one error here
+        if self.grid.time_steps_passed < self.waveform_array.shape[0]:
+            # check for off-by-one error here
             input_voltage = self.waveform_array[self.grid.time_steps_passed]
         else:
-            input_voltage = 0.0 # one could taper the last value off smoothly instead
+            input_voltage = 0.0  # one could taper the last value off smoothly instead
 
-        if(self.grid.time_steps_passed > 0):
+        if self.grid.time_steps_passed > 0:
             current = self.current_detector.I[-1][0][0][0]
         else:
             current = 0.0
 
-        if(self.impedance > 0):
-             source_resistive_voltage = (self.impedance * current)
-             output_voltage = input_voltage + source_resistive_voltage
+        if self.impedance > 0:
+            source_resistive_voltage = self.impedance * current
+            output_voltage = input_voltage + source_resistive_voltage
         else:
             output_voltage = input_voltage
 
-        #right now, this does not compensate for the cell's permittivity!
+        # right now, this does not compensate for the cell's permittivity!
 
-        self.grid.E[self.x, self.y, self.z, 2] += output_voltage / self.grid.grid_spacing
+        self.grid.E[self.x, self.y, self.z, 2] += (
+            output_voltage / self.grid.grid_spacing
+        )
 
         self.input_voltage.append([[[input_voltage]]])
         self.source_voltage.append([[[output_voltage]]])
 
     def update_H(self):
         pass
-
 
     def __repr__(self):
         return (

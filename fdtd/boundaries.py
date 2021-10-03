@@ -9,7 +9,7 @@ Available Boundaries:
 ## Imports
 
 # typing
-from .typing import Tensorlike, ListOrSlice, IntOrSlice
+from .typing_ import Tensorlike, ListOrSlice, IntOrSlice
 
 # relative
 from .grid import Grid
