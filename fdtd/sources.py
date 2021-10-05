@@ -1,4 +1,4 @@
-""" Sources are objects that inject power into the grid.
+""" Sources are objects that inject the fields into the grid.
 
 Available sources:
 
@@ -28,7 +28,7 @@ class PointSource:
     def __init__(
         self,
         period: Number = 15,
-        power: float = 1.0,
+        amplitude: float = 1.0,
         phase_shift: float = 0.0,
         name: str = None,
         pulse: bool = False,
@@ -40,7 +40,7 @@ class PointSource:
         Args:
             period: The period of the source. The period can be specified
                 as integer [timesteps] or as float [seconds]
-            power: The power of the source
+            amplitude: The electric field amplitude in simulation units
             phase_shift: The phase offset of the source.
             name: name of the source.
             pulse: Set True to use a Hanning window pulse instead of continuous wavefunction.
@@ -50,7 +50,7 @@ class PointSource:
         """
         self.grid = None
         self.period = period
-        self.power = power
+        self.amplitude = amplitude
         self.phase_shift = phase_shift
         self.name = name
         self.pulse = pulse
@@ -88,9 +88,6 @@ class PointSource:
             raise ValueError("a point source should be placed on a single grid cell.")
         self.x, self.y, self.z = grid._handle_tuple((x, y, z))
         self.period = grid._handle_time(self.period)
-        self.amplitude = (
-            self.power * self.grid.inverse_permittivity[self.x, self.y, self.z, 2]
-        ) ** 0.5
 
     def update_E(self):
         """Add the source to the electric field"""
@@ -116,7 +113,7 @@ class PointSource:
     def __repr__(self):
         return (
             f"{self.__class__.__name__}(period={self.period}, "
-            f"power={self.power}, phase_shift={self.phase_shift}, "
+            f"amplitude={self.amplitude}, phase_shift={self.phase_shift}, "
             f"name={repr(self.name)})"
         )
 
@@ -136,7 +133,7 @@ class LineSource:
     def __init__(
         self,
         period: Number = 15,
-        power: float = 1.0,
+        amplitude: float = 1.0,
         phase_shift: float = 0.0,
         name: str = None,
         pulse: bool = False,
@@ -148,7 +145,7 @@ class LineSource:
         Args:
             period: The period of the source. The period can be specified
                 as integer [timesteps] or as float [seconds]
-            power: The power of the source
+            amplitude: The amplitude of the source in simulation units
             phase_shift: The phase offset of the source.
             pulse: Set True to use a Hanning window pulse instead of continuous wavefunction.
             cycle: cycles for Hanning window pulse.
@@ -157,7 +154,7 @@ class LineSource:
         """
         self.grid = None
         self.period = period
-        self.power = power
+        self.amplitude = amplitude
         self.phase_shift = phase_shift
         self.name = name
         self.pulse = pulse
@@ -194,9 +191,6 @@ class LineSource:
         self.x, self.y, self.z = self._handle_slices(x, y, z)
 
         self.period = grid._handle_time(self.period)
-        amplitude = (
-            self.power * self.grid.inverse_permittivity[self.x, self.y, self.z, 2]
-        ) ** 0.5
 
         L = len(self.x)
         vect = bd.array(
@@ -208,7 +202,7 @@ class LineSource:
 
         self.profile = bd.exp(-(vect ** 2) / (2 * (0.5 * vect.max()) ** 2))
         self.profile /= self.profile.sum()
-        self.profile *= amplitude
+        self.profile *= self.amplitude
 
     def _handle_slices(
         self, x: ListOrSlice, y: ListOrSlice, z: ListOrSlice
@@ -306,7 +300,7 @@ class LineSource:
     def __repr__(self):
         return (
             f"{self.__class__.__name__}(period={self.period}, "
-            f"power={self.power}, phase_shift={self.phase_shift}, "
+            f"amplitude={self.amplitude}, phase_shift={self.phase_shift}, "
             f"name={repr(self.name)})"
         )
 
@@ -326,7 +320,7 @@ class PlaneSource:
     def __init__(
         self,
         period: Number = 15,
-        power: float = 1.0,
+        amplitude: float = 1.0,
         phase_shift: float = 0.0,
         name: str = None,
     ):
@@ -335,13 +329,13 @@ class PlaneSource:
         Args:
             period: The period of the source. The period can be specified
                 as integer [timesteps] or as float [seconds]
-            power: The power of the source
+            amplitude: The amplitude of the source in simulation units
             phase_shift: The phase offset of the source.
 
         """
         self.grid = None
         self.period = period
-        self.power = power
+        self.amplitude = amplitude
         self.phase_shift = phase_shift
         self.name = name
 
@@ -374,9 +368,6 @@ class PlaneSource:
         self.x, self.y, self.z = self._handle_slices(x, y, z)
 
         self.period = grid._handle_time(self.period)
-        amplitude = (
-            self.power * self.grid.inverse_permittivity[self.x, self.y, self.z, 2]
-        ) ** 0.5
 
         x = bd.arange(self.x.start, self.x.stop, 1) - (self.x.start + self.x.stop) // 2
         y = bd.arange(self.y.start, self.y.stop, 1) - (self.y.start + self.y.stop) // 2
@@ -412,7 +403,7 @@ class PlaneSource:
                 / (2 * (0.5 * min(_xvec.max(), _yvec.max())) ** 2)
             )
 
-        self.profile = amplitude * profile / profile.sum()
+        self.profile = self.amplitude * profile / profile.sum()
 
     def _handle_slices(
         self, x: ListOrSlice, y: ListOrSlice, z: ListOrSlice
@@ -493,7 +484,7 @@ class PlaneSource:
     def __repr__(self):
         return (
             f"{self.__class__.__name__}(period={self.period}, "
-            f"power={self.power}, phase_shift={self.phase_shift}, "
+            f"amplitude={self.amplitude}, phase_shift={self.phase_shift}, "
             f"name={repr(self.name)})"
         )
 
@@ -637,11 +628,7 @@ class SoftArbitraryPointSource:
         pass
 
     def __repr__(self):
-        return (
-            f"{self.__class__.__name__}(period={self.period}, "
-            f"power={self.power}, phase_shift={self.phase_shift}, "
-            f"name={repr(self.name)})"
-        )
+        return f"{self.__class__.__name__}()"
 
     def __str__(self):
         s = "    " + repr(self) + "\n"

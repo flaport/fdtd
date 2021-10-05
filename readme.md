@@ -26,6 +26,7 @@ pip install -e fdtd
 ```
 
 Development dependencies can be installed with
+
 ```
 pip install -e fdtd[dev]
 ```
@@ -43,8 +44,6 @@ pip install -e fdtd[dev]
 
 All improvements or additions (for example new objects, sources or detectors) are
 welcome. Please make a pull-request 😊.
-
-
 
 ## Documentation
 
@@ -218,7 +217,7 @@ added:
 # signature
 fdtd.LineSource(
     period: Number = 15, # timesteps or seconds
-    power: float = 1.0,
+    amplitude: float = 1.0,
     phase_shift: float = 0.0,
     name: str = None,
 )
@@ -241,7 +240,7 @@ Internally, these slices will be converted into lists to ensure this behavior:
 print(grid.source)
 ```
 
-        LineSource(period=14, power=1.0, phase_shift=0.0, name='source')
+        LineSource(period=14, amplitude=1.0, phase_shift=0.0, name='source')
             @ x=[48, ... , 51], y=[76, ... , 83], z=[0, ... , 0]
 
 Note that one could also have supplied lists to index the grid in the first
@@ -308,7 +307,7 @@ print(grid)
     Grid(shape=(161,97,1), grid_spacing=1.55e-07, courant_number=0.70)
 
     sources:
-        LineSource(period=14, power=1.0, phase_shift=0.0, name='source')
+        LineSource(period=14, amplitude=1.0, phase_shift=0.0, name='source')
             @ x=[48, ... , 51], y=[76, ... , 83], z=[0, ... , 0]
 
     detectors:
@@ -372,7 +371,7 @@ grid.visualize(
 ```
 
 This method will by default visualize all objects in the grid, as well as the
-power at the current `time_step` at a certain `x`, `y` **OR** `z`-plane. By
+field intensity at the current `time_step` at a certain `x`, `y` **OR** `z`-plane. By
 setting `show=False`, one can disable the immediate visualization of the
 matplotlib image.
 
