@@ -421,14 +421,20 @@ class PlaneSource:
         """
         # ensure all slices
         if not isinstance(x, slice):
+            if isinstance(x, list):
+                (x,) = x
             x = slice(
                 self.grid._handle_distance(x), self.grid._handle_distance(x) + 1, None
             )
         if not isinstance(y, slice):
+            if isinstance(y, list):
+                (y,) = y
             y = slice(
                 self.grid._handle_distance(y), self.grid._handle_distance(y) + 1, None
             )
         if not isinstance(z, slice):
+            if isinstance(z, list):
+                (z,) = z
             z = slice(
                 self.grid._handle_distance(z), self.grid._handle_distance(z) + 1, None
             )

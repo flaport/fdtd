@@ -199,7 +199,15 @@ def visualize(
                     if source.y.stop > source.y.start + 1
                     else slice(source.y.start, source.y.start)
                 )
-            plt.plot([_y.start, _y.stop], [_x.start, _x.stop], lw=3, color=srccolor)
+            patch = ptc.Rectangle(
+                xy=(_y.start - 0.5, _x.start - 0.5),
+                width=_y.stop - _y.start,
+                height=_x.stop - _x.start,
+                linewidth=0,
+                edgecolor="none",
+                facecolor=srccolor,
+            )
+            plt.gca().add_patch(patch)
 
     # Detector
     for detector in grid.detectors:
@@ -457,7 +465,6 @@ def plot_detection(detector_dict=None, specific_plot=None):
         plt.legend()
         plt.suptitle("Time-of-arrival plot")
     plt.show()
-
 
 
 #
