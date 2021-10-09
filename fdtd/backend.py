@@ -28,6 +28,7 @@ The ``cuda`` backends are only available for computers with a GPU.
 
 # Numpy Backend
 import numpy  # numpy has to be present
+from functools import wraps
 
 # used only by test runner.
 # default must be idx 0.
@@ -46,7 +47,7 @@ try:
 
     torch.set_default_dtype(torch.float64)  # we need more precision for FDTD
     try:  # we don't need gradients (for now)
-        torch._C.set_grad_enabled(False)
+        torch._C.set_grad_enabled(False)  # type: ignore
     except AttributeError:
         torch._C._set_grad_enabled(False)
     TORCH_AVAILABLE = True
@@ -58,7 +59,7 @@ except ImportError:
 
 # Base Class
 class Backend:
-    """ Backend Base Class """
+    """Backend Base Class"""
 
     # constants
     pi = numpy.pi
@@ -67,9 +68,28 @@ class Backend:
         return self.__class__.__name__
 
 
+def _replace_float(func):
+    """replace the default dtype a function is called with"""
+
+    @wraps(func)
+    def new_func(self, *args, **kwargs):
+        result = func(*args, **kwargs)
+        if result.dtype in (
+            numpy.float_,
+            numpy.float16,
+            numpy.float32,
+            numpy.float64,
+            numpy.float128,
+        ):
+            result = numpy.asarray(result, dtype=self.float)
+        return result
+
+    return new_func
+
+
 # Numpy Backend
 class NumpyBackend(Backend):
-    """ Numpy Backend """
+    """Numpy Backend"""
 
     # types
     int = numpy.int64
@@ -79,8 +99,7 @@ class NumpyBackend(Backend):
     """ floating type for array """
 
     # methods
-    asarray = staticmethod(numpy.asarray)
-    """ create an array """
+    asarray = _replace_float(numpy.asarray)
 
     exp = staticmethod(numpy.exp)
     """ exponential of all elements in array """
@@ -117,36 +136,37 @@ class NumpyBackend(Backend):
 
     @staticmethod
     def bmm(arr1, arr2):
-        """ batch matrix multiply two arrays """
+        """batch matrix multiply two arrays"""
         return numpy.einsum("ijk,ikl->ijl", arr1, arr2)
 
     @staticmethod
     def is_array(arr):
-        """ check if an object is an array """
+        """check if an object is an array"""
         return isinstance(arr, numpy.ndarray)
 
     # constructors
-    array = staticmethod(numpy.array)
+    array = _replace_float(numpy.array)
     """ create an array from an array-like sequence """
 
-    ones = staticmethod(numpy.ones)
+    ones = _replace_float(numpy.ones)
     """ create an array filled with ones """
 
-    zeros = staticmethod(numpy.zeros)
+    zeros = _replace_float(numpy.zeros)
     """ create an array filled with zeros """
 
     zeros_like = staticmethod(numpy.zeros_like)
     """ create an array filled with zeros """
 
-    linspace = staticmethod(numpy.linspace)
+    linspace = _replace_float(numpy.linspace)
     """ create a linearly spaced array between two points """
 
-    arange = staticmethod(numpy.arange)
+    arange = _replace_float(numpy.arange)
     """ create a range of values """
 
     pad = staticmethod(numpy.pad)
 
     fftfreq = staticmethod(numpy.fft.fftfreq)
+
     fft = staticmethod(numpy.fft.fft)
 
     exp = staticmethod(numpy.exp)
@@ -161,15 +181,16 @@ class NumpyBackend(Backend):
     #
     # could this (and below) perhaps be changed to "to_numpy()"
     # or maybe "check_numpy" ?
-    numpy = staticmethod(numpy.asarray)
+    numpy = _replace_float(numpy.asarray)
     """ convert the array to numpy array """
 
 
 # Torch Backend
 if TORCH_AVAILABLE:
+    import torch
 
     class TorchBackend(Backend):
-        """ Torch Backend """
+        """Torch Backend"""
 
         # types
         int = torch.int64
@@ -202,7 +223,7 @@ if TORCH_AVAILABLE:
 
         @staticmethod
         def transpose(arr, axes=None):
-            """ transpose array by flipping two dimensions """
+            """transpose array by flipping two dimensions"""
             if axes is None:
                 axes = tuple(range(len(arr.shape) - 1, -1, -1))
             return arr.permute(*axes)
@@ -224,12 +245,12 @@ if TORCH_AVAILABLE:
 
         @staticmethod
         def is_array(arr):
-            """ check if an object is an array """
+            """check if an object is an array"""
             # is this a reasonable implemenation?
             return isinstance(arr, numpy.ndarray) or torch.is_tensor(arr)
 
         def array(self, arr, dtype=None):
-            """ create an array from an array-like sequence """
+            """create an array from an array-like sequence"""
             if dtype is None:
                 dtype = torch.get_default_dtype()
             if torch.is_tensor(arr):
@@ -244,7 +265,7 @@ if TORCH_AVAILABLE:
         """ create an array filled with zeros """
 
         def linspace(self, start, stop, num=50, endpoint=True):
-            """ create a linearly spaced array between two points """
+            """create a linearly spaced array between two points"""
             delta = (stop - start) / float(num - float(endpoint))
             if not delta:
                 return self.array([start] * num)
@@ -253,10 +274,11 @@ if TORCH_AVAILABLE:
         arange = staticmethod(torch.arange)
         """ create a range of values """
 
-        pad = staticmethod(torch.nn.functional.pad)
+        pad = staticmethod(torch.nn.functional.pad)  # type: ignore
 
         fftfreq = staticmethod(numpy.fft.fftfreq)
-        fft = staticmethod(torch.fft)
+
+        fft = staticmethod(torch.fft)  # type: ignore
 
         divide = staticmethod(torch.div)
 
@@ -266,54 +288,51 @@ if TORCH_AVAILABLE:
         # <3 <3 <3 <3
 
         def numpy(self, arr):
-            """ convert the array to numpy array """
+            """convert the array to numpy array"""
             if torch.is_tensor(arr):
                 return arr.numpy()
             else:
                 return numpy.asarray(arr)
 
-        fft = staticmethod(torch.fft)
+    # Torch Cuda Backend
+    if TORCH_CUDA_AVAILABLE:
 
+        class TorchCudaBackend(TorchBackend):
+            """Torch Cuda Backend"""
 
-# Torch Cuda Backend
-if TORCH_CUDA_AVAILABLE:
+            def ones(self, shape):
+                """create an array filled with ones"""
+                return torch.ones(shape, device="cuda")
 
-    class TorchCudaBackend(TorchBackend):
-        """ Torch Cuda Backend """
+            def zeros(self, shape):
+                """create an array filled with zeros"""
+                return torch.zeros(shape, device="cuda")
 
-        def ones(self, shape):
-            """ create an array filled with ones """
-            return torch.ones(shape, device="cuda")
+            def array(self, arr, dtype=None):
+                """create an array from an array-like sequence"""
+                if dtype is None:
+                    dtype = torch.get_default_dtype()
+                if torch.is_tensor(arr):
+                    return arr.clone().to(device="cuda", dtype=dtype)
+                return torch.tensor(arr, device="cuda", dtype=dtype)
 
-        def zeros(self, shape):
-            """ create an array filled with zeros """
-            return torch.zeros(shape, device="cuda")
+            # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            # The same warning applies here.
+            def numpy(self, arr):
+                """convert the array to numpy array"""
+                if torch.is_tensor(arr):
+                    return arr.cpu().numpy()
+                else:
+                    return numpy.asarray(arr)
 
-        def array(self, arr, dtype=None):
-            """ create an array from an array-like sequence """
-            if dtype is None:
-                dtype = torch.get_default_dtype()
-            if torch.is_tensor(arr):
-                return arr.clone().to(device="cuda", dtype=dtype)
-            return torch.tensor(arr, device="cuda", dtype=dtype)
-
-        # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-        # The same warning applies here.
-        def numpy(self, arr):
-            """ convert the array to numpy array """
-            if torch.is_tensor(arr):
-                return arr.cpu().numpy()
-            else:
-                return numpy.asarray(arr)
-
-        def linspace(self, start, stop, num=50, endpoint=True):
-            """ convert a linearly spaced interval of values """
-            delta = (stop - start) / float(num - float(endpoint))
-            if not delta:
-                return self.array([start] * num)
-            return torch.arange(
-                start, stop + 0.5 * float(endpoint) * delta, delta, device="cuda"
-            )
+            def linspace(self, start, stop, num=50, endpoint=True):
+                """convert a linearly spaced interval of values"""
+                delta = (stop - start) / float(num - float(endpoint))
+                if not delta:
+                    return self.array([start] * num)
+                return torch.arange(
+                    start, stop + 0.5 * float(endpoint) * delta, delta, device="cuda"
+                )
 
 
 ## Default Backend
@@ -334,42 +353,67 @@ def set_backend(name: str):
     Args:
         name: name of the backend. Allowed backend names:
             - ``numpy`` (defaults to float64 arrays)
+            - ``numpy.float16``
+            - ``numpy.float32``
+            - ``numpy.float64``
+            - ``numpy.float128``
             - ``torch`` (defaults to float64 tensors)
+            - ``torch.float16``
             - ``torch.float32``
             - ``torch.float64``
             - ``torch.cuda`` (defaults to float64 tensors)
+            - ``torch.cuda.float16``
             - ``torch.cuda.float32``
             - ``torch.cuda.float64``
 
     """
     # perform checks
-    if "torch" in name and not TORCH_AVAILABLE:
+    if name.startswith("torch") and not TORCH_AVAILABLE:
         raise RuntimeError("Torch backend is not available. Is PyTorch installed?")
-    if "torch.cuda" in name and not TORCH_CUDA_AVAILABLE:
+    if name.startswith("torch.cuda") and not TORCH_CUDA_AVAILABLE:
         raise RuntimeError(
             "Torch cuda backend is not available.\n"
             "Do you have a GPU on your computer?\n"
             "Is PyTorch with cuda support installed?"
         )
 
-    # change backend by monkeypatching
-    if name == "numpy":
-        backend.__class__ = NumpyBackend
-    elif name == "torch" or name == "torch.float64":
-        torch.set_default_dtype(torch.float64)
-        backend.__class__ = TorchBackend
-    elif name == "torch.float32":
-        torch.set_default_dtype(torch.float32)
-        backend.__class__ = TorchBackend
-        backend.float = torch.float32
-    elif name == "torch.cuda" or name == "torch.cuda.float64":
-        torch.set_default_dtype(torch.float64)
-        backend.__class__ = TorchCudaBackend
-    elif name == "torch.cuda.float32":
-        torch.set_default_dtype(torch.float32)
-        backend.__class__ = TorchCudaBackend
-        backend.float = torch.float32
-    # Support fp16 types? Noise will be hell, but crazy-fast -
-    # on a V100 you can get 8x higher raw FLOPS AFAIK
+    if name.count(".") == 0:
+        dtype, device = "float64", "cpu"
+    elif name.count(".") == 1:
+        name, dtype = name.split(".")
+        if dtype == "cuda":
+            device, dtype = "cuda", "float64"
+        else:
+            device = "cpu"
+    elif name.count(".") == 2:
+        name, device, dtype = name.split(".")
     else:
-        raise RuntimeError(f'unknown backend "{name}"')
+        raise ValueError(f"Unknown backend '{name}'")
+
+    if name == "numpy":
+        if device == "cpu":
+            backend.__class__ = NumpyBackend
+            backend.float = getattr(numpy, dtype)
+        elif device == "cuda":
+            raise ValueError(
+                "Device 'cuda' not available for numpy backend. Use 'torch' backend in stead."
+            )
+        else:
+            raise ValueError(
+                "Unknown device '{device}'. Available devices: 'cpu', 'cuda'"
+            )
+    elif name == "torch":
+        if device == "cpu":
+            backend.__class__ = TorchBackend
+            backend.float = getattr(torch, dtype)
+        elif device == "cuda":
+            backend.__class__ = TorchCudaBackend
+            backend.float = getattr(torch, dtype)
+        else:
+            raise ValueError(
+                "Unknown device '{device}'. Available devices: 'cpu', 'cuda'"
+            )
+    else:
+        raise ValueError(
+            "Unknown backend '{name}'. Available backends: 'numpy', 'torch'"
+        )
