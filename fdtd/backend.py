@@ -31,11 +31,13 @@ import numpy  # numpy has to be present
 
 # used only by test runner.
 # default must be idx 0.
-backend_names = [dict(backends="numpy"),
-                 dict(backends="torch.float32"),
-                 dict(backends="torch.float64"),
-                 dict(backends="torch.cuda.float32"),
-                 dict(backends="torch.cuda.float64")]
+backend_names = [
+    dict(backends="numpy"),
+    dict(backends="torch.float32"),
+    dict(backends="torch.float64"),
+    dict(backends="torch.cuda.float32"),
+    dict(backends="torch.cuda.float64"),
+]
 
 
 # Torch Backends (and flags)
@@ -77,6 +79,9 @@ class NumpyBackend(Backend):
     """ floating type for array """
 
     # methods
+    asarray = staticmethod(numpy.asarray)
+    """ create an array """
+
     exp = staticmethod(numpy.exp)
     """ exponential of all elements in array """
 
@@ -106,6 +111,9 @@ class NumpyBackend(Backend):
 
     broadcast_arrays = staticmethod(numpy.broadcast_arrays)
     """ broadcast arrays """
+
+    broadcast_to = staticmethod(numpy.broadcast_to)
+    """ broadcast array into shape """
 
     @staticmethod
     def bmm(arr1, arr2):
@@ -171,6 +179,9 @@ if TORCH_AVAILABLE:
         """ floating type for array """
 
         # methods
+        asarray = staticmethod(torch.as_tensor)
+        """ create an array """
+
         exp = staticmethod(torch.exp)
         """ exponential of all elements in array """
 
@@ -202,6 +213,9 @@ if TORCH_AVAILABLE:
         broadcast_arrays = staticmethod(torch.broadcast_tensors)
         """ broadcast arrays """
 
+        broadcast_to = staticmethod(torch.broadcast_to)
+        """ broadcast array into shape """
+
         reshape = staticmethod(torch.reshape)
         """ reshape array into given shape """
 
@@ -212,7 +226,7 @@ if TORCH_AVAILABLE:
         def is_array(arr):
             """ check if an object is an array """
             # is this a reasonable implemenation?
-            return (isinstance(arr, numpy.ndarray) or torch.is_tensor(arr))
+            return isinstance(arr, numpy.ndarray) or torch.is_tensor(arr)
 
         def array(self, arr, dtype=None):
             """ create an array from an array-like sequence """
@@ -248,7 +262,7 @@ if TORCH_AVAILABLE:
 
         exp = staticmethod(torch.exp)
         # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-        #The same warning applies here.
+        # The same warning applies here.
         # <3 <3 <3 <3
 
         def numpy(self, arr):
@@ -259,6 +273,7 @@ if TORCH_AVAILABLE:
                 return numpy.asarray(arr)
 
         fft = staticmethod(torch.fft)
+
 
 # Torch Cuda Backend
 if TORCH_CUDA_AVAILABLE:
@@ -283,7 +298,7 @@ if TORCH_CUDA_AVAILABLE:
             return torch.tensor(arr, device="cuda", dtype=dtype)
 
         # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-        #The same warning applies here.
+        # The same warning applies here.
         def numpy(self, arr):
             """ convert the array to numpy array """
             if torch.is_tensor(arr):
