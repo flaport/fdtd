@@ -9,7 +9,6 @@ together and where the biggest part of the calculations are done.
 
 # standard library
 import os
-from math import pi
 from os import path, makedirs, chdir, remove
 from subprocess import check_call, CalledProcessError
 from glob import glob
@@ -24,22 +23,7 @@ from .typing_ import Tuple, Number, Tensorlike
 
 # relative
 from .backend import backend as bd
-
-
-## Constants
-SPEED_LIGHT: float = 299_792_458.0  # [m/s] speed of light
-VACUUM_PERMEABILITY: float = 4e-7 * pi  # vacuum permeability
-VACUUM_PERMITTIVITY: float = 1.0 / (
-    VACUUM_PERMEABILITY * SPEED_LIGHT ** 2
-)  # vacuum permittivity
-
-class d_:
-    '''
-    Just a convenience function for indexing polarizations of arrays.
-    '''
-    X = 0
-    Y = 1
-    Z = 2
+from . import constants as const
 
 ## Functions
 def curl_E(E: Tensorlike) -> Tensorlike:
@@ -145,7 +129,7 @@ class Grid:
             self.courant_number = float(courant_number)
 
         # timestep of the simulation
-        self.time_step = self.courant_number * self.grid_spacing / SPEED_LIGHT
+        self.time_step = self.courant_number * self.grid_spacing / const.c
 
         # save electric and magnetic field
         self.E = bd.zeros((self.Nx, self.Ny, self.Nz, 3))

@@ -15,8 +15,9 @@ Available Objects:
 from .typing_ import Tensorlike, ListOrSlice
 
 # relative
-from .grid import Grid, VACUUM_PERMITTIVITY, d_
+from .grid import Grid
 from .backend import backend as bd
+from . import constants as const
 
 
 ## Object
@@ -194,7 +195,7 @@ class AbsorbingObject(Object):
             * self.inverse_permittivity
             * self.conductivity
             * self.grid.grid_spacing
-            / VACUUM_PERMITTIVITY
+            / const.eps0
         )
 
     def update_E(self, curl_H):

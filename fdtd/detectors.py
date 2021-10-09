@@ -14,13 +14,14 @@ from .typing_ import ListOrSlice, Tuple, List
 # relative
 from .grid import Grid
 from .backend import backend as bd
-from .grid import d_
+from .constants import X, Y, Z
+
 ## Detector
 class LineDetector:
     """ A detector along a line in the FDTD grid """
 
     def __init__(self, name=None):
-        """ Create a line detector
+        """Create a line detector
 
         Args:
             name: name of the Detector
@@ -34,7 +35,7 @@ class LineDetector:
     def _register_grid(
         self, grid: Grid, x: ListOrSlice, y: ListOrSlice, z: ListOrSlice
     ):
-        """ Register a grid to the detector
+        """Register a grid to the detector
 
         Args:
             grid: the grid to place the detector into
@@ -62,7 +63,7 @@ class LineDetector:
     def _handle_slices(
         self, x: ListOrSlice, y: ListOrSlice, z: ListOrSlice
     ) -> Tuple[List, List, List]:
-        """ Convert slices in the grid to lists
+        """Convert slices in the grid to lists
 
         This is necessary to make the source span the diagonal of the volume
         defined by the slices.
@@ -135,7 +136,8 @@ class LineDetector:
 
     def detector_values(self):
         """ outputs what detector detects """
-        return {'E': self.E, 'H': self.H}
+        return {"E": self.E, "H": self.H}
+
 
 # is the "detector" paradigm necessary? Can we just flag a segment of the base mesh to be
 # stored per timestep?
@@ -143,10 +145,11 @@ class LineDetector:
 ## BlockDetector
 class BlockDetector:
     """ A detector along a block in the FDTD grid """
+
     """ Basic copy of LineDetector code, changed detect functions """
 
     def __init__(self, name=None):
-        """ Create a block detector
+        """Create a block detector
 
         Args:
             name: name of the Detector
@@ -160,7 +163,7 @@ class BlockDetector:
     def _register_grid(
         self, grid: Grid, x: ListOrSlice, y: ListOrSlice, z: ListOrSlice
     ):
-        """ Register a grid to the detector
+        """Register a grid to the detector
 
         Args:
             grid: the grid to place the detector into
@@ -188,7 +191,7 @@ class BlockDetector:
     def _handle_slices(
         self, x: ListOrSlice, y: ListOrSlice, z: ListOrSlice
     ) -> Tuple[List, List, List]:
-        """ Convert slices in the grid to lists
+        """Convert slices in the grid to lists
 
         This is necessary to make the source span the volume
         defined by the slices.
@@ -245,7 +248,7 @@ class BlockDetector:
                 E[i].append([])
                 for pillar in self.z:
                     E[i][j].append(self.grid.E[row, col, [pillar]][0])
-        #E = self.grid.E[self.x, self.y, self.z]
+        # E = self.grid.E[self.x, self.y, self.z]
         self.E.append(E)
 
     def detect_H(self):
@@ -258,7 +261,7 @@ class BlockDetector:
                 H[i].append([])
                 for pillar in self.z:
                     H[i][j].append(self.grid.H[row, col, [pillar]][0])
-        #H = self.grid.H[self.x, self.y, self.z]
+        # H = self.grid.H[self.x, self.y, self.z]
         self.H.append(H)
 
     def __repr__(self):
@@ -274,8 +277,7 @@ class BlockDetector:
 
     def detector_values(self):
         """ outputs what detector detects """
-        return {'E': self.E, 'H': self.H}
-
+        return {"E": self.E, "H": self.H}
 
 
 ## CurrentDetector
@@ -306,7 +308,7 @@ class CurrentDetector:
     # not sure how important it is for optical stuff
 
     def __init__(self, name=None):
-        """ Create a block detector
+        """Create a block detector
 
         Args:
             name: name of the Detector
@@ -320,7 +322,7 @@ class CurrentDetector:
     def _register_grid(
         self, grid: Grid, x: ListOrSlice, y: ListOrSlice, z: ListOrSlice
     ):
-        """ Register a grid to the detector
+        """Register a grid to the detector
 
         Args:
             grid: the grid to place the detector into
@@ -349,7 +351,7 @@ class CurrentDetector:
     def _handle_slices(
         self, x: ListOrSlice, y: ListOrSlice, z: ListOrSlice
     ) -> Tuple[List, List, List]:
-        """ Convert slices in the grid to lists
+        """Convert slices in the grid to lists
 
         This is necessary to make the source span the volume
         defined by the slices.
@@ -400,7 +402,7 @@ class CurrentDetector:
         """ detect the electric field at a certain location in the grid """
 
     def single_point_current(self, px, py, pz):
-        '''
+        """
 
         Only Z-polarized for now. Can probably do a cross product to get arbitrary polarizations
 
@@ -431,38 +433,40 @@ class CurrentDetector:
         IEEE Trans Antennas Propagat 1996;44:1000–5.
         https://doi.org/10.1109/8.504308.
 
-        '''
+        """
 
-        #[Luebbers 1996 1992]
+        # [Luebbers 1996 1992]
         # /sqrt(mu_0)s removed!
 
+        # option for unit factor here? Units will get very complicated otherwise
 
-
-        #option for unit factor here? Units will get very complicated otherwise
-
-        current_vector_1 = (((self.grid.H[px,py-1,pz,d_.X])-
-                    (self.grid.H[px,py,pz,d_.X]))*self.grid.grid_spacing)
-        current_vector_2 = (((self.grid.H[px,py,pz,d_.Y])-
-                    (self.grid.H[px-1,py,pz,d_.Y]))*self.grid.grid_spacing)
+        current_vector_1 = (
+            (self.grid.H[px, py - 1, pz, X]) - (self.grid.H[px, py, pz, X])
+        ) * self.grid.grid_spacing
+        current_vector_2 = (
+            (self.grid.H[px, py, pz, Y]) - (self.grid.H[px - 1, py, pz, Y])
+        ) * self.grid.grid_spacing
 
         current_1 = current_vector_1 + current_vector_2
         # current_1 = float(current.cpu())
 
-        current_vector_1 = (((self.grid.H[px,py-1,pz-1,d_.X])-
-                    (self.grid.H[px,py,pz-1,d_.X]))*self.grid.grid_spacing)
-        current_vector_2 += (((self.grid.H[px,py,pz-1,d_.Y])-
-                    (self.grid.H[px-1,py,pz-1,d_.Y]))*self.grid.grid_spacing)
+        current_vector_1 = (
+            (self.grid.H[px, py - 1, pz - 1, X]) - (self.grid.H[px, py, pz - 1, X])
+        ) * self.grid.grid_spacing
+        current_vector_2 += (
+            (self.grid.H[px, py, pz - 1, Y]) - (self.grid.H[px - 1, py, pz - 1, Y])
+        ) * self.grid.grid_spacing
         # current_2 = float(current_2.cpu())
         current_2 = current_vector_1 + current_vector_2
 
-        I = ((current_1+current_2) / 2.0)
+        I = (current_1 + current_2) / 2.0
 
         return I
 
     def detect_H(self):
 
-        #should detector outputs be bd.array() by default?
-        #for that matter, should they always be converted to numpy?
+        # should detector outputs be bd.array() by default?
+        # for that matter, should they always be converted to numpy?
 
         I = []
         for i, row in enumerate(self.x):
@@ -489,8 +493,4 @@ class CurrentDetector:
 
     def detector_values(self):
         """ outputs what detector detects """
-        return {'I': self.I}
-
-# def reshape
-#
-#     bd.array(grid.detectors[1].E).reshape(n,3)[:,d_.Z]
+        return {"I": self.I}

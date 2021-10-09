@@ -1,10 +1,8 @@
-from math import pi, sin, cos, sqrt
-from .typing_ import Tuple, Number, ListOrSlice, List
-from .grid import Grid, VACUUM_PERMEABILITY, VACUUM_PERMITTIVITY
+from math import sqrt
 
-# from .backend import backend as bd
+from . import constants as const
 
-'''
+"""
 Optional reduced unit conversion functions for user use.
 Mainly to make it explicit where conversions happen.
 
@@ -20,7 +18,7 @@ of simulation units equals 1 per definition".
 
 FIXME: DC: find and add md notes on scaling
 
-'''
+"""
 
 # Might perhaps be worth putting a note in the readme about default units / suggested unit systems?
 # (done, see next PR)
@@ -31,16 +29,17 @@ FIXME: DC: find and add md notes on scaling
 # don't know how severe noise is with fp32, whether it's worth the extra hassle for most people
 
 
-
 def simE_to_worldE(input):
-    return input / sqrt(VACUUM_PERMITTIVITY)
+    return input / sqrt(const.eps0)
+
 
 def worldE_to_simE(input):
-    return sqrt(VACUUM_PERMITTIVITY) * input
+    return sqrt(const.eps0) * input
 
 
 def simH_to_worldH(input):
-    return input / sqrt(VACUUM_PERMEABILITY)
+    return input / sqrt(const.mu0)
+
 
 def worldH_to_simH(input):
-    return sqrt(VACUUM_PERMEABILITY) * input
+    return sqrt(const.mu0) * input
