@@ -195,7 +195,7 @@ class AbsorbingObject(Object):
             * self.inverse_permittivity
             * self.conductivity
             * self.grid.grid_spacing
-            / const.eps0
+            * const.eta0
         )
 
     def update_E(self, curl_H):

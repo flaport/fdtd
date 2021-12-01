@@ -19,3 +19,6 @@ mu0: float = 4e-7 * pi
 
 eps0: float = 1.0 / (mu0 * c ** 2)
 """ vacuum permittivity """
+
+eta0: float = mu0 * c
+""" free space impedance """

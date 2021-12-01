@@ -566,45 +566,43 @@ class Grid:
 
 ### Lossy Medium
 
-When a material has a _electric conductivity_ σe, a conduction-current will
+When a material has a _electric conductivity_ σ, a conduction-current will
 ensure that the medium is lossy. Ampere's law with a conduction current becomes
 
 ```python
-    curl(H) = σe*E + ε*ε0*dE/dt
+    curl(H) = σ*E + ε*ε0*dE/dt
 ```
 
 Making the usual substitutions, this becomes:
 
 ```python
-    E(t+dt) - E(t) = sc*inv(ε)*curl_H(t+dt/2) - dt*inv(ε)*σe*E(t+dt/2)/ε0
+    E(t+dt) - E(t) = sc*inv(ε)*curl_H(t+dt/2) - dt*inv(ε)*σ*E(t+dt/2)/ε0
 ```
 
-This update equation depends on the electric field on a half-integer time step
-(a _magnetic field time step_). We need to make a substitution to interpolate
-the electric field to this time step:
+This update equation depends on the electric field on a half-integer time step (a
+_magnetic field time step_). We need to substitute `E(t+dt/2)=(E(t)+E(t+dt))/2` to
+interpolate the electric field to the correct time step.
 
 ```python
-    (1 + 0.5*dt*inv(ε)*σ/√ε0)*E(t+dt) = sc*inv(ε)*curl_H(t+dt/2) + (1 - 0.5*dt*inv(ε)*σe/ε0)*E(t)
+    (1 + 0.5*dt*inv(ε)*σ/√ε0)*E(t+dt) = sc*inv(ε)*curl_H(t+dt/2) + (1 - 0.5*dt*inv(ε)*σ/ε0)*E(t)
 ```
 
-Which, after substitution `σ := inv(ε)*σe/ε0` yield the new update equations:
+Which, yield the new update equations:
 
 ```python
-    f = 0.5*dt*σ
+    f = 0.5*inv(ε)*σ*sc*du/(ε0*c)
     E *= inv(1 + f) * (1 - f)
     E += inv(1 + f)*sc*inv(ε)*curl_H
 ```
 
 Note that the more complicated the permittivity tensor ε is, the more time
-consuming this algorithm will be. It is therefore sometimes the right decision
-to transfer the absorption to the magnetic domain by introducing a
+consuming this algorithm will be. It is therefore sometimes a nice hack to
+transfer the absorption to the magnetic domain by introducing a
 (_nonphysical_) magnetic conductivity, because the permeability tensor µ is
-usually just equal to one.
-
-Which, after substitution `σ := inv(µ)*σm/µ0`, we get the magnetic field update equations:
+usually just equal to one:
 
 ```python
-    f = 0.5*dt*σ
+    f = 0.5*inv(μ)*σm*sc*du/(μ0*c)
     H *= inv(1 + f) * (1 - f)
     H += inv(1 + f)*sc*inv(µ)*curl_E
 ```
@@ -665,7 +663,7 @@ Similarly, one can also keep track of the absorbed energy due to an electric
 conductivity in the following way:
 
 ```python
-    f = 0.5*dt*σ
+    f = 0.5*inv(ε)*σ*sc*du/(ε0*c)
     Enoabs = E + sc*inv(ε)*curl_H
     E *= inv(1 + f) * (1 - f)
     E += inv(1 + f)*sc*inv(ε)*curl_H
@@ -677,7 +675,7 @@ or if we want to keep track of the absorbed energy by magnetic a magnetic
 conductivity:
 
 ```python
-    f = 0.5*dt*inv(µ)*σ
+    f = 0.5*inv(μ)*σm*sc*du/(μ0*c)
     Hnoabs = E + sc*inv(µ)*curl_E
     H *= inv(1 + f) * (1 - f)
     H += inv(1 + f)*sc*inv(µ)*curl_E
@@ -687,10 +685,10 @@ conductivity:
 
 The electric term and magnetic term in the energy density are usually of the
 same size. Therefore, the same amount of energy will be absorbed by introducing
-a _magnetic conductivity_ σm as by introducing a _electric conductivity_ σe if:
+a _magnetic conductivity_ σm as by introducing a _electric conductivity_ σ if:
 
 ```python
-    inv(µ)*σm/µ0 = inv(ε)*σe/ε0
+    inv(µ)*σm/µ0 = inv(ε)*σ/ε0
 ```
 
 ### Boundary Conditions
@@ -741,8 +739,8 @@ A PML is an impedance-matched absorbing area in the grid. It turns out that
 for a impedance-matching condition to hold, the PML can only be absorbing in
 a single direction. This is what makes a PML in fact a nonphysical material.
 
-Consider Ampere's law for the `Ez` component, where the usual substitutions
-`E := √ε0*E`, `H := √µ0*H` and `σ := inv(ε)*σe/ε0` are
+Consider Ampere's law for the `Ez` component, where we use the following substitutions:
+`E := √ε0*E`, `H := √µ0*H` and `σ := inv(ε)*σ/ε0` are
 already introduced:
 
 ```python
