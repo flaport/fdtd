@@ -14,8 +14,8 @@ Y: int = 1
 Z: int = 2
 """ z-index (useful for indexing) """
 
-eps0: float = 4e-7 * pi
-""" vacuum permittivity """
-
-mu0: float = 1.0 / (eps0 * c ** 2)
+mu0: float = 4e-7 * pi
 """ vacuum permeability """
+
+eps0: float = 1.0 / (mu0 * c ** 2)
+""" vacuum permittivity """
