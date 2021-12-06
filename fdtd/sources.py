@@ -323,21 +323,23 @@ class PlaneSource:
         amplitude: float = 1.0,
         phase_shift: float = 0.0,
         name: str = None,
+        polarization: str = 'z',
     ):
-        """Create a LineSource with a gaussian profile
+        """Create a PlaneSource.
 
         Args:
             period: The period of the source. The period can be specified
                 as integer [timesteps] or as float [seconds]
             amplitude: The amplitude of the source in simulation units
             phase_shift: The phase offset of the source.
-
+            polarization: Axis of E-field polarization ('x','y',or 'z')
         """
         self.grid = None
         self.period = period
         self.amplitude = amplitude
         self.phase_shift = phase_shift
         self.name = name
+        self.polarization = polarization
 
     def _register_grid(
         self, grid: Grid, x: ListOrSlice, y: ListOrSlice, z: ListOrSlice
@@ -379,31 +381,8 @@ class PlaneSource:
         _yvec = bd.array(yvec, float)
         _zvec = bd.array(zvec, float)
 
-        print(
-            [
-                self.x.stop - self.x.start,
-                self.y.stop - self.y.start,
-                self.z.stop - self.z.start,
-            ]
-        )
-
-        if self.x.stop - self.x.start == 1:
-            profile = bd.exp(
-                -(_yvec ** 2 + _zvec ** 2)
-                / (2 * (0.5 * min(_yvec.max(), _zvec.max())) ** 2)
-            )
-        elif self.y.stop - self.y.start == 1:
-            profile = bd.exp(
-                -(_zvec ** 2 + _xvec ** 2)
-                / (2 * (0.5 * min(_zvec.max(), _xvec.max())) ** 2)
-            )
-        elif self.z.stop - self.z.start == 1:
-            profile = bd.exp(
-                -(_xvec ** 2 + _yvec ** 2)
-                / (2 * (0.5 * min(_xvec.max(), _yvec.max())) ** 2)
-            )
-
-        self.profile = self.amplitude * profile / profile.sum()
+        profile = bd.ones(_xvec.shape)
+        self.profile = self.amplitude * profile
 
     def _handle_slices(
         self, x: ListOrSlice, y: ListOrSlice, z: ListOrSlice
@@ -476,22 +455,38 @@ class PlaneSource:
                 "Use a LineSource for lower dimensional sources."
             )
 
+        self._Epol = 'xyz'.index(self.polarization)
+        if (x.stop - x.start == 1 and self.polarization == 'x') or \
+           (y.stop - y.start == 1 and self.polarization == 'y') or \
+           (z.stop - z.start == 1 and self.polarization == 'z'):
+            raise ValueError(
+                "PlaneSource cannot be polarized perpendicular to the orientation of the plane."
+            )
+        _Hpols = [(z,1,2), (z,0,2), (y,0,1)][self._Epol]
+        if _Hpols[0].stop - _Hpols[0].start == 1:
+            self._Hpol = _Hpols[1]
+        else:
+            self._Hpol = _Hpols[2]
+
         return x, y, z
 
     def update_E(self):
         """Add the source to the electric field"""
         q = self.grid.time_steps_passed
         vect = self.profile * sin(2 * pi * q / self.period + self.phase_shift)
-        self.grid.E[self.x, self.y, self.z, 2] = vect
+        self.grid.E[self.x, self.y, self.z, self._Epol] = vect
 
     def update_H(self):
         """Add the source to the magnetic field"""
+        q = self.grid.time_steps_passed
+        vect = self.profile * sin(2 * pi * q / self.period + self.phase_shift)
+        self.grid.H[self.x, self.y, self.z, self._Hpol] = vect
 
     def __repr__(self):
         return (
             f"{self.__class__.__name__}(period={self.period}, "
             f"amplitude={self.amplitude}, phase_shift={self.phase_shift}, "
-            f"name={repr(self.name)})"
+            f"name={repr(self.name)}, polarization={repr(self.polarization)})"
         )
 
     def __str__(self):
