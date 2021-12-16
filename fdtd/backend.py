@@ -40,6 +40,14 @@ backend_names = [
     dict(backends="torch.cuda.float64"),
 ]
 
+numpy_float_dtypes = {
+    getattr(numpy, "float_", numpy.float64),
+    getattr(numpy, "float16", numpy.float64),
+    getattr(numpy, "float32", numpy.float64),
+    getattr(numpy, "float64", numpy.float64),
+    getattr(numpy, "float128", numpy.float64),
+}
+
 
 # Torch Backends (and flags)
 try:
@@ -74,13 +82,7 @@ def _replace_float(func):
     @wraps(func)
     def new_func(self, *args, **kwargs):
         result = func(*args, **kwargs)
-        if result.dtype in (
-            numpy.float_,
-            numpy.float16,
-            numpy.float32,
-            numpy.float64,
-            numpy.float128,
-        ):
+        if result.dtype in numpy_float_dtypes:
             result = numpy.asarray(result, dtype=self.float)
         return result
 
