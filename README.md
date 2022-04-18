@@ -109,7 +109,7 @@ A `grid_spacing` can be given. For stability reasons, it is recommended to
 choose a grid spacing that is at least 10 times smaller than the _smallest_
 wavelength in the grid. This means that for a grid containing a source with
 wavelength `1550nm` and a material with refractive index of `3.1`, the
-recommended minimum `grid_spacing` turns out to be `50pm`
+recommended minimum `grid_spacing` turns out to be `50nm`
 
 For the `permittivity` and `permeability` floats or arrays with the following
 shapes
