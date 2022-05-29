@@ -499,7 +499,7 @@ class PlaneSource:
 
 
 class SoftArbitraryPointSource:
-    """
+    r"""
 
     A source placed at a single point (grid cell) in the grid.
     This source is special: it's both a source and a detector.
