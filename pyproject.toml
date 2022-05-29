@@ -1,6 +1,6 @@
 [build-system]
 requires = ["setuptools", "pip", "build", "wheel"]
-build_backend = "setuptools.build_meta"
+build-backend = "setuptools.build_meta"
 
 [tool.black]
 line-length = 88
