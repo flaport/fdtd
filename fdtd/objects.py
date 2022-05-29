@@ -32,7 +32,7 @@ class Object:
         """
         self.grid = None
         self.name = name
-        self.permittivity = permittivity
+        self.permittivity = bd.array(permittivity)
 
     def _register_grid(
         self, grid: Grid, x: ListOrSlice, y: ListOrSlice, z: ListOrSlice
