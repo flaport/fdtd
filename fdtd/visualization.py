@@ -199,7 +199,15 @@ def visualize(
                     if source.y.stop > source.y.start + 1
                     else slice(source.y.start, source.y.start)
                 )
-            plt.plot([_y.start, _y.stop], [_x.start, _x.stop], lw=3, color=srccolor)
+            patch = ptc.Rectangle(
+                xy=(_y.start - 0.5, _x.start - 0.5),
+                width=_y.stop - _y.start,
+                height=_x.stop - _x.start,
+                linewidth=0,
+                edgecolor="none",
+                facecolor=srccolor,
+            )
+            plt.gca().add_patch(patch)
 
     # Detector
     for detector in grid.detectors:
@@ -457,3 +465,20 @@ def plot_detection(detector_dict=None, specific_plot=None):
         plt.legend()
         plt.suptitle("Time-of-arrival plot")
     plt.show()
+
+
+#
+# def dump_to_vtk(pcb, filename, iteration, Ex_dump=False, Ey_dump=False, Ez_dump=False, Emag_dump=True, objects_dump=True, ports_dump=True):
+#     '''
+#     Extension is automatically chosen, you don't need to supply it
+#
+#     thanks
+#     https://pyscience.wordpress.com/2014/09/06/numpy-to-vtk-converting-your-numpy-arrays-to-vtk-arrays-and-files/
+#     https://bitbucket.org/pauloh/pyevtk/src/default/src/hl.py
+#
+#     Paraview needs a threshold operation to view the objects correctly.
+#
+#
+#     argument scaling_factor=None,True(epsilon and hbar), or Float, to accomodate reduced units
+#     or maybe
+#     '''

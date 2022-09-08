@@ -1,0 +1,11 @@
+[build-system]
+requires = ["setuptools", "pip", "build", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.black]
+line-length = 88
+target-version = ['py38']
+include = '\.pyi?$'
+
+[tool.pyright]
+reportPrivateImportUsage = false

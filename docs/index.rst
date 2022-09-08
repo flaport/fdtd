@@ -201,7 +201,7 @@ be added: ::
     # signature
     fdtd.LineSource(
         period: Number = 15, # timesteps or seconds
-        power: float = 1.0,
+        amplitude: float = 1.0,
         phase_shift: float = 0.0,
         name: str = None,
     )
@@ -221,7 +221,7 @@ Internally, these slices will be converted into lists to ensure this behavior: :
 
 .. code-block:: text
 
-    LineSource(period=14, power=1.0, phase_shift=0.0, name='source')
+    LineSource(period=14, amplitude=1.0, phase_shift=0.0, name='source')
         @ x=[48, ... , 51], y=[76, ... , 83], z=[0, ... , 0]
 
 Note that one could also have supplied lists to index the grid in the first
@@ -291,7 +291,7 @@ A simple summary of the grid can be shown by printing out the grid: ::
     Grid(shape=(161,97,1), grid_spacing=1.55e-07, courant_number=0.70)
 
     sources:
-        LineSource(period=14, power=1.0, phase_shift=0.0, name='source')
+        LineSource(period=14, amplitude=1.0, phase_shift=0.0, name='source')
             @ x=[48, ... , 51], y=[76, ... , 83], z=[0, ... , 0]
 
     detectors:
@@ -351,7 +351,7 @@ Let's visualize the grid. This can be done with the ``grid.visualize`` method: :
     )
 
 This method will by default visualize all objects in the grid, as well as the
-power at the current ``time_step`` at a certain ``x``, ``y`` **OR** ``z``-plane. By
+field intensity at the current ``time_step`` at a certain ``x``, ``y`` **OR** ``z``-plane. By
 setting ``show=False``, one can disable the immediate visualization of the
 matplotlib image. ::
 

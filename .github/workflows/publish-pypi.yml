@@ -1,0 +1,32 @@
+name: Publish on PyPI
+on: push
+jobs:
+  build-n-publish:
+    name: Build and Publish on PyPI
+    runs-on: ubuntu-18.04
+    steps:
+    - uses: actions/checkout@master
+    - name: Set up Python 3.8
+      uses: actions/setup-python@v1
+      with:
+        python-version: 3.8
+    - name: Install Build System
+      run: >-
+        python -m
+        pip
+        install
+        setuptools
+        pip
+        build
+        wheel
+    - name: Install PyPI/build
+      run: >-
+        python -m
+        build
+        --sdist
+        --wheel
+    - name: Publish distribution to PyPI
+      if: startsWith(github.ref, 'refs/tags')
+      uses: pypa/gh-action-pypi-publish@master
+      with:
+        password: ${{ secrets.PYPI_API_TOKEN }}

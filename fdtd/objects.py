@@ -12,11 +12,12 @@ Available Objects:
 ## Imports
 
 # typing
-from .typing import Tensorlike, ListOrSlice
+from .typing_ import Tensorlike, ListOrSlice
 
 # relative
-from .grid import Grid, VACUUM_PERMITTIVITY
+from .grid import Grid
 from .backend import backend as bd
+from . import constants as const
 
 
 ## Object
@@ -31,12 +32,12 @@ class Object:
         """
         self.grid = None
         self.name = name
-        self.permittivity = permittivity
+        self.permittivity = bd.array(permittivity)
 
     def _register_grid(
         self, grid: Grid, x: ListOrSlice, y: ListOrSlice, z: ListOrSlice
     ):
-        """ Register the object to the grid
+        """Register the object to the grid
 
         Args:
             grid: the grid to register the object into
@@ -110,7 +111,7 @@ class Object:
         raise ValueError("Invalid grid indexing used for object")
 
     def update_E(self, curl_H):
-        """ custom update equations for inside the object
+        """custom update equations for inside the object
 
         Args:
             curl_H: the curl of magnetic field in the grid.
@@ -122,7 +123,7 @@ class Object:
         )
 
     def update_H(self, curl_E):
-        """ custom update equations for inside the object
+        """custom update equations for inside the object
 
         Args:
             curl_E: the curl of electric field in the grid.
@@ -171,7 +172,7 @@ class AbsorbingObject(Object):
     def _register_grid(
         self, grid: Grid, x: slice = None, y: slice = None, z: slice = None
     ):
-        """ Register a grid to the object
+        """Register a grid to the object
 
         Args:
             grid: the grid to register the object into
@@ -180,17 +181,25 @@ class AbsorbingObject(Object):
             z: the z-location of the object in the grid
         """
         super()._register_grid(grid=grid, x=x, y=y, z=z)
+
+        conductivity = bd.asarray(self.conductivity)
+        while conductivity.ndim < self.inverse_permittivity.ndim:
+            conductivity = conductivity[..., None]
+        self.conductivity = bd.broadcast_to(
+            conductivity, self.inverse_permittivity.shape
+        )
+
         self.absorption_factor = (
             0.5
             * self.grid.courant_number
             * self.inverse_permittivity
             * self.conductivity
             * self.grid.grid_spacing
-            / VACUUM_PERMITTIVITY
+            * const.eta0
         )
 
     def update_E(self, curl_H):
-        """ custom update equations for inside the anisotropic object
+        """custom update equations for inside the absorbing object
 
         Args:
             curl_H: the curl of magnetic field in the grid.
@@ -206,7 +215,7 @@ class AbsorbingObject(Object):
         )
 
     def update_H(self, curl_E):
-        """ custom update equations for inside the anisotropic object
+        """custom update equations for inside the absorbing object
 
         Args:
             curl_E: the curl of electric field in the grid.
@@ -220,7 +229,7 @@ class AnisotropicObject(Object):
     def _register_grid(
         self, grid: Grid, x: slice = None, y: slice = None, z: slice = None
     ):
-        """ Register a grid to the object
+        """Register a grid to the object
 
         Args:
             grid: the grid to register the object into
@@ -237,7 +246,7 @@ class AnisotropicObject(Object):
         )
 
     def update_E(self, curl_H):
-        """ custom update equations for inside the anisotropic object
+        """custom update equations for inside the anisotropic object
 
         Args:
             curl_H: the curl of magnetic field in the grid.
@@ -254,7 +263,7 @@ class AnisotropicObject(Object):
         )
 
     def update_H(self, curl_E):
-        """ custom update equations for inside the anisotropic object
+        """custom update equations for inside the anisotropic object
 
         Args:
             curl_E: the curl of electric field in the grid.

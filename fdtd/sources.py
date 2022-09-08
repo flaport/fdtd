@@ -1,4 +1,4 @@
-""" Sources are objects that inject power into the grid.
+""" Sources are objects that inject the fields into the grid.
 
 Available sources:
 
@@ -9,29 +9,26 @@ Available sources:
 ## Imports
 
 # other
-from math import pi, sin, cos
+from math import pi, sin
 
 # typing
-from .typing import Tuple, Number, ListOrSlice, List
+from .typing_ import Tuple, Number, ListOrSlice, List
+from numpy import ndarray
 
 # relatvie
 from .grid import Grid
 from .backend import backend as bd
-
-
-# For Hanning window pulses
-def hanning(f, t, n):
-    return (1 / 2) * (1 - cos(f * t / n)) * (sin(f * t))
-
+from .waveforms import *
+from .detectors import CurrentDetector
 
 ## PointSource class
 class PointSource:
-    """ A source placed at a single point (grid cell) in the grid """
+    """A source placed at a single point (grid cell) in the grid"""
 
     def __init__(
         self,
         period: Number = 15,
-        power: float = 1.0,
+        amplitude: float = 1.0,
         phase_shift: float = 0.0,
         name: str = None,
         pulse: bool = False,
@@ -43,7 +40,7 @@ class PointSource:
         Args:
             period: The period of the source. The period can be specified
                 as integer [timesteps] or as float [seconds]
-            power: The power of the source
+            amplitude: The electric field amplitude in simulation units
             phase_shift: The phase offset of the source.
             name: name of the source.
             pulse: Set True to use a Hanning window pulse instead of continuous wavefunction.
@@ -53,7 +50,7 @@ class PointSource:
         """
         self.grid = None
         self.period = period
-        self.power = power
+        self.amplitude = amplitude
         self.phase_shift = phase_shift
         self.name = name
         self.pulse = pulse
@@ -91,12 +88,9 @@ class PointSource:
             raise ValueError("a point source should be placed on a single grid cell.")
         self.x, self.y, self.z = grid._handle_tuple((x, y, z))
         self.period = grid._handle_time(self.period)
-        self.amplitude = (
-            self.power * self.grid.inverse_permittivity[self.x, self.y, self.z, 2]
-        ) ** 0.5
 
     def update_E(self):
-        """ Add the source to the electric field """
+        """Add the source to the electric field"""
         q = self.grid.time_steps_passed
         # if pulse
         if self.pulse:
@@ -114,12 +108,12 @@ class PointSource:
         self.grid.E[self.x, self.y, self.z, 2] += src
 
     def update_H(self):
-        """ Add the source to the magnetic field """
+        """Add the source to the magnetic field"""
 
     def __repr__(self):
         return (
             f"{self.__class__.__name__}(period={self.period}, "
-            f"power={self.power}, phase_shift={self.phase_shift}, "
+            f"amplitude={self.amplitude}, phase_shift={self.phase_shift}, "
             f"name={repr(self.name)})"
         )
 
@@ -134,12 +128,12 @@ class PointSource:
 
 ## LineSource class
 class LineSource:
-    """ A source along a line in the FDTD grid """
+    """A source along a line in the FDTD grid"""
 
     def __init__(
         self,
         period: Number = 15,
-        power: float = 1.0,
+        amplitude: float = 1.0,
         phase_shift: float = 0.0,
         name: str = None,
         pulse: bool = False,
@@ -151,7 +145,7 @@ class LineSource:
         Args:
             period: The period of the source. The period can be specified
                 as integer [timesteps] or as float [seconds]
-            power: The power of the source
+            amplitude: The amplitude of the source in simulation units
             phase_shift: The phase offset of the source.
             pulse: Set True to use a Hanning window pulse instead of continuous wavefunction.
             cycle: cycles for Hanning window pulse.
@@ -160,7 +154,7 @@ class LineSource:
         """
         self.grid = None
         self.period = period
-        self.power = power
+        self.amplitude = amplitude
         self.phase_shift = phase_shift
         self.name = name
         self.pulse = pulse
@@ -197,9 +191,6 @@ class LineSource:
         self.x, self.y, self.z = self._handle_slices(x, y, z)
 
         self.period = grid._handle_time(self.period)
-        amplitude = (
-            self.power * self.grid.inverse_permittivity[self.x, self.y, self.z, 2]
-        ) ** 0.5
 
         L = len(self.x)
         vect = bd.array(
@@ -211,7 +202,7 @@ class LineSource:
 
         self.profile = bd.exp(-(vect ** 2) / (2 * (0.5 * vect.max()) ** 2))
         self.profile /= self.profile.sum()
-        self.profile *= amplitude
+        self.profile *= self.amplitude
 
     def _handle_slices(
         self, x: ListOrSlice, y: ListOrSlice, z: ListOrSlice
@@ -283,7 +274,7 @@ class LineSource:
         return x, y, z
 
     def update_E(self):
-        """ Add the source to the electric field """
+        """Add the source to the electric field"""
         q = self.grid.time_steps_passed
         # if pulse
         if self.pulse:
@@ -304,12 +295,12 @@ class LineSource:
             self.grid.E[x, y, z, 2] += value
 
     def update_H(self):
-        """ Add the source to the magnetic field """
+        """Add the source to the magnetic field"""
 
     def __repr__(self):
         return (
             f"{self.__class__.__name__}(period={self.period}, "
-            f"power={self.power}, phase_shift={self.phase_shift}, "
+            f"amplitude={self.amplitude}, phase_shift={self.phase_shift}, "
             f"name={repr(self.name)})"
         )
 
@@ -324,29 +315,31 @@ class LineSource:
 
 ## PlaneSource class
 class PlaneSource:
-    """ A source along a plane in the FDTD grid """
+    """A source along a plane in the FDTD grid"""
 
     def __init__(
         self,
         period: Number = 15,
-        power: float = 1.0,
+        amplitude: float = 1.0,
         phase_shift: float = 0.0,
         name: str = None,
+        polarization: str = 'z',
     ):
-        """Create a LineSource with a gaussian profile
+        """Create a PlaneSource.
 
         Args:
             period: The period of the source. The period can be specified
                 as integer [timesteps] or as float [seconds]
-            power: The power of the source
+            amplitude: The amplitude of the source in simulation units
             phase_shift: The phase offset of the source.
-
+            polarization: Axis of E-field polarization ('x','y',or 'z')
         """
         self.grid = None
         self.period = period
-        self.power = power
+        self.amplitude = amplitude
         self.phase_shift = phase_shift
         self.name = name
+        self.polarization = polarization
 
     def _register_grid(
         self, grid: Grid, x: ListOrSlice, y: ListOrSlice, z: ListOrSlice
@@ -360,7 +353,7 @@ class PlaneSource:
             z: The z-location of the source in the grid
 
         Note:
-            As its name suggests, this source is a LINE source.
+        As its name suggests, this source is a LINE source.
             Hence the source spans the diagonal of the cube
             defined by the slices in the grid.
         """
@@ -377,9 +370,6 @@ class PlaneSource:
         self.x, self.y, self.z = self._handle_slices(x, y, z)
 
         self.period = grid._handle_time(self.period)
-        amplitude = (
-            self.power * self.grid.inverse_permittivity[self.x, self.y, self.z, 2]
-        ) ** 0.5
 
         x = bd.arange(self.x.start, self.x.stop, 1) - (self.x.start + self.x.stop) // 2
         y = bd.arange(self.y.start, self.y.stop, 1) - (self.y.start + self.y.stop) // 2
@@ -391,31 +381,8 @@ class PlaneSource:
         _yvec = bd.array(yvec, float)
         _zvec = bd.array(zvec, float)
 
-        print(
-            [
-                self.x.stop - self.x.start,
-                self.y.stop - self.y.start,
-                self.z.stop - self.z.start,
-            ]
-        )
-
-        if self.x.stop - self.x.start == 1:
-            profile = bd.exp(
-                -(_yvec ** 2 + _zvec ** 2)
-                / (2 * (0.5 * min(_yvec.max(), _zvec.max())) ** 2)
-            )
-        elif self.y.stop - self.y.start == 1:
-            profile = bd.exp(
-                -(_zvec ** 2 + _xvec ** 2)
-                / (2 * (0.5 * min(_zvec.max(), _xvec.max())) ** 2)
-            )
-        elif self.z.stop - self.z.start == 1:
-            profile = bd.exp(
-                -(_xvec ** 2 + _yvec ** 2)
-                / (2 * (0.5 * min(_xvec.max(), _yvec.max())) ** 2)
-            )
-
-        self.profile = amplitude * profile / profile.sum()
+        profile = bd.ones(_xvec.shape)
+        self.profile = self.amplitude * profile
 
     def _handle_slices(
         self, x: ListOrSlice, y: ListOrSlice, z: ListOrSlice
@@ -433,14 +400,20 @@ class PlaneSource:
         """
         # ensure all slices
         if not isinstance(x, slice):
+            if isinstance(x, list):
+                (x,) = x
             x = slice(
                 self.grid._handle_distance(x), self.grid._handle_distance(x) + 1, None
             )
         if not isinstance(y, slice):
+            if isinstance(y, list):
+                (y,) = y
             y = slice(
                 self.grid._handle_distance(y), self.grid._handle_distance(y) + 1, None
             )
         if not isinstance(z, slice):
+            if isinstance(z, list):
+                (z,) = z
             z = slice(
                 self.grid._handle_distance(z), self.grid._handle_distance(z) + 1, None
             )
@@ -482,22 +455,38 @@ class PlaneSource:
                 "Use a LineSource for lower dimensional sources."
             )
 
+        self._Epol = 'xyz'.index(self.polarization)
+        if (x.stop - x.start == 1 and self.polarization == 'x') or \
+           (y.stop - y.start == 1 and self.polarization == 'y') or \
+           (z.stop - z.start == 1 and self.polarization == 'z'):
+            raise ValueError(
+                "PlaneSource cannot be polarized perpendicular to the orientation of the plane."
+            )
+        _Hpols = [(z,1,2), (z,0,2), (y,0,1)][self._Epol]
+        if _Hpols[0].stop - _Hpols[0].start == 1:
+            self._Hpol = _Hpols[1]
+        else:
+            self._Hpol = _Hpols[2]
+
         return x, y, z
 
     def update_E(self):
-        """ Add the source to the electric field """
+        """Add the source to the electric field"""
         q = self.grid.time_steps_passed
         vect = self.profile * sin(2 * pi * q / self.period + self.phase_shift)
-        self.grid.E[self.x, self.y, self.z, 2] = vect
+        self.grid.E[self.x, self.y, self.z, self._Epol] = vect
 
     def update_H(self):
-        """ Add the source to the magnetic field """
+        """Add the source to the magnetic field"""
+        q = self.grid.time_steps_passed
+        vect = self.profile * sin(2 * pi * q / self.period + self.phase_shift)
+        self.grid.H[self.x, self.y, self.z, self._Hpol] = vect
 
     def __repr__(self):
         return (
             f"{self.__class__.__name__}(period={self.period}, "
-            f"power={self.power}, phase_shift={self.phase_shift}, "
-            f"name={repr(self.name)})"
+            f"amplitude={self.amplitude}, phase_shift={self.phase_shift}, "
+            f"name={repr(self.name)}, polarization={repr(self.polarization)})"
         )
 
     def __str__(self):
@@ -505,5 +494,147 @@ class PlaneSource:
         x = f"[{self.x.start}, ... , {self.x.stop}]"
         y = f"[{self.y.start}, ... , {self.y.stop}]"
         z = f"[{self.z.start}, ... , {self.z.stop}]"
+        s += f"        @ x={x}, y={y}, z={z}\n"
+        return s
+
+
+class SoftArbitraryPointSource:
+    r"""
+
+    A source placed at a single point (grid cell) in the grid.
+    This source is special: it's both a source and a detector.
+
+    Unlike the other sources, the input is a voltage, not an electric field.
+    (really? why? should we convert back and forth?)
+
+    For electrical measurements I've only needed a single-index source,
+    so I don't know how the volume/line sources above work.
+    We want the FFT function to operate over any detector.
+    Maybe all sources should take an arbitary waveform argument?
+
+    Each index in the *waveform* array represents 1 value at a timestep.
+
+    There are many different *geometries* of "equivalent sources".
+    The detector/source paradigm used in /fdtd might perhaps not correspond to this in an ideal
+    fashion.
+
+    It's not intuitively clear to me what a "soft" source would imply in the optical case, or what
+    impedance even means for a laser.
+
+    /fdtd/ seems to have found primary use in optical circles,
+    so the default Z should probably be 0.
+
+    "Whilst established for microwaves and electrical circuits,
+    this concept has only very recently been observed in the optical domain,
+    yet is not well defined or understood."[1]
+
+    [1]: Optical impedance of metallic nano-structures, M. Mazilu and K. Dholakia
+    https://doi.org/10.1364/OE.14.007709
+
+    [2]: http://www.gwoptics.org/learn/02_Plane_waves/01_Fabry_Perot_cavity/02_Impedance_matched.php
+
+    /\/\-
+    """
+
+    def __init__(
+        self, waveform_array: ndarray, name: str = None, impedance: float = 0.0
+    ):
+        """Create
+
+
+
+        Args:
+            waveform_array
+        """
+        self.grid = None
+        self.name = name
+        self.current_detector = None
+        self.waveform_array = waveform_array
+        self.impedance = impedance
+        self.input_voltage = []  # voltage hard-imposed by the source
+        self.source_voltage = []  #
+        # "field" rather than "voltage" might be more meaningful
+        # FIXME: these voltage time histories have a different dimensionality
+
+    def _register_grid(self, grid: Grid, x: Number, y: Number, z: Number):
+        """Register a grid for the source.
+
+        Args:
+            grid: the grid to place the source into.
+            x: The x-location of the source in the grid
+            y: The y-location of the source in the grid
+            z: The z-location of the source in the grid
+
+        Note:
+            As its name suggests, this source is a POINT source.
+            Hence it should be placed at a single coordinate tuple
+            int the grid.
+        """
+        self.grid = grid
+        self.grid.sources.append(self)
+        if self.name is not None:
+            if not hasattr(grid, self.name):
+                setattr(grid, self.name, self)
+            else:
+                raise ValueError(
+                    f"The grid already has an attribute with name {self.name}"
+                )
+
+        try:
+            (x,), (y,), (z,) = x, y, z
+        except (TypeError, ValueError):
+            raise ValueError("a point source should be placed on a single grid cell.")
+        self.x, self.y, self.z = grid._handle_tuple((x, y, z))
+
+        if self.name is not None:
+            detector_name += "_I"
+        else:
+            detector_name = None
+
+        self.current_detector = CurrentDetector(name=detector_name)
+        grid[x, y, z] = self.current_detector
+
+    def update_E(self):
+
+        # It is important that this step happen between the E-field update and the
+        # H-field update.
+
+        if self.grid.time_steps_passed < self.waveform_array.shape[0]:
+            # check for off-by-one error here
+            input_voltage = self.waveform_array[self.grid.time_steps_passed]
+        else:
+            input_voltage = 0.0  # one could taper the last value off smoothly instead
+
+        if self.grid.time_steps_passed > 0:
+            current = self.current_detector.I[-1][0][0][0]
+        else:
+            current = 0.0
+
+        if self.impedance > 0:
+            source_resistive_voltage = self.impedance * current
+            output_voltage = input_voltage + source_resistive_voltage
+        else:
+            output_voltage = input_voltage
+
+        # right now, this does not compensate for the cell's permittivity!
+
+        self.grid.E[self.x, self.y, self.z, 2] += (
+            output_voltage / self.grid.grid_spacing
+        )
+
+        self.input_voltage.append([[[input_voltage]]])
+        self.source_voltage.append([[[output_voltage]]])
+
+    def update_H(self):
+        pass
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}()"
+
+    def __str__(self):
+        s = "    " + repr(self) + "\n"
+        x = f"{self.x}"
+        y = f"{self.y}"
+        z = f"{self.z}"
         s += f"        @ x={x}, y={y}, z={z}\n"
         return s
