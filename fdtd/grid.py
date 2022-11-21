@@ -140,13 +140,13 @@ class Grid:
 
         if bd.is_array(permittivity) and len(permittivity.shape) == 3:
             permittivity = permittivity[:, :, :, None]
-        self.inverse_permittivity = bd.ones((self.Nx, self.Ny, self.Nz, 3)) / float(
+        self.inverse_permittivity = bd.ones((self.Nx, self.Ny, self.Nz, 3)) / bd.float(
             permittivity
         )
 
         if bd.is_array(permeability) and len(permeability.shape) == 3:
             permeability = permeability[:, :, :, None]
-        self.inverse_permeability = bd.ones((self.Nx, self.Ny, self.Nz, 3)) / float(
+        self.inverse_permeability = bd.ones((self.Nx, self.Ny, self.Nz, 3)) / bd.float(
             permeability
         )
 
