@@ -380,13 +380,13 @@ def set_backend(name: str):
         )
 
     if name.count(".") == 0:
-        device, dtype = "cpu", "float64"
+        dtype, device = "float64", "cpu"
     elif name.count(".") == 1:
         name, dtype = name.split(".")
         if dtype == "cuda":
             device, dtype = "cuda", "float64"
         else:
-            device, dtype = "cpu", "float64"
+            device = "cpu"
     elif name.count(".") == 2:
         name, device, dtype = name.split(".")
     else:
@@ -407,14 +407,10 @@ def set_backend(name: str):
     elif name == "torch":
         if device == "cpu":
             backend.__class__ = TorchBackend
-            backend.float = lambda valueToCast : torch.tensor(valueToCast,
-                                                              dtype=getattr(torch, dtype),
-                                                              device=device)
+            backend.float = getattr(torch, dtype)
         elif device == "cuda":
             backend.__class__ = TorchCudaBackend
-            backend.float = lambda valueToCast : torch.tensor(valueToCast,
-                                                              dtype=getattr(torch, dtype),
-                                                              device=device)
+            backend.float = getattr(torch, dtype)
         else:
             raise ValueError(
                 "Unknown device '{device}'. Available devices: 'cpu', 'cuda'"
