@@ -167,7 +167,7 @@ class AbsorbingObject(Object):
             name: name of the object (will become available as attribute to the grid)
         """
         super().__init__(permittivity, name)
-        self.conductivity = conductivity
+        self.conductivity = bd.array(conductivity)
 
     def _register_grid(
         self, grid: Grid, x: slice = None, y: slice = None, z: slice = None
