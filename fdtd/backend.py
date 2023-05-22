@@ -99,6 +99,9 @@ class NumpyBackend(Backend):
 
     float = numpy.float64
     """ floating type for array """
+    
+    complex = numpy.complex128
+    """ complex type for array """
 
     # methods
     asarray = _replace_float(numpy.asarray)
@@ -200,6 +203,12 @@ if TORCH_AVAILABLE:
 
         float = torch.get_default_dtype()
         """ floating type for array """
+
+        if float is torch.float32:
+            complex = torch.complex64
+        else:
+            complex = torch.complex128
+        """ complex type for array """
 
         # methods
         asarray = staticmethod(torch.as_tensor)
