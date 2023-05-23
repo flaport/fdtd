@@ -47,6 +47,10 @@ class Object:
         """
         self.grid = grid
         self.grid.objects.append(self)
+
+        if self.permittivity.dtype is bd.complex().dtype:
+            self.grid.promote_dtypes_to_complex()
+
         if self.name is not None:
             if not hasattr(grid, self.name):
                 setattr(grid, self.name, self)
@@ -66,7 +70,7 @@ class Object:
         if bd.is_array(self.permittivity) and len(self.permittivity.shape) == 3:
             self.permittivity = self.permittivity[:, :, :, None]
         self.inverse_permittivity = (
-            bd.ones((self.Nx, self.Ny, self.Nz, 3)) / self.permittivity
+            bd.ones((self.Nx, self.Ny, self.Nz, 3),dtype=self.permittivity.dtype) / self.permittivity
         )
 
         # set the permittivity values of the object at its border to be equal
@@ -118,9 +122,10 @@ class Object:
 
         """
         loc = (self.x, self.y, self.z)
-        self.grid.E[loc] += (
+
+        self.grid.E[loc] = self.grid.E[loc] +(
             self.grid.courant_number * self.inverse_permittivity * curl_H[loc]
-        )
+            )
 
     def update_H(self, curl_E):
         """custom update equations for inside the object
@@ -129,6 +134,9 @@ class Object:
             curl_E: the curl of electric field in the grid.
 
         """
+    # def promote_dtypes_to_complex(self):
+    #     self.E = self.E.astype(bd.complex)
+    #     self.H = self.H.astype(bd.complex)
 
     def __repr__(self):
         return f"{self.__class__.__name__}(name={repr(self.name)})"

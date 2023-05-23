@@ -103,6 +103,17 @@ class Boundary:
         Note:
             this method is called *after* the grid fields are updated
         """
+    def promote_dtypes_to_complex(self):
+        self.phi_E = bd.complex(self.phi_E)
+        self.phi_H = bd.complex(self.phi_H)
+
+        self.psi_Ex = bd.complex(self.psi_Ex)
+        self.psi_Ey = bd.complex(self.psi_Ey)
+        self.psi_Ez = bd.complex(self.psi_Ez)
+        
+        self.psi_Hx = bd.complex(self.psi_Hx)
+        self.psi_Hy = bd.complex(self.psi_Hy)
+        self.psi_Hz = bd.complex(self.psi_Hz)
 
     def __repr__(self):
         return f"PML(name={repr(self.name)})"
