@@ -5,6 +5,9 @@ from math import pi
 c: float = 299792458.0
 """ speed of light """
 
+k: float = c*c
+""" quantum circulation constant (8.987551787368176e+16)"""
+
 X: int = 0
 """ x-index (useful for indexing) """
 
