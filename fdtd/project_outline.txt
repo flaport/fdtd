@@ -1,0 +1,92 @@
+
+
+The goal of the project is to make a simumulator new superfluid equations, which have similarities with both Maxwell's equations as 
+well as Navier-Stokes.
+
+The idea is to refactor an existing FDTD project, which was written for Maxwell's equations, by replacing Maxwell's equations with the new ones.
+
+Since the grid is one of the most important parts of the simulator, I started refactoring the existing Grid class in a new class named LGrid.
+
+
+
+
+### Maxwell equations
+
+An electromagnetic FDTD solver solves the time-dependent Maxwell Equations
+
+```python
+    curl(H) = ε*ε0*dE/dt
+    curl(E) = -µ*µ0*dH/dt
+```
+
+These two equations are called _Ampere's Law_ and _Faraday's Law_ respectively.
+
+In these equations, ε and µ are the relative permittivity and permeability
+tensors respectively. ε0 and µ0 are the vacuum permittivity and permeability
+and their square root can be absorbed into E and H respectively, such that `E := √ε0*E` and `H := √µ0*H`.
+
+Doing this, the Maxwell equations can be written as update equations:
+
+```python
+    E  += c*dt*inv(ε)*curl(H)
+    H  -= c*dt*inv(µ)*curl(E)
+```
+
+The electric and magnetic field can then be discretized on a grid with interlaced Yee-coordinates.
+
+### New superfluid equations
+
+The new equations build opon the vector Laplace operator del, the second spatial derivative in 3D, given by:
+
+```python
+    del(F) = grad(div(F)) + curl(curl(F))
+```
+
+With this operator, we can define the time derivative of any given vector field [F] within the superfluid by:
+
+d[F]/dt = -k del([F]),
+
+with k the quantum circulation constant of the superfluid, given by k = h/m, 
+with h planck's constant and m the mass of a molecule of the superfluid.
+
+This way, we can write an update equation for any given vector field [F] within the superfluid by:
+
+```python
+    F -= k*del(F)*dt
+```
+
+We can apply this to a superfluid by working with the flow velocity field [v] and define the update equation:
+
+```python
+    v -= k*del(v)*dt
+```
+
+However, in order to have access to the intermediate results, we define intermediate fields by writing out the definition of del:
+
+```python
+    C = k*rho*v
+    P = div(C)
+    A = curl(C)
+    L = grad(P)
+    R = curl(A)
+    F = R + L
+```
+
+with rho the mass density in [kg/m^3] and F force density in [N/m^3]
+
+the update eqiaton then becomes:
+
+```python
+    v -= inv(rho)*F 
+```
+
+Please suggest an implementation of the Grid class.
+
+
+
+
+
+
+
+
+

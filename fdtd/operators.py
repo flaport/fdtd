@@ -95,63 +95,8 @@ specific fields on specific locations on the grid, we will have to make a
 distinction between the two curl operators and redefine our vector laplace
 operator as:
 
-delta[F] = grad(div(F)) - curl_point(curl_surface(F))
-
-where curl_point and curl_surface are the curl operators for the left and right hand sides
-of the equation, respectively.
-
-l4m4re: Would it be correct to consider the two curl operators to be left and
-right handed, and if yes, please explain?
-
-GitHub Copilot: Yes, it would be correct to consider the two curl operators to
-be left and right handed. In the context of the code you provided, the
-left-handed curl operator `curl_point` is used to calculate the curl of the electric
-field, while the right-handed curl operator `curl_surface` is used to calculate the
-curl of the magnetic field. 
-
-The distinction between left-handed and right-handed curl operators arises from
-the fact that the curl of a vector field is a vector that is perpendicular to
-the plane of the original vector field. The direction of this vector is
-determined by the right-hand rule, which states that if you curl the fingers of
-your right hand in the direction of the vector field, then your thumb points in
-the direction of the curl vector. 
-
-However, in some cases, it may be more convenient to use a left-handed
-coordinate system instead of a right-handed one. In a left-handed coordinate
-system, the direction of the curl vector is determined by the left-hand rule,
-which is the same as the right-hand rule but with the left hand. 
-
-In the context of the code you provided, the left-handed curl operator `curl_point`
-is used to calculate the curl of the electric field because the electric field
-is located on the edges of the grid cells, which corresponds to a left-handed
-coordinate system. On the other hand, the right-handed curl operator `curl_surface` is
-used to calculate the curl of the magnetic field because the magnetic field is
-located on the faces of the grid cells, which corresponds to a right-handed
-coordinate system.
-
-
-Note that we have two possibilities for the the definition of the vector
-laplacian:
-
-    delta[F] = grad(div(F)) - curl_point(curl_surface(F))
-
     delta[F] = grad(div(F)) - curl_surface(curl_point(F))
 
-This is because the curl operator is not commutative, meaning that:
-    
-        curl_point(curl_surface(F)) != curl_surface(curl_point(F))  
-        
-However, for our Universe, it has been found that the cummuative order of
-application of the curl operators along Maxwell's equations provides good
-predictions for the electromagnetic fields, so the order of the curl_E and
-curl_H functions should be maintained and therefore this definition of the
-vector laplacia is the correct one:
-    
-        delta[F] = grad(div(F)) - curl_point(curl_surface(F)) 
-        
-And, since in the current implementation of delta(F) we use the curl_E and
-curl_H functions, we should use the curl_point(curl_surface(F)) definition of the vector
-laplacian.   
 
 '''
 
