@@ -75,21 +75,6 @@ class Backend:
     def __repr__(self):
         return self.__class__.__name__
 
-    @staticmethod
-    def is_complex(x):
-        """check if an object is a `ComplexFloat`"""
-        import torch
-        import numpy as np
-
-        return (
-            isinstance(x, complex)
-            or (isinstance(x, np.ndarray) and x.dtype in (np.complex64, np.complex128))
-            or (
-                isinstance(x, torch.Tensor)
-                and x.dtype in (torch.complex64, torch.complex128)
-            )
-        )
-
 
 def _replace_float(func):
     """replace the default dtype a function is called with"""
@@ -203,6 +188,15 @@ class NumpyBackend(Backend):
     # or maybe "check_numpy" ?
     numpy = _replace_float(numpy.asarray)
     """ convert the array to numpy array """
+
+    @staticmethod
+    def is_complex(x):
+        """check if an object is a `ComplexFloat`"""
+
+        return isinstance(x, complex) or (
+            isinstance(x, numpy.ndarray)
+            and x.dtype in (numpy.complex64, numpy.complex128)
+        )
 
 
 # Torch Backend
