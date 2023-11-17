@@ -75,8 +75,12 @@ class Backend:
     def __repr__(self):
         return self.__class__.__name__
 
+    @staticmethod
     def is_complex(x):
         """check if an object is a `ComplexFloat`"""
+        import torch
+        import numpy as np
+
         return (
             isinstance(x, complex)
             or (isinstance(x, np.ndarray) and x.dtype in (np.complex64, np.complex128))
