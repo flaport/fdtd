@@ -75,6 +75,17 @@ class Backend:
     def __repr__(self):
         return self.__class__.__name__
 
+    def is_complex(x):
+        """check if an object is a `ComplexFloat`"""
+        return (
+            isinstance(x, complex)
+            or (isinstance(x, np.ndarray) and x.dtype in (np.complex64, np.complex128))
+            or (
+                isinstance(x, torch.Tensor)
+                and x.dtype in (torch.complex64, torch.complex128)
+            )
+        )
+
 
 def _replace_float(func):
     """replace the default dtype a function is called with"""
@@ -99,7 +110,7 @@ class NumpyBackend(Backend):
 
     float = numpy.float64
     """ floating type for array """
-    
+
     complex = numpy.complex128
     """ complex type for array """
 
@@ -304,6 +315,8 @@ if TORCH_AVAILABLE:
                 return arr.numpy()
             else:
                 return numpy.asarray(arr)
+
+        is_complex = staticmethod(torch.is_complex)
 
     # Torch Cuda Backend
     if TORCH_CUDA_AVAILABLE:

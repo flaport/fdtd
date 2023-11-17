@@ -1,10 +1,15 @@
 repos:
-  - repo: https://github.com/psf/black
-    rev: 20.8b1
-    hooks:
-      - id: black
-        language_version: python3
-  - repo: https://github.com/kynan/nbstripout
-    rev: 0.3.9
-    hooks:
-      - id: nbstripout
+- repo: https://github.com/kynan/nbstripout
+  rev: 0.6.0
+  hooks:
+    - id: nbstripout
+- repo: https://github.com/psf/black-pre-commit-mirror
+  rev: 23.9.1
+  hooks:
+    - id: black
+      language_version: python3.11
+- repo: https://github.com/psf/black-pre-commit-mirror
+  rev: 23.9.1
+  hooks:
+    - id: black-jupyter
+      language_version: python3.11
