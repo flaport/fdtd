@@ -494,12 +494,21 @@ class Grid:
 
         Parameters: None
         """
+        def _numpyfy(item):
+            if isinstance(item, list):
+                return [_numpyfy(el) for el in item]
+            elif bd.is_array(item):
+                return bd.numpy(item)
+            else:
+                return item
+                
         if self.folder is None:
             raise Exception(
                 "Save location not initialized. Please read about 'fdtd.Grid.saveSimulation()' or try running 'grid.saveSimulation()'."
             )
         dic = {}
         for detector in self.detectors:
-            dic[detector.name + " (E)"] = [x for x in detector.detector_values()["E"]]
-            dic[detector.name + " (H)"] = [x for x in detector.detector_values()["H"]]
+            values = detector.detector_values()
+            dic[detector.name + " (E)"] = _numpyfy(values['E'])
+            dic[detector.name + " (H)"] = _numpyfy(values['H'])
         savez(path.join(self.folder, "detector_readings"), **dic)
