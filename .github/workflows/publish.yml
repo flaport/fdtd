@@ -40,14 +40,14 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            dist/fdtd-0.3.5.tar.gz
-            dist/fdtd-0.3.5-py3-none-any.whl
+            dist/fdtd-0.3.6.tar.gz
+            dist/fdtd-0.3.6-py3-none-any.whl
       - name: Publish to PyPI
         run: |
           pip install --user twine \
           && twine upload \
-            dist/fdtd-0.3.5.tar.gz \
-            dist/fdtd-0.3.5-py3-none-any.whl \
+            dist/fdtd-0.3.6.tar.gz \
+            dist/fdtd-0.3.6-py3-none-any.whl \
           --username __token__ \
           --password ${{ secrets.PYPI_API_TOKEN }}
 
