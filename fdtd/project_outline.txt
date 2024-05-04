@@ -42,32 +42,39 @@ The new equations build opon the vector Laplace operator del, the second spatial
     del(F) = grad(div(F)) + curl(curl(F))
 ```
 
-With this operator, we can define the time derivative of any given vector field [F] within the superfluid by:
+With this operator, we can define the time derivative of any given vector field
+[F] within the superfluid by:
 
 d[F]/dt = -k del([F]),
 
 with k the quantum circulation constant of the superfluid, given by k = h/m, 
 with h planck's constant and m the mass of a molecule of the superfluid.
 
-This way, we can write an update equation for any given vector field [F] within the superfluid by:
+This way, we can write an update equation for any given vector field [F] within
+the superfluid by:
 
 ```python
-    F -= k*del(F)*dt
+    F += k*ndel(F)*dt,
+
+    with ndel the negative of the vector Laplace operator.
 ```
 
-We can apply this to a superfluid by working with the flow velocity field [v] and define the update equation:
+We can apply this to a superfluid by working with the flow velocity field [v]
+and define the update equation:
 
 ```python
-    v -= k*del(v)*dt
+    v += k*ndel(v)*dt
 ```
 
-However, in order to have access to the intermediate results, we define intermediate fields by writing out the definition of del:
+However, in order to have access to the intermediate results, we define
+intermediate fields by writing out the definition of ndel, wherein we take the
+negative of the gradient:
 
 ```python
     C = k*rho*v
-    P = div(C)
+    p = div(C)
     A = curl(C)
-    L = grad(P)
+    L = - grad(p)
     R = curl(A)
     F = R + L
 ```

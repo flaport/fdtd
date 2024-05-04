@@ -963,6 +963,24 @@ def curl_surface(F: Tensorlike) -> Tensorlike:
 
     return curl
 
+'''
+
+Note that curl_surface can only work on curl_point, so
+we can define a curl_curl bij
+
+curl_curl(F) = curl_surface(curl_point(F))
+
+In other words: curl_surface is ALWAYS the curl of the curl!
+
+Thus, both operators MUST be applied in this particular manner.
+
+
+
+'''
+
+
+
+
 
 '''
 We can then compute `curl_surface(curl_point(v))` for a point vector field `v`
@@ -1012,6 +1030,29 @@ def div(vf: Tensorlike) -> Tensorlike:
     The resulting value is not located on one of the faces of the cube, but
     rather at the center of the cube, which is a point in space represented by
     an integer grid point in a staggered Yee grid.
+    
+    
+    Note that the resulting field is a scalar field, as the divergence is a
+    scalar quantity that represents the rate at which a vector field expands or
+    contracts at a given point in space. This does not have a direction, but is
+    rather a quantity. 
+    
+    This yields the question of how we shouldt interpret Maxwells equation for
+    ampere's law:
+    
+    curl E = -dB/dt.
+    
+    and:
+    
+    E = - grad Phi - d[A]/dt.
+    
+    
+         
+    
+    
+    
+    
+    
     
     GitHub Copilot: The `div` function computes the divergence of a velocity
     field `vf` located on the faces of the grid cells. The input velocity field
@@ -1240,6 +1281,7 @@ def delta_C(C: Tensorlike) -> Tensorlike:
     d_C = L - R # Delta C, the vector laplace operator of C in [N/m^3]
     
     return d_C # net force density in [N/m^3].
+
 
 
 

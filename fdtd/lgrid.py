@@ -18,15 +18,15 @@ operators used and the update functions for the fields.
 
 Once these are working and tested, the next step is to implement the sources,
 boundaries, detectors and objects. These will have to be adapted from their
-electromagnetic counterparts to the new theory and have to be consistend with a
+electromagnetic counterparts to the new theory and have to be consistent with a
 staggered Yee grid.
 
 The new theory is based on the vector LaPlace operator and the discovery of the
 quantum circulation constant k, with a value equal to c*c but a unit of
-measurement in [m/s^2]. This is a new constant of nature and represents the
+measurement in [m^2/s]. This is a new constant of nature and represents the
 quantum circulation constant, kinematic viscocity or diffusivity of the medium:
 
-    k = c*c = 8.987551787368176e+16 [m/s^2].
+    k = c*c = 8.987551787368176e+16 [m^2/s].
 
 The fundamental equation of the new theory is the definition of the time
 derivative of any given vector field within the superfluid medium:
@@ -46,7 +46,7 @@ scientific breakthroughs of the 21st century, because there simply is no
 argument to be made against such a simple and straightforward application of the
 vector Laplacian using only one single Universal constant: k.
 
-The vector LaPlace operator is commonly defined as follows:
+The vector LaPlace operator is defined as follows:
 
     delta(F) = grad(div(F)) - curl(curl(F)),
     
@@ -57,26 +57,37 @@ actually has to be split into two separate operators, one for the left handed
 curl and one for the right handed curl, so we redefine the vector LaPlace as
 follows:
     
-    delta(F) = grad(div(F)) - curl_l(curl_r(F)),
+    delta(F) = grad(div(F)) - curl_surface(curl_point(F)),
         
-where curl_l is the left handed curl operator and curl_r is the right handed
-curl operator.  
+where curl_surface is the surface field curl operator and curl_point is the
+point field curl operator.  
+
+According to the Yee discretization algorithm, there are inherently two types of
+fields on the grid: `E`-type point fields on integer grid locations and `H`-type
+surface fields on half-integer grid locations.
+
+The beauty of these interlaced coordinates is that they enable a very natural
+way of writing the curl of the electric and magnetic fields: the curl of an
+H-type surface field will be an E-type point field and vice versa.
+
+
 
 This definitiion can be negated:
 
-    - delta(F) = - grad(div(F)) + curl_l(curl_r(F)),
+    - delta(F) = - grad(div(F)) + curl_surface(curl_point(F)),
 
 And thus we can compute the time derivative of any given vector field F along:
 
-    dF/dt = -k * delta(F) = -k * grad(div(F)) + k * curl_l(curl_r(F)),
+    dF/dt = -k * delta(F) = -k * grad(div(F)) + k * curl_surface(curl_point(F)),
 
 or:
 
-    dF/dt = -k * delta(F) = k ( -grad(div(F)) + curl_l(curl_r(F)) ),
+    dF/dt = -k * delta(F) = k ( -grad(div(F)) + curl_surface(curl_point(F)) ),
 
 which can be rewritten to an update equation for F:
 
-    F += -k * delta(F) * dt = k ( -grad(div(F)) + curl_l(curl_r(F)) ) * dt,
+    F += -k * delta(F) * dt = k ( -grad(div(F)) + curl_surface(curl_point(F)) )
+    * dt,
     
 with dt the time step of the simulation.
 
@@ -85,7 +96,8 @@ fields within one consistent framework. The most simple field to define is the
 flow velocity vector field v, so we can compute it's time derivate, the
 acceleration vector field a, as follows:
 
-    a = dv/dt = -k * delta(v) = k ( -grad(div(v)) + curl_l(curl_r(v)) ).
+    a = dv/dt = -k * delta(v) = k ( -grad(div(v)) + curl_surface(curl_point(v))
+    ).
 
 This is known as the velocity diffusion equation and is the fundamental equation
 of fluid dynamics.
@@ -94,20 +106,21 @@ And, by applying Newton's F=ma, we can define the 3D force density vector field
 F as follows:
 
     F = rho * a = -k * rho * delta(v) = k * rho * (-grad(div(v)) +
-    curl_l(curl_r(v)) ).
+    curl_surface(curl_point(v)) ).
     
 One of the big benefits of the the fundamental equation of the new theory,
 defining the time derivative of any given vector field F, is that we can now
 apply this equation to the acceleration vector field a to compute the time
 derivative of a, the jerk vector field j:
 
-    j = da/dt = -k * delta(a) = k ( -grad(div(a)) + curl_l(curl_r(a)) ).
+    j = da/dt = -k * delta(a) = k ( -grad(div(a)) + curl_surface(curl_point(a))
+    ).
     
 And, by applying Y=mj, with Yank the time derivative of Force, we van the 3D
 yank density vector field Y as follows:  
     
     Y = rho * j = -k * rho * delta(a) = k * rho * (-grad(div(a)) +
-    curl_l(curl_r(a)) ).
+    curl_surface(curl_point(a)) ).
             
 Thus, we come to a higher order model incorporating not only acceleration and
 force density vector fields, but also their time derivatives: the jerk and yank
@@ -143,7 +156,7 @@ or a fluid accurately.
 Now let's consider the negated definition of the vector LaPlace operator for a
 field C:
 
-   - delta(C) = - grad(div(C)) + curl_l(curl_r(C)),
+   - delta(C) = - grad(div(C)) + curl_surface(curl_point(C)),
 
 with C = rho * k * v, resulting in a unit of measurement of:
 
@@ -163,11 +176,11 @@ order equation, unlike Maxwell's:
 
     phi = div(C) 
     
-    A   = curl_r(C)
+    A   = curl_point(C)
     
     E  = -grad(phi) 
     
-    B  =  curl_l(A)
+    B  =  curl_surface(A)
 
 And because of vector identities we can also write:    
 
@@ -229,7 +242,65 @@ we obtain the Maxwell-Faraday equation, representing Faraday's law of induction:
 Faraday's law of induction is a basic law of electromagnetism predicting how a
 magnetic field will interact with an electric circuit to produce an
 electromotive force (EMF), which is thus a law that applies at the macroscopic
-level. Because of the inconsistencies in Maxwell's equations with respect to the
+level. 
+
+'''
+'''
+
+An interesting detail is how the fields can be characterizeed in a descretized
+version of Maxwell's equations, as can be read further down in this document:
+
+"In electrodynamics, the electric field is located on the edges of the grid
+cells, while the magnetic field is located on the faces of the grid cells. This
+is because the electric field is a vector field that is defined at a point in
+space, while the magnetic field is a vector field that is defined over an area."
+
+
+This illustrates that geometry with respect to definition of our operators
+matters, and since this is correctly implemented in the discretized alrogirims
+in this simulator, we should realize that the infenitesimal fields can also
+be fundamentally distinguished by fields defined at a point in space and fields
+defined over an area.
+
+phi is a point field, while A is a surface field, and E is a point field, while
+B is a surface field. This is a very important distinction, because it reveals
+that the electric and magnetic fields are fundamentally different types of
+vector fields. 
+
+Based on this, what can we conclude about this equation because of the mixture of
+point fields defined at a point in space and surface fields defined over an area?
+
+  curl(E) = -dB/dt.
+  
+@copilot: What are the rules with regards to addition of point and surface fields
+and what does this mean for this equation?
+
+GitHub Copilot: In a staggered Yee grid, the fields are located at either integer
+or half-integer grid points, whereby the integer grid points represent vector
+fields defined at a point in space, while the half-integer grid points represent
+vector fields defined over an area. This means that the electric field E is
+located at integer grid points and the magnetic field B is located at
+half-integer grid points.
+
+In the equation curl(E) = -dB/dt, the curl of the electric field E is a point
+field located at integer grid points, while the time derivative of the magnetic
+field B is a surface field located at half-integer grid points. This means that
+the two fields are defined at different locations on the grid, which is why the
+equation is not mathematically consistent.
+
+l4m4re: So, what can we conclude from this?
+
+GitHub Copilot: The equation curl(E) = -dB/dt is not mathematically consistent
+because it mixes point fields defined at a point in space with surface fields
+defined over an area. In order to make the equation mathematically consistent,
+the fields should be defined at the same location on the grid. 
+
+
+'''
+'''
+
+
+Because of the inconsistencies in Maxwell's equations with respect to the
 fundamental theorem of vector calculus, it is now clear that this entanglement
 of the fundamental E and B fields in Maxwell's equations is responsible for a
 lot of problems in current main stream physics, for starters the non-invariance
@@ -297,12 +368,12 @@ equations that leaves room for "gauge freedom" on top of which a whole set of
 Note that because of the vector identity curl(grad(p))=0, addition of a vector
 field whose curl vanishes to the vector potential has no effect whatsoever on
 the resulting field, which begs the question of why the addition of a vector
-field that has no effect on the resulting field, is supposed to describe
+field that has no effect on the resulting field, is supposed to descri`be
 something that has any relevance to the real world at all.
 
 Or, to put it another way: how exactly is the Standard Model, which is a gauge
 theory and therefore uses fields that have no effect on the resulting physical
-fields, is supposed to have any relevance to the real world at all?
+fields, supposed to have any relevance to the real world at all?
 
 Thus, we can conclude that Maxwell's rather strange entanglement of the electric
 and magnetic fields has led to a lot of problems in physics, to such an extent
@@ -320,7 +391,7 @@ with different symbols.
 So let's consider the negated definition of the vector LaPlace operator for a
 field C again:
 
-   - delta(C) = - grad(div(C)) + curl_l(curl_r(C)),
+   - delta(C) = - grad(div(C)) + curl_surface(curl_point(C)),
 
 with C = rho * k * v, resulting in a unit of measurement of:
 
@@ -331,11 +402,11 @@ with completely different meanings and units of measurements:
 
     p = div(C) 
     
-    A = curl_r(C)
+    A = curl_point(C)
     
     L = -grad(p) 
     
-    R = curl_l(A)
+    R = curl_surface(A)
 
 And because of vector identities we can also write:    
 
@@ -367,11 +438,11 @@ fundamental theorem of vector calculus, unlike Maxwell's equations.
 Now let's consider the negated definition of the vector LaPlace operator for a
 field I:
 
-   - delta(I) = - grad(div(I)) + curl_l(curl_r(I)),
+   - delta(I) = - grad(div(I)) + curl_surface(curl_point(I)),
 
 with I = rho * k * a, resulting in a unit of measurement of:
 
-    [C] = [rho] * [k] * [a] = [kg/m^3] * [m^2/s] * [m/s^2] = [kg/s^3].
+    [I] = [rho] * [k] * [a] = [kg/m^3] * [m^2/s] * [m/s^2] = [kg/s^3].
 
 Thus, I represents the Intensity or radiosity field in [kg/s^3], [N/m-s],
 [J/m^2-s], [Pa-m/s] or [W/m^2].
@@ -380,11 +451,11 @@ From this, we can write out intermediate fields:
 
     t   = div(I) 
     
-    W   = curl_r(I)
+    W   = curl_point(I)
     
     Y_l = -grad(t) 
     
-    Y_a = curl_l(W)
+    Y_a = curl_surface(W)
 
 And because of vector identities we can also write:    
 
@@ -425,17 +496,24 @@ field W. However, the unit of measurment of J would be [A/m^3], which would in
 our theory be equal to [kg/s-m^3]. 
 
 eta = 1/mu = 1/4*pi*1e-7 = 8.987551787368176e+16 [kg/m-s2] rho = eta/k =
-8.987551787368176e+16 / 8.987551787368176e+16 = 1 [kg/m3]
+8.987551787368176e+16 [kg/m3]
+
+W in [kg/m-s^3] or [Pa/s] = [W/m^3] = [N/m^2-s] J in [kg/m^3-s] or [A/m^3]
+
+J = W / c^2 ??
+
+Dimensons match:
+
+[kg/m^3-s]  = [kg/m-s^3] / [m^2/s^2] 
+
+            = [kg/m-s^3] * [s^2/m^2] 
+
+            = [kg/m^3-s^3] * [s^2] 
+            
+            = [kg/m^3-s] 
 
 
-W in [kg/m-s^3] or [Pa/s] = [W/m^3] = [N/m^2-s] J in [kg/s-m^3] or [A]
 
- [kg/s-m^3]  = X [kg/m-s^3]
- 
- [m^2]  = X [/s^2]
- 
- x = [m^2-s^2]
- 
  
  
 So far, we have made a number of references to superfluids, without explaining
@@ -665,12 +743,12 @@ points in a staggered Yee grid, the resulting vector field is located at an
 integer grid point as is the input scalar field.
 
 For the curl operator, we found that we needed two different curl operators,
-namely the left and right curl operators. The curl operator is defined as the
+namely the point and surface curl operators. The curl operator is defined as the
 line integral of the tangential component of the vector field over a closed path
 around some point in space, divided by the area enclosed by the path along
 Stokes' theorem, resulting in a unit of per meter [1/m] for the operator. And
 since this line integral can be computed clockwise or counter-clockwise, we
-obtain the left and right curl operators needed in the implementation of the
+obtain the point and surface curl operators needed in the implementation of the
 staggered Yee grid.
 
 
@@ -681,7 +759,7 @@ in the finite difference implementation of the gradient and curl operators, as
 the difference of the scalar field can be computed between six points at a
 certain distance from the point along the three coordinate axes (+ and -).
 
-Similarly, the left and right curl operators can be computed by taking the
+Similarly, the point and surface curl operators can be computed by taking the
 difference of the vector field components at neigboring faces along the three
 coordinate axes (+ and -). Since the grid spacing is constant, the resulting
 value is simply the difference between the vector field components at the two
@@ -845,7 +923,7 @@ from .backend import backend as bd
 from . import constants as const
 
 #import operators:
-from .operators import curl_l, curl_r, grad, div
+from .operators import curl_surface, curl_point, grad, div
 
 
 
@@ -1101,20 +1179,20 @@ class LGrid:
         # the faces of the grid and thus be a H-type field.
         
         self.p      = div (self.C)
-        self.A      = curl_l(self.C)
+        self.A      = curl_surface(self.C)
         
         self.L      = - grad(self.P)
-        self.R      = curl_r(self.A)
+        self.R      = curl_point(self.A)
         
         self.F      = self.L + self.R
         
         self.I      = self.k * self.F
         
         self.t      = div(self.I)
-        self.W      = curl_l(self.I)
+        self.W      = curl_surface(self.I)
         
         self.Y_l    = -grad(self.t)
-        self.Y_a    = curl_r(self.W)
+        self.Y_a    = curl_point(self.W)
         
         self.Y      = self.Y_l + self.Y_r
     
