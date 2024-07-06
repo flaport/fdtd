@@ -22,7 +22,7 @@ from . import constants as const
 
 ## Object
 class Object:
-    """ An object to place in the grid """
+    """An object to place in the grid"""
 
     def __init__(self, permittivity: Tensorlike, name: str = None):
         """
@@ -47,6 +47,10 @@ class Object:
         """
         self.grid = grid
         self.grid.objects.append(self)
+
+        if bd.is_complex(self.permittivity):
+            self.grid.promote_dtypes_to_complex()
+
         if self.name is not None:
             if not hasattr(grid, self.name):
                 setattr(grid, self.name, self)
@@ -66,7 +70,8 @@ class Object:
         if bd.is_array(self.permittivity) and len(self.permittivity.shape) == 3:
             self.permittivity = self.permittivity[:, :, :, None]
         self.inverse_permittivity = (
-            bd.ones((self.Nx, self.Ny, self.Nz, 3)) / self.permittivity
+            bd.ones((self.Nx, self.Ny, self.Nz, 3), dtype=self.permittivity.dtype)
+            / self.permittivity
         )
 
         # set the permittivity values of the object at its border to be equal
@@ -118,7 +123,8 @@ class Object:
 
         """
         loc = (self.x, self.y, self.z)
-        self.grid.E[loc] += (
+
+        self.grid.E[loc] = self.grid.E[loc] + (
             self.grid.courant_number * self.inverse_permittivity * curl_H[loc]
         )
 
@@ -155,7 +161,7 @@ class Object:
 
 
 class AbsorbingObject(Object):
-    """ An absorbing object takes conductivity into account """
+    """An absorbing object takes conductivity into account"""
 
     def __init__(
         self, permittivity: Tensorlike, conductivity: Tensorlike, name: str = None
@@ -167,7 +173,7 @@ class AbsorbingObject(Object):
             name: name of the object (will become available as attribute to the grid)
         """
         super().__init__(permittivity, name)
-        self.conductivity = conductivity
+        self.conductivity = bd.array(conductivity)
 
     def _register_grid(
         self, grid: Grid, x: slice = None, y: slice = None, z: slice = None
@@ -224,7 +230,7 @@ class AbsorbingObject(Object):
 
 
 class AnisotropicObject(Object):
-    """ An object with anisotropic permittivity tensor """
+    """An object with anisotropic permittivity tensor"""
 
     def _register_grid(
         self, grid: Grid, x: slice = None, y: slice = None, z: slice = None

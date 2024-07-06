@@ -100,6 +100,9 @@ class NumpyBackend(Backend):
     float = numpy.float64
     """ floating type for array """
 
+    complex = numpy.complex128
+    """ complex type for array """
+
     # methods
     asarray = _replace_float(numpy.asarray)
 
@@ -186,6 +189,15 @@ class NumpyBackend(Backend):
     numpy = _replace_float(numpy.asarray)
     """ convert the array to numpy array """
 
+    @staticmethod
+    def is_complex(x):
+        """check if an object is a `ComplexFloat`"""
+
+        return isinstance(x, complex) or (
+            isinstance(x, numpy.ndarray)
+            and x.dtype in (numpy.complex64, numpy.complex128)
+        )
+
 
 # Torch Backend
 if TORCH_AVAILABLE:
@@ -200,6 +212,12 @@ if TORCH_AVAILABLE:
 
         float = torch.get_default_dtype()
         """ floating type for array """
+
+        if float is torch.float32:
+            complex = torch.complex64
+        else:
+            complex = torch.complex128
+        """ complex type for array """
 
         # methods
         asarray = staticmethod(torch.as_tensor)
@@ -296,30 +314,30 @@ if TORCH_AVAILABLE:
             else:
                 return numpy.asarray(arr)
 
+        is_complex = staticmethod(torch.is_complex)
+
     # Torch Cuda Backend
     if TORCH_CUDA_AVAILABLE:
 
         class TorchCudaBackend(TorchBackend):
             """Torch Cuda Backend"""
 
-            def ones(self, shape):
+            def ones(self, shape, **kwargs):
                 """create an array filled with ones"""
-                return torch.ones(shape, device="cuda")
+                return torch.ones(shape, device="cuda", **kwargs)
 
-            def zeros(self, shape):
+            def zeros(self, shape, **kwargs):
                 """create an array filled with zeros"""
-                return torch.zeros(shape, device="cuda")
+                return torch.zeros(shape, device="cuda", **kwargs)
 
-            def array(self, arr, dtype=None):
+            def array(self, arr, dtype=None, **kwargs):
                 """create an array from an array-like sequence"""
                 if dtype is None:
                     dtype = torch.get_default_dtype()
                 if torch.is_tensor(arr):
-                    return arr.clone().to(device="cuda", dtype=dtype)
-                return torch.tensor(arr, device="cuda", dtype=dtype)
+                    return arr.clone().to(device="cuda", dtype=dtype, **kwargs)
+                return torch.tensor(arr, device="cuda", dtype=dtype, **kwargs)
 
-            # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-            # The same warning applies here.
             def numpy(self, arr):
                 """convert the array to numpy array"""
                 if torch.is_tensor(arr):

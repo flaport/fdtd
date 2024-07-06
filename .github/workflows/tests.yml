@@ -1,8 +1,17 @@
-# This workflow runs tests for fdtd package.
+name: Tests
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches:
+      - master
+    paths-ignore:
+      - ".github/**"
+      - "!.github/workflows/main.yml"
+      - "docs/**"
+      - "*.md"
+      - ".git*"
 
-name: fdtd tests
-
-on: [push]
 jobs:
   build:
     runs-on: ubuntu-latest
