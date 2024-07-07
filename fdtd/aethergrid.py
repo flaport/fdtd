@@ -50,7 +50,8 @@ leaving no room for "gauge fixing".
 Another key point is that there are only three units of measurement in this
 model: the meter, the second and the kilogram. Within this model, electric
 charge has a unit in [kg/s], while the electric field has a unit of velocity in
-[m/s]. And the magnetic field has a unit in 
+[m/s]. And the magnetic field B has a unit in [/m-s], while the magnetizing field
+H has a unit in [kg/m^2-s^2].
 
 """
 
