@@ -1,48 +1,58 @@
-""" The FDTD LGrid
+""" The FDTD Aether Grid
 
 The grid is the core of the FDTD Library. It is where everything comes together
 and where the biggest part of the calculations are done.
 
-The LGrid class is under construction and is to become the grid for simulating a
-new theory based on the vector LaPlace operator. It is not yet functional and
-should become an alternative implementation of the existing Grid class in the
-FDTD library, which is made for simulating the electromagnetic Maxwell
-equations. The end goal of the project is to build a simulator for a new theory,
-based on the existing electromagnetic simulation library FDTD of which this
-project is a fork.
+This grid is an experimental implementation of a new aether theory, based on the
+discovery of the quantum circulation constant, kinematic viscosity or
+diffusivity k, with a value equal to light speed c squared but a unit of
+[m^2/s].
+    
+This theory is documented in this jupyter notebook:
+    
+https://github.com/l4m4re/notebooks/blob/main/aether_physics.ipynb
+        
+Key point is that the quantum circulation constant can be combined with the
+vector LaPlace operator to define the time derivative of any given vector field
+F within the aether by:
 
-So, for now, the goal of the current project is to refactor / rework the
-existing Grid class for the electromagnetic fields into a new Grid class for the
-new theory. The first step of impelementing the new theory is to implement the
-operators used and the update functions for the fields. 
+dF/dt = -k Delta F,
 
+with Delta the LaPlace operator. 
+
+From here, we can define the acceleration field a as the time derivative of the
+velocity field v by:
+
+a = d/dt v = -k Delta v,
+
+and jerk j as the time derivative of the acceleration field a by:
+
+j = d/dt a = -k Delta a = k^2 Delta^2 v.
+
+This way, we obtain a second order model, in contrast to Maxwell's equations as
+well as Navier-Stokes equations, so we can define second order LaPlace and
+Poisson equations in full 3D, which was heretofore impossible.
+
+An interesting detail is that the wave equation for the velocity field v can be
+written as:
+
+j/c^2 + a/k = 0,
+
+which is a full 3D second order wave equation, illustrating the expressive power
+of utilizing the vector LaPlace operator, the second spatial derivative, when
+combined with the quantum circulation constant k.
+
+By writing out the definition of the vector LaPlacian for the acceleration and
+jerk fields, various fields can be defined, amongst others the electric and
+magnetic fields as well as uniquely defined scalar and vector potentials,
+leaving no room for "gauge fixing".
+
+Another key point is that there are only three units of measurement in this
+model: the meter, the second and the kilogram. Within this model, electric
+charge has a unit in [kg/s], while the electric field has a unit of velocity in
+[m/s]. And the magnetic field has a unit in 
 
 """
-
-
-    
-    
-    
-    
-
-
-
-
-## Constants
-
-from math import pi
-
-c     = 299792458.0          # [m/s] - speed of light
-c_l   = c * (pi/2)           # [m/s] - speed of longitudinal "Tesla" sound-like waves
-mu    = 4*pi*1e-7            # permeability = 1/viscosity
-eta   = 1/mu                 # viscosity      [Pa-s],[kg/m-s],  [N-s/m2], [J-s/m3]
-h     = 6.62607015e-34       # Planck's constant    [J-s], [kg/m2-s]      
-k     = c*c                  # dynamic viscosity    [m2/s]
-rho   = eta/k                # 8.854187817620389e-12
-eps   = rho                  # permittivity
-q     = 1.602176634e-19      # elemental charge
-m     = h/k                  # elemental mass   
-
 
 ## Imports
 
@@ -62,23 +72,54 @@ from .typing_ import Tuple, Number, Tensorlike
 
 # relative
 from .backend import backend as bd
-from . import constants as const
 
-#import operators:
-from .operators import curl_surface, curl_point, grad, div
+from .operators import curl_edge_to_face, curl_face_to_edge, grad, div
 
 
+from math import pi
 
-## FDTD LGrid Class
-class LGrid:
-    """The FDTD LGrid
+## Constants
 
-    The LGrid is the core of the FDTD Library. It is where everything comes
+# base constants
+
+c       = 299792458.0       # speed of light                [m/s]
+
+eta     = 1/(4*pi*1e-7)     # viscosity (1/mu_0)            [kg/m-s],   [Pa-s]
+
+h       = 6.62607015e-34    # Planck's constant             [kg-m^2/s], [J-s]
+
+e       = 1.602176634e-19   # elementary charge             [kg/s]
+
+# derived constants
+
+k       = c**2              # quantum circulation constant
+                            # 8.987551787368176e+16         [m^2/s]
+
+rho     = eta/k             # mass density (eps_0) 
+                            # 8.85418781762039e-12          [kg/m^3]
+
+m       = h/k               # elementary mass 
+                            # 7.372497323812708e-51         [kg]
+                      
+rho_q0  = e/m * rho         # vacuum charge density 
+                            # 1.9241747011042014e+20        [kg/m^3-s]
+                            
+tau     = e/k               # vacuum torque density 
+                            # 1.7826619216278975e-36        [N-m/m^3]
+
+
+inv_rho_q0 = 1/rho_q0      
+rho_tau    = rho/tau        # = eta/e
+tau_rho    = tau/rho        # = e/eta
+
+## FDTD Grid Class
+class AetherGrid:
+    """The FDTD Aether Grid
+
+    The grid is the core of the FDTD Library. It is where everything comes
     together and where the biggest part of the calculations are done.
     
-    This implementation implements fields based on the Laplace operator
-    rather than Maxwells equations
-
+    
     """
 
     from .visualization import visualize
@@ -123,7 +164,7 @@ class LGrid:
             )
         else:
             self.courant_number = float(courant_number)
-
+            
         """
         For now, we assume our fields to propagate with a maximum speed of pi/2
         * c, since we assume Tesla's longitudinal sound-like waves to also exist
@@ -143,42 +184,53 @@ class LGrid:
         # timestep of the simulation
         self.time_step = self.courant_number * self.grid_spacing / ((pi/2)*const.c)
         
-        #define the fields used in the new model:
-                
-        self.C          = bd.zeros((self.Nx, self.Ny, self.Nz, 3))
+        # define fields
+        # velocity
+        self.v = bd.zeros((self.Nx, self.Ny, self.Nz, 3))
         
-        self.p          = bd.zeros((self.Nx, self.Ny, self.Nz, 1))
-        self.A          = bd.zeros((self.Nx, self.Ny, self.Nz, 3))
-
-        self.L          = bd.zeros((self.Nx, self.Ny, self.Nz, 3))
-        self.R          = bd.zeros((self.Nx, self.Ny, self.Nz, 3))
-
-        self.F          = bd.zeros((self.Nx, self.Ny, self.Nz, 3))
-      
-        self.I          = bd.zeros((self.Nx, self.Ny, self.Nz, 3))
+        # first order scalar and vector potentials
+        self.p = bd.zeros((self.Nx, self.Ny, self.Nz))
+        self.A = bd.zeros((self.Nx, self.Ny, self.Nz, 3))
         
-        self.t          = bd.zeros((self.Nx, self.Ny, self.Nz, 1))
-        self.W          = bd.zeros((self.Nx, self.Ny, self.Nz, 3))
+        # first order force and torque density fields
+        self.L = bd.zeros((self.Nx, self.Ny, self.Nz, 3))
+        self.R = bd.zeros((self.Nx, self.Ny, self.Nz, 3))
         
-        self.Y_l        = bd.zeros((self.Nx, self.Ny, self.Nz, 3))
-        self.Y_a        = bd.zeros((self.Nx, self.Ny, self.Nz, 3))
+        # first order electric and magnetic fields
+        self.E = bd.zeros((self.Nx, self.Ny, self.Nz, 3))
+        self.H = bd.zeros((self.Nx, self.Ny, self.Nz, 3))
         
-        self.Y          = bd.zeros((self.Nx, self.Ny, self.Nz, 3))
-          
+        # acceleration
+        self.a = bd.zeros((self.Nx, self.Ny, self.Nz, 3))
+        
+        # second order scalar and vector potentials
+        self.dpdt = bd.zeros((self.Nx, self.Ny, self.Nz))
+        self.dAdt = bd.zeros((self.Nx, self.Ny, self.Nz, 3))
+        
+        # second order force and torque density fields
+        self.dLdt = bd.zeros((self.Nx, self.Ny, self.Nz, 3))
+        self.dRdt = bd.zeros((self.Nx, self.Ny, self.Nz, 3))
+        
+        # second order electric and magnetic fields
+        self.dEdt = bd.zeros((self.Nx, self.Ny, self.Nz, 3))
+        self.dHdt = bd.zeros((self.Nx, self.Ny, self.Nz, 3))
+        
+        # jerk
+        self.j = bd.zeros((self.Nx, self.Ny, self.Nz, 3))
         
         # save the inverse of the relative permittiviy and the relative permeability
         # these tensors can be anisotropic!
 
         if bd.is_array(permittivity) and len(permittivity.shape) == 3:
             permittivity = permittivity[:, :, :, None]
-        self.inverse_permittivity = bd.ones((self.Nx, self.Ny, self.Nz, 3)) / float(
-            permittivity
+        self.inverse_permittivity = bd.ones((self.Nx, self.Ny, self.Nz, 3)) / bd.array(
+            permittivity, dtype=bd.float
         )
 
         if bd.is_array(permeability) and len(permeability.shape) == 3:
             permeability = permeability[:, :, :, None]
-        self.inverse_permeability = bd.ones((self.Nx, self.Ny, self.Nz, 3)) / float(
-            permeability
+        self.inverse_permeability = bd.ones((self.Nx, self.Ny, self.Nz, 3)) / bd.array(
+            permeability, dtype=bd.float
         )
 
         # save current time index
@@ -200,13 +252,13 @@ class LGrid:
         self.folder = None
 
     def _handle_distance(self, distance: Number) -> int:
-        """ transform a distance to an integer number of gridpoints """
+        """transform a distance to an integer number of gridpoints"""
         if not isinstance(distance, int):
             return int(float(distance) / self.grid_spacing + 0.5)
         return distance
 
     def _handle_time(self, time: Number) -> int:
-        """ transform a time value to an integer number of timesteps """
+        """transform a time value to an integer number of timesteps"""
         if not isinstance(time, int):
             return int(float(time) / self.time_step + 0.5)
         return time
@@ -214,7 +266,7 @@ class LGrid:
     def _handle_tuple(
         self, shape: Tuple[Number, Number, Number]
     ) -> Tuple[int, int, int]:
-        """ validate the grid shape and transform to a length-3 tuple of ints """
+        """validate the grid shape and transform to a length-3 tuple of ints"""
         if len(shape) != 3:
             raise ValueError(
                 f"invalid grid shape {shape}\n"
@@ -227,7 +279,7 @@ class LGrid:
         return x, y, z
 
     def _handle_slice(self, s: slice) -> slice:
-        """ validate the slice and transform possibly float values to ints """
+        """validate the slice and transform possibly float values to ints"""
         start = (
             s.start
             if not isinstance(s.start, float)
@@ -242,7 +294,7 @@ class LGrid:
         return slice(start, stop, step)
 
     def _handle_single_key(self, key):
-        """ transform a single index key to a slice or list """
+        """transform a single index key to a slice or list"""
         try:
             len(key)
             return [self._handle_distance(k) for k in key]
@@ -255,27 +307,27 @@ class LGrid:
 
     @property
     def x(self) -> int:
-        """ get the number of grid cells in the x-direction """
+        """get the number of grid cells in the x-direction"""
         return self.Nx * self.grid_spacing
 
     @property
     def y(self) -> int:
-        """ get the number of grid cells in the y-direction """
+        """get the number of grid cells in the y-direction"""
         return self.Ny * self.grid_spacing
 
     @property
     def z(self) -> int:
-        """ get the number of grid cells in the y-direction """
+        """get the number of grid cells in the y-direction"""
         return self.Nz * self.grid_spacing
 
     @property
     def shape(self) -> Tuple[int, int, int]:
-        """ get the shape of the FDTD grid """
+        """get the shape of the FDTD grid"""
         return (self.Nx, self.Ny, self.Nz)
 
     @property
     def time_passed(self) -> float:
-        """ get the total time passed """
+        """get the total time passed"""
         return self.time_steps_passed * self.time_step
 
     def run(self, total_time: Number, progress_bar: bool = True):
@@ -294,21 +346,18 @@ class LGrid:
             time = tqdm(time)
         for _ in time:
             self.step()
-
+    
     def step(self):
-        """do a single FDTD step by first updating the electric field and then
-        updating the magnetic field
+        """do a single FDTD step by first computing acceleration, jerk
+        and the intermediate fields, and then updating the velocity field.
         """
-             
-        self.update_C()     # [C]      += [F]*dt + [Y]*dt^2
-       
+
+        self.update()
         
         self.time_steps_passed += 1
-
-
-
-    def update_C(self):
-        """ update the C field by using the vector Laplace operator """
+        
+    def update(self):
+        """ update the fields along the vector Laplace operator """
         
         # update boundaries: step 1
         #for boundary in self.boundaries:
@@ -317,32 +366,41 @@ class LGrid:
         #curl = curl_E(self.E)
         #self.H -= self.courant_number * self.inverse_permeability * curl
         
-        # Since C represents a force density, it would be located on
-        # the faces of the grid and thus be a H-type field.
+        # potential fields
+        self.p      = eta * div (self.v)
+        self.A      = e   * curl_edge_to_face(self.v)
         
-        self.p      = div (self.C)
-        self.A      = curl_surface(self.C)
+        # force and torque density fields
+        self.L      = - grad(self.p)
+        self.R      = curl_face_to_edge(self.A)
         
-        self.L      = - grad(self.P)
-        self.R      = curl_point(self.A)
+        # electric and magnetic fields
+        self.E      = inv_rho_q0 * self.L
+        self.H      = rho_tau    * self.R
         
-        self.F      = self.L + self.R
+        # acceleration field
+        self.a      = rho_q0 * self.E + tau_rho * self.H
         
-        self.I      = self.k * self.F
+        # second order potential fields        
+        self.dpdt   = eta * div (self.a)
+        self.dAdt   = e   * curl_edge_to_face(self.a)
         
-        self.t      = div(self.I)
-        self.W      = curl_surface(self.I)
+        #second order yank and d/dt torque density fields
+        self.dLdt   = - grad(self.dpdt)
+        self.dRdt   = curl_face_to_edge(self.dAdt)
         
-        self.Y_l    = -grad(self.t)
-        self.Y_a    = curl_point(self.W)
+        # second order (time derivative) of electric and magnetic fields
+        self.dEdt   = inv_rho_q0 * self.dLdt
+        self.dHdt   = rho_tau    * self.dRdt
         
-        self.Y      = self.Y_l + self.Y_r
+        # jerk field
+        self.j      = rho_q0 * self.dEdt + tau_rho * self.dHdt
     
+        # update velocity field
+        self.v      += self.courant_number    * self.a
+        self.v      += self.courant_number**2 * self.j
         
-        self.C      += self.courant_number * self.k * self.F
-        self.C      += self.courant_number * self.courant_number * self.k * self.Y
-    
-    
+        
         # update objects
         #for obj in self.objects:
         #    obj.update_H(curl)
@@ -352,55 +410,63 @@ class LGrid:
         #    boundary.update_H()
            
         # add sources to grid:
-        for src in self.sources:
-            src.update_H()
-            src.update_E()
+        #for src in self.sources:
+        #    src.update_H()
+        #    src.update_E()
            
            
         # detect electric field
         #for det in self.detectors:
-        #    det.detect_H()
-        
+        #    det.detect_H()    
+
 
 
     def reset(self):
-        """ reset the grid by setting all fields to zero """
-        #self.H *= 0.0
-        #self.E *= 0.0
-        self.C          *= 0.0
-        self.p          *= 0.0
-        self.A          *= 0.0
-        self.L          *= 0.0
-        self.R          *= 0.0
-        self.F          *= 0.0
-        self.I          *= 0.0
-        self.t          *= 0.0
-        self.W          *= 0.0
-        self.Y_l        *= 0.0
-        self.Y_a        *= 0.0
-        self.Y          *= 0.0
+        """reset the grid by setting all fields to zero"""
+        self.v *= 0.0
+        self.p *= 0.0
+        self.A *= 0.0
+        self.L *= 0.0
+        self.R *= 0.0
+        self.H *= 0.0
+        self.E *= 0.0
+        
+        self.a    *= 0.0
+        self.dpdt *= 0.0
+        self.dAdt *= 0.0
+        self.dLdt *= 0.0
+        self.dRdt *= 0.0
+        self.dEdt *= 0.0
+        self.dHdt *= 0.0
+        
+        self.j *= 0.0
         
         self.time_steps_passed *= 0
 
     def add_source(self, name, source):
-        """ add a source to the grid """
+        """add a source to the grid"""
         source._register_grid(self)
         self.sources[name] = source
 
     def add_boundary(self, name, boundary):
-        """ add a boundary to the grid """
+        """add a boundary to the grid"""
         boundary._register_grid(self)
         self.boundaries[name] = boundary
 
     def add_detector(self, name, detector):
-        """ add a detector to the grid """
+        """add a detector to the grid"""
         detector._register_grid(self)
         self.detectors[name] = detector
 
     def add_object(self, name, obj):
-        """ add an object to the grid """
+        """add an object to the grid"""
         obj._register_grid(self)
         self.objects[name] = obj
+    
+    def promote_dtypes_to_complex(self):
+        self.E = self.E.astype(bd.complex)
+        self.H = self.H.astype(bd.complex)
+        [boundary.promote_dtypes_to_complex() for boundary in self.boundaries]
 
     def __setitem__(self, key, attr):
         if not isinstance(key, tuple):
@@ -541,15 +607,21 @@ class LGrid:
 
         Parameters: None
         """
+        def _numpyfy(item):
+            if isinstance(item, list):
+                return [_numpyfy(el) for el in item]
+            elif bd.is_array(item):
+                return bd.numpy(item)
+            else:
+                return item
+                
         if self.folder is None:
             raise Exception(
                 "Save location not initialized. Please read about 'fdtd.Grid.saveSimulation()' or try running 'grid.saveSimulation()'."
             )
         dic = {}
         for detector in self.detectors:
-            dic[detector.name + " (E)"] = [x for x in detector.detector_values()["E"]]
-            dic[detector.name + " (H)"] = [x for x in detector.detector_values()["H"]]
+            values = detector.detector_values()
+            dic[detector.name + " (E)"] = _numpyfy(values['E'])
+            dic[detector.name + " (H)"] = _numpyfy(values['H'])
         savez(path.join(self.folder, "detector_readings"), **dic)
-
-
-
