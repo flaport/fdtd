@@ -104,20 +104,13 @@ m       = h/k               # elementary mass
                       
 rho_q0  = e/m * rho         # vacuum charge density 
                             # 1.9241747011042014e+20        [kg/m^3-s]
-                            
-tau     = e/k               # vacuum angular momentum density 
-                            # 1.7826619216278975e-36        [kg-m/m^3]
 
-"""
-Note: I made a mistake confusing angular momentum and torque.
-
-For now, I'll leave the symbol tau in, will fix this later.
-"""
-
+sigma  = e/k                # Surface mass density
+                            # 1.7826619216278975e-36        [kg/m^2], [kg-m/m^3]
 
 inv_rho_q0 = 1/rho_q0      
-rho_tau    = rho/tau        # = eta/e
-tau_rho    = tau/rho        # = e/eta
+rho_sigma    = rho/sigma        # = eta/e
+sigma_rho    = sigma/rho        # = e/eta
 
 ## FDTD Grid Class
 class AetherGrid:
@@ -189,7 +182,7 @@ class AetherGrid:
         his laboratory in Colorado Springs, according to Hugo Gernsback.
         """
         # timestep of the simulation
-        self.time_step = self.courant_number * self.grid_spacing / ((pi/2)*const.c)
+        self.time_step = self.courant_number * self.grid_spacing / ((pi/2) * c)
         
         # define fields
         # velocity
@@ -383,10 +376,10 @@ class AetherGrid:
         
         # electric and magnetic fields
         self.E      = inv_rho_q0 * self.L
-        self.H      = rho_tau    * self.R
+        self.H      = rho_sigma    * self.R
         
         # acceleration field
-        self.a      = rho_q0 * self.E + tau_rho * self.H
+        self.a      = rho_q0 * self.E + sigma_rho * self.H
         
         # second order potential fields        
         self.dpdt   = eta * div (self.a)
@@ -398,10 +391,10 @@ class AetherGrid:
         
         # second order (time derivative) of electric and magnetic fields
         self.dEdt   = inv_rho_q0 * self.dLdt
-        self.dHdt   = rho_tau    * self.dRdt
+        self.dHdt   = rho_sigma    * self.dRdt
         
         # jerk field
-        self.j      = rho_q0 * self.dEdt + tau_rho * self.dHdt
+        self.j      = rho_q0 * self.dEdt + sigma_rho * self.dHdt
     
         # update velocity field
         self.v      += self.courant_number    * self.a
