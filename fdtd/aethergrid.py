@@ -105,8 +105,14 @@ m       = h/k               # elementary mass
 rho_q0  = e/m * rho         # vacuum charge density 
                             # 1.9241747011042014e+20        [kg/m^3-s]
                             
-tau     = e/k               # vacuum torque density 
-                            # 1.7826619216278975e-36        [N-m/m^3]
+tau     = e/k               # vacuum angular momentum density 
+                            # 1.7826619216278975e-36        [kg-m/m^3]
+
+"""
+Note: I made a mistake confusing angular momentum and torque.
+
+For now, I'll leave the symbol tau in, will fix this later.
+"""
 
 
 inv_rho_q0 = 1/rho_q0      
