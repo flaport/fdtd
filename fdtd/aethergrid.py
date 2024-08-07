@@ -105,12 +105,12 @@ m       = h/k               # elementary mass
 rho_q0  = e/m * rho         # vacuum charge density 
                             # 1.9241747011042014e+20        [kg/m^3-s]
 
-sigma  = e/k                # Surface mass density
-                            # 1.7826619216278975e-36        [kg/m^2], [kg-m/m^3]
+eta_e   = eta/e
+e_eta   = e/eta
+inv_rho = 1/rho
 
 inv_rho_q0 = 1/rho_q0      
-rho_sigma    = rho/sigma        # = eta/e
-sigma_rho    = sigma/rho        # = e/eta
+
 
 ## FDTD Grid Class
 class AetherGrid:
@@ -188,13 +188,14 @@ class AetherGrid:
         # velocity
         self.v = bd.zeros((self.Nx, self.Ny, self.Nz, 3))
         
-        # first order scalar and vector potentials
-        self.p = bd.zeros((self.Nx, self.Ny, self.Nz))
-        self.A = bd.zeros((self.Nx, self.Ny, self.Nz, 3))
+        # first order scalar potential and torque density
+        self.p      = bd.zeros((self.Nx, self.Ny, self.Nz))
+        self.omega  = bd.zeros((self.Nx, self.Ny, self.Nz, 3))
+        self.tau    = bd.zeros((self.Nx, self.Ny, self.Nz, 3))
         
-        # first order force and torque density fields
-        self.L = bd.zeros((self.Nx, self.Ny, self.Nz, 3))
-        self.R = bd.zeros((self.Nx, self.Ny, self.Nz, 3))
+        # first order force density and vector potential
+        self.f = bd.zeros((self.Nx, self.Ny, self.Nz, 3))
+        self.A = bd.zeros((self.Nx, self.Ny, self.Nz, 3))
         
         # first order electric and magnetic fields
         self.E = bd.zeros((self.Nx, self.Ny, self.Nz, 3))
@@ -203,20 +204,21 @@ class AetherGrid:
         # acceleration
         self.a = bd.zeros((self.Nx, self.Ny, self.Nz, 3))
         
-        # second order scalar and vector potentials
-        self.dpdt = bd.zeros((self.Nx, self.Ny, self.Nz))
-        self.dAdt = bd.zeros((self.Nx, self.Ny, self.Nz, 3))
+        # second order scalar potential and torque density time derivative
+        self.dpdt    = bd.zeros((self.Nx, self.Ny, self.Nz))
+        self.alpha   = bd.zeros((self.Nx, self.Ny, self.Nz, 3))
+        self.dtau_dt = bd.zeros((self.Nx, self.Ny, self.Nz, 3))
         
-        # second order force and torque density fields
-        self.dLdt = bd.zeros((self.Nx, self.Ny, self.Nz, 3))
-        self.dRdt = bd.zeros((self.Nx, self.Ny, self.Nz, 3))
+        # second order yank density and vector potential
+        self.y      = bd.zeros((self.Nx, self.Ny, self.Nz, 3))
+        self.dAdt   = bd.zeros((self.Nx, self.Ny, self.Nz, 3))
         
         # second order electric and magnetic fields
-        self.dEdt = bd.zeros((self.Nx, self.Ny, self.Nz, 3))
-        self.dHdt = bd.zeros((self.Nx, self.Ny, self.Nz, 3))
+        self.dEdt   = bd.zeros((self.Nx, self.Ny, self.Nz, 3))
+        self.dHdt   = bd.zeros((self.Nx, self.Ny, self.Nz, 3))
         
         # jerk
-        self.j = bd.zeros((self.Nx, self.Ny, self.Nz, 3))
+        self.j      = bd.zeros((self.Nx, self.Ny, self.Nz, 3))
         
         # save the inverse of the relative permittiviy and the relative permeability
         # these tensors can be anisotropic!
@@ -359,87 +361,124 @@ class AetherGrid:
     def update(self):
         """ update the fields along the vector Laplace operator """
         
-        # update boundaries: step 1
-        #for boundary in self.boundaries:
-        #    boundary.update_phi_H()
+        self.updateBoundaries()
         
-        #curl = curl_E(self.E)
-        #self.H -= self.courant_number * self.inverse_permeability * curl
-        
-        # potential fields
+      
+         # scalar potential and torque density fields
         self.p      = eta * div (self.v)
-        self.A      = e   * curl_edge_to_face(self.v)
+        self.omega  =       curl_edge_to_face(self.v)
+        self.tau    = eta * self.omega
         
-        # force and torque density fields
-        self.L      = - grad(self.p)
-        self.R      = curl_face_to_edge(self.A)
+        # linear force density field
+        self.f      = - grad(self.p)
         
         # electric and magnetic fields
-        self.E      = inv_rho_q0 * self.L
-        self.H      = rho_sigma    * self.R
+        self.E      = inv_rho_q0 * self.f
+        self.H      = eta_e      * self.tau
+        
+        # update E and H 
+        self.updateEH()
+
+        # vector potential
+        self.A      = curl_face_to_edge(e_eta * self.H)
         
         # acceleration field
-        self.a      = rho_q0 * self.E + sigma_rho * self.H
+        self.a      = rho_q0 * self.E + inv_rho * self.A
         
-        # second order potential fields        
-        self.dpdt   = eta * div (self.a)
-        self.dAdt   = e   * curl_edge_to_face(self.a)
+
+        # second order scalar potential and time derivative
+        # of torque density fields
+        self.dpdt    = eta * div (self.a)
+        self.alpha   =       curl_edge_to_face(self.a)
+        self.dtau_dt = eta * self.alpha
         
-        #second order yank and d/dt torque density fields
-        self.dLdt   = - grad(self.dpdt)
-        self.dRdt   = curl_face_to_edge(self.dAdt)
+        # linear yank density field
+        self.y      = - grad(self.dpdt)
         
-        # second order (time derivative) of electric and magnetic fields
-        self.dEdt   = inv_rho_q0 * self.dLdt
-        self.dHdt   = rho_sigma    * self.dRdt
+        # time derivative of electric and magnetic fields
+        self.dEdt   = inv_rho_q0 * self.y
+        self.dHdt   = eta_e      * self.dtau_dt
         
-        # jerk field
-        self.j      = rho_q0 * self.dEdt + sigma_rho * self.dHdt
+        # update dEdt and dHdt ?
+        #self.updatedEHdt()
+
+        # vector potential
+        self.dAdt   = curl_face_to_edge(e_eta * self.dHdt)
+        
+        # acceleration field
+        self.j      = rho_q0 * self.dEdtE + inv_rho * self.dAdt
+        
     
         # update velocity field
         self.v      += self.courant_number    * self.a
         self.v      += self.courant_number**2 * self.j
-        
-        
+
+
+    def updateBoundaries(self):
+
+        # update boundaries: step 1
+        #for boundary in self.boundaries:
+        #    boundary.update_phi_E()
+        #    boundary.update_phi_H()
+
+        return
+
+
+    def updateEH(self):    
         # update objects
         #for obj in self.objects:
+        #    obj.update_E(curl)
         #    obj.update_H(curl)
            
         # update boundaries: step 2
         #for boundary in self.boundaries:
+        #    boundary.update_E()
         #    boundary.update_H()
            
         # add sources to grid:
         #for src in self.sources:
-        #    src.update_H()
         #    src.update_E()
+        #    src.update_H()
            
            
         # detect electric field
         #for det in self.detectors:
+        #    det.detect_E()
         #    det.detect_H()    
+
+        return
 
 
 
     def reset(self):
         """reset the grid by setting all fields to zero"""
-        self.v *= 0.0
-        self.p *= 0.0
-        self.A *= 0.0
-        self.L *= 0.0
-        self.R *= 0.0
-        self.H *= 0.0
-        self.E *= 0.0
+        self.v      *= 0.0
+
+        self.p      *= 0.0
+        self.omega  *= 0.0
+        self.tau    *= 0.0
+
+        self.f      *= 0.0
+
+        self.E      *= 0.0
+        self.H      *= 0.0
+    
+        self.A      *= 0.0
         
-        self.a    *= 0.0
-        self.dpdt *= 0.0
-        self.dAdt *= 0.0
-        self.dLdt *= 0.0
-        self.dRdt *= 0.0
-        self.dEdt *= 0.0
-        self.dHdt *= 0.0
-        
-        self.j *= 0.0
+        self.a      *= 0.0
+
+        self.dpdt   *= 0.0
+        self.alpha  *= 0.0 
+        self.dtau_dt *= 0.0
+
+        self.y      *= 0.0
+
+        self.dEdt   *= 0.0
+        self.dHdt   *= 0.0
+
+        self.dAdt   *= 0.0
+
+        self.j      *= 0.0
         
         self.time_steps_passed *= 0
 
