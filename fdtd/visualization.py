@@ -163,7 +163,7 @@ def visualize(
                 _y = source.z
             elif y is not None:
                 _x = source.z
-                _y = source.y
+                _y = source.x
             elif z is not None:
                 _x = source.x
                 _y = source.y
