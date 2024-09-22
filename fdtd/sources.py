@@ -88,6 +88,7 @@ class PointSource:
             raise ValueError("a point source should be placed on a single grid cell.")
         self.x, self.y, self.z = grid._handle_tuple((x, y, z))
         self.period = grid._handle_time(self.period)
+        self.frequency = 1.0 / self.period
 
     def update_E(self):
         """Add the source to the electric field"""
@@ -191,6 +192,7 @@ class LineSource:
         self.x, self.y, self.z = self._handle_slices(x, y, z)
 
         self.period = grid._handle_time(self.period)
+        self.frequency = 1.0 / self.period
 
         L = len(self.x)
         vect = bd.array(
@@ -370,6 +372,7 @@ class PlaneSource:
         self.x, self.y, self.z = self._handle_slices(x, y, z)
 
         self.period = grid._handle_time(self.period)
+        self.frequency = 1.0 / self.period
 
         x = bd.arange(self.x.start, self.x.stop, 1) - (self.x.start + self.x.stop) // 2
         y = bd.arange(self.y.start, self.y.stop, 1) - (self.y.start + self.y.stop) // 2
