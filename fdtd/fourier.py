@@ -14,6 +14,7 @@ from math import ceil
 from .backend import backend as bd
 from .detectors import LineDetector, BlockDetector, CurrentDetector
 from .sources import SoftArbitraryPointSource
+import matplotlib.pyplot as plt
 
 class FrequencyRoutines:
     # originally called FrequencyDomain, renamed because 'fd' is already a namespace
